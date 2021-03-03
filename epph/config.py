@@ -11,16 +11,13 @@ def load():
     """ There are three modes
         0 = train and test model
         1 = explain prediction for random test case
-        2 = evaluate explanations for predictions (test set) 
     """
-    # Mode 1 + 2
-    parser.add_argument('--xai', default="shap", type=str)  # shap
-    parser.add_argument('--shap_num_samples', default=100, type=int)  # 100 (good estimate), 1000 (very good estimate)
 
     # Mode 1
+    parser.add_argument('--xai', default="shap", type=str)  # shap
+    parser.add_argument('--shap_num_samples', default=100, type=int)  # 100 (good estimate), 1000 (very good estimate)
     parser.add_argument('--rand_lower_bound', default=5, type=int)
-    parser.add_argument('--rand_upper_bound', default=5, type=int)
-
+    parser.add_argument('--rand_upper_bound', default=10, type=int)
 
     # Classifier
     #   LSTM -> Bi-directional long short-term neural network
