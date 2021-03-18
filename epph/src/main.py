@@ -15,6 +15,8 @@ import seaborn as sns
 import epph.src.util as util
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
+n_hidden = 8
+target_activity = 'Release B'
 
 static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                    'SIRSCritTachypnea', 'Hypotensie',
@@ -30,9 +32,8 @@ seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Triage', 'ER Sepsis Triag
                 'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
                 'Release E']
 
-n_hidden = 8
-target_activity = 'Release B'
 
+# pre-processing
 df = pd.read_csv(ds_path)
 df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
 diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))
@@ -54,42 +55,44 @@ for case in df['Case ID'].unique():
     found_target_flag = False
     df_tmp = df[df['Case ID'] == case]
     df_tmp = df_tmp.sort_values(by='Complete Timestamp')
-    for _, x in df_tmp.iterrows():
-        if x['Activity'] == 'ER Registration':
-            x_statics.append(x[static_features].values.astype(float))
+    for _, value in df_tmp.iterrows():
+        if value['Activity'] == 'ER Registration':
+            x_statics.append(value[static_features].values.astype(float))
             x_seqs.append([])
             after_registration_flag = True
             continue
 
-        if 'Release' in x['Activity']:
-            if x['Activity'] == target_activity:
+        if 'Release' in value['Activity']:
+            if value['Activity'] == target_activity:
                 y.append(1)
                 found_target_flag = True
             break
 
-        if x['Activity'] == target_activity:
+        """
+        if x['Activity'] == target_activity:  # todo: cannot be reached
             y.append(1)
             found_target_flag = True
             break
+        """
 
         if after_registration_flag:
-            x_seqs[-1].append(util.get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid))
+            x_seqs[-1].append(util.get_custom_one_hot_of_activity(value, max_leucocytes, max_lacticacid))
 
     if not found_target_flag and after_registration_flag:
         y.append(0)
 
-assert len(x_seqs) == len(x_statics) == len(y)
+assert len(x_seqs) == len(x_statics) == len(y)  # check
 
 max_len = int(np.percentile([len(x) for x in x_seqs], 95))  # we cut the extreme cases for runtime
-print(f'Cutting evrthing after {max_len} activities')
+print(f'Cutting everything after {max_len} activities')
 x_seqs_final = np.zeros((len(x_seqs), max_len, len(x_seqs[0][0])), dtype=np.float32)
-for i, x in enumerate(x_seqs):
-    x_seqs_final[i, :min(len(x), max_len), :] = np.array(x[:max_len])
+for idx, value in enumerate(x_seqs):
+    x_seqs_final[idx, :min(len(value), max_len), :] = np.array(value[:max_len])
 x_statics_final = np.array(x_statics)
 y_final = np.array(y).astype(np.int32)
 
 
-def train_lstm(x_train_seq, x_train_stat, y_train, x_test_seq, x_test_stat, y_test):
+def train_lstm(x_train_seq, x_train_stat, y_train):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
@@ -147,7 +150,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_test_seq, x_test_stat, y_te
     return model
 
 
-model = train_lstm(x_seqs_final, x_statics_final, y_final, x_seqs_final, x_statics_final, y_final.reshape(-1, 1))
+model = train_lstm(x_seqs_final, x_statics_final, y_final)
 output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()
 output_names = [f'Hidden State {i}' for i in range(2 * n_hidden)] + static_features
 
@@ -177,3 +180,4 @@ seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
 sns.jointplot(data=static_value_shaps, x='SHAP Hypotensie', y='Hypotensie', marker='+', size=10, alpha=0.3)
 
 sns.jointplot(data=seq_value_shape, x='SHAP Leucocytes', y='Leucocytes', marker='+', size=10, alpha=0.3)
+
