@@ -168,9 +168,8 @@ def test_lstm(x_test_seq, x_test_stat, y_test, model):
 
     results = model.evaluate([x_test_seq, x_test_stat], y_test, batch_size=16)
 
-    print(0)
-
-    return 0
+    print(f'Test loss: {results[0]}')
+    print(f'Test accuracy: {results[1]}')
 
 x_seqs_train, x_seqs_test, \
 x_statics_train, x_statics_test, \
