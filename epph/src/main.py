@@ -17,6 +17,7 @@ import epph.src.util as util
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
 target_activity = 'Release B'
+train_size = 0.8
 
 static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                    'SIRSCritTachypnea', 'Hypotensie',
@@ -92,6 +93,20 @@ x_statics_final = np.array(x_statics)
 y_final = np.array(y).astype(np.int32)
 
 
+def custom_data_split(x_seqs_final, x_statics_final, y_final, train_size):
+
+    x_seqs_train = x_seqs_final[:int(train_size * x_seqs_final.shape[0])]
+    x_seqs_test = x_seqs_final[int(train_size * x_seqs_final.shape[0]):]
+    x_statics_train = x_statics_final[:int(train_size * x_statics_final.shape[0])]
+    x_statics_test = x_statics_final[int(train_size * x_statics_final.shape[0]):]
+    y_train = y_final[:int(train_size * len(y_final))]
+    y_test = y_final[int(train_size * len(y_final)):]
+
+    return x_seqs_train, x_seqs_test, \
+           x_statics_train, x_statics_test, \
+           y_train, y_test
+
+
 def train_lstm(x_train_seq, x_train_stat, y_train):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
@@ -149,8 +164,21 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
 
     return model
 
+def test_lstm(x_test_seq, x_test_stat, y_test, model):
 
-model = train_lstm(x_seqs_final, x_statics_final, y_final)
+    results = model.evaluate([x_test_seq, x_test_stat], y_test, batch_size=16)
+
+    print(0)
+
+    return 0
+
+x_seqs_train, x_seqs_test, \
+x_statics_train, x_statics_test, \
+y_train, y_test = custom_data_split(x_seqs_final, x_statics_final, y_final, train_size)
+
+model = train_lstm(x_seqs_train, x_statics_train, y_train)
+test_lstm(x_seqs_test, x_statics_test, y_test, model)
+
 output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()
 output_names = [f'Hidden State {i}' for i in range(2 * n_hidden)] + static_features
 
