@@ -318,7 +318,6 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
 x_seqs_final, x_statics_final, y_final = get_data(target_activity)
 
 
-
 # Run CV on cuts to plot results --> Figure 1
 evaluate_on_cut(x_seqs_final, x_statics_final, y_final)
 
