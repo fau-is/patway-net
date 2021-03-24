@@ -28,7 +28,12 @@ target_activity = 'Admission IC'
 # Admission IC: Good
 # Admission NC: Bad
 
-train_size = 0.8
+seed_val = 1377
+seed = True
+
+if seed:
+    np.random.seed(1377)
+    tf.random.set_seed(1377)
 
 static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                    'SIRSCritTachypnea', 'Hypotensie',
@@ -113,20 +118,6 @@ def get_data(target_activity):
     return x_seqs_final, x_statics_final, y_final
 
 
-def custom_data_split(x_seqs_final, x_statics_final, y_final, train_size):
-
-    x_seqs_train = x_seqs_final[:int(train_size * x_seqs_final.shape[0])]
-    x_seqs_test = x_seqs_final[int(train_size * x_seqs_final.shape[0]):]
-    x_statics_train = x_statics_final[:int(train_size * x_statics_final.shape[0])]
-    x_statics_test = x_statics_final[int(train_size * x_statics_final.shape[0]):]
-    y_train = y_final[:int(train_size * len(y_final))]
-    y_test = y_final[int(train_size * len(y_final)):]
-
-    return x_seqs_train, x_seqs_test, \
-           x_statics_train, x_statics_test, \
-           y_train, y_test
-
-
 def my_palplot(pal, size=1, ax=None):
     n = 5
     if ax is None:
@@ -160,7 +151,10 @@ def compute_shap_summary_plot(X_all):
 
         palette = itertools.cycle(sns.color_palette("viridis"))
         for b in np.unique(digitized):
-            X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=0)
+            if seed:
+                X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=seed_val)
+            else:
+                X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=None)
             sns.swarmplot(data=X_dat, x=c, color=next(palette), alpha=1., size=4, ax=ax)
         [s.set_visible(False) for s in ax.spines.values()]
         if i != (len(shap_values) - 1):
@@ -194,7 +188,7 @@ def compute_shap_summary_plot(X_all):
     ax.set_yticklabels([])
 
     fig11.tight_layout()
-    plt.savefig(f'plots/{target_activity}_shap.svg', bbox_inches="tight")
+    plt.savefig(f'../plots/{target_activity}_shap.svg', bbox_inches="tight")
 
 
 def train_lstm(x_train_seq, x_train_stat, y_train):
@@ -254,19 +248,15 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
 
     return model
 
-def test_lstm(x_test_seq, x_test_stat, y_test, model):
-
-    results = model.evaluate([x_test_seq, x_test_stat], y_test, batch_size=16)
-
-    print(f'Test loss: {results[0]}')
-    print(f'Test accuracy: {results[1]}')
-
 
 def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
-    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    if seed:
+        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed_val)
+    else:
+        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=None)
 
     cut_lengths = [1, 5, 10, 15, 20, 25]
     results = {}
@@ -304,7 +294,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
     ax.set_xlabel('Number of Steps Considered for Prediction')
     ax.set_ylabel('Accuracy')
-    plt.savefig(f'plots/{target_activity}_acc.svg')
+    plt.savefig(f'../plots/{target_activity}_acc.svg')
 
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final):
@@ -320,7 +310,7 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
     ax.set_yticklabels(output_names)
     ax.set_xlabel('Values of Coefficient in Last Layer')
     fig.tight_layout()
-    plt.savefig(f'plots/{target_activity}_coefs.svg')
+    plt.savefig(f'../plots/{target_activity}_coefs.svg')
 
     return model
 
