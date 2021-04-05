@@ -53,7 +53,7 @@ seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Triage', 'ER Sepsis Triag
 # pre-processing
 df = pd.read_csv(ds_path)
 df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
-diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))
+diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))  # ordinal encoding
 print(diagnose_mapping)
 df['Diagnose'] = df['Diagnose'].apply(lambda x: diagnose_mapping[x])
 df['Age'] = df['Age'].fillna(-1.)
@@ -108,7 +108,6 @@ def get_data(target_activity):
     assert len(x_seqs) == len(x_statics) == len(y)
 
     max_len = int(np.percentile([len(x) for x in x_seqs], 95))  # we cut the extreme cases for runtime
-
     print(f'Cutting everything after {max_len} activities')
     x_seqs_final = np.zeros((len(x_seqs), max_len, len(x_seqs[0][0])), dtype=np.float32)
     for i, x in enumerate(x_seqs):
@@ -337,7 +336,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
     ax.set_xlabel('Number of Steps Considered for Prediction')
     ax.set_ylabel('Accuracy')
-    plt.savefig(f'../plots/{target_activity}_auc.svg')
+    plt.savefig(f'../plots/{target_activity}_acc.svg')
 
     # AUC ROC
     fig, ax = plt.subplots(figsize=(14, 10))
@@ -348,7 +347,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
     ax.set_xlabel('Number of Steps Considered for Prediction')
-    ax.set_ylabel('Accuracy')
+    ax.set_ylabel('AUC ROC')
     plt.savefig(f'../plots/{target_activity}_auc.svg')
 
 
