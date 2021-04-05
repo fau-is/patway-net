@@ -309,7 +309,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
                      results['gts'])),
             columns=['ts', 'preds', 'preds_proba', 'gts'])
 
-        cut_lengths = [1, 3, 5, 10, 15]
+        cut_lengths = range(1, X_train_seq.shape[1])  # [1, 3, 5, 10, 15]
 
         # init
         if cut_lengths[0] not in results:
@@ -319,14 +319,14 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
                 results[cut_len]['auc'] = list()
 
         for cut_len in cut_lengths:
-            results_temp_cut = results_temp[results_temp.ts == cut_len]
+            results_temp_cut = results_temp[results_temp.ts <= cut_len]
 
             if not results_temp_cut.empty:  # if cut length is longer than max trace length
                 results[cut_len]['acc'].append(metrics.accuracy_score(y_true=results_temp_cut['gts'], y_pred=results_temp_cut['preds']))
                 results[cut_len]['auc'].append(metrics.roc_auc_score(y_true=results_temp_cut['gts'], y_score=results_temp_cut['preds_proba']))
 
 
-    # Make plots
+    # Accuracy
     fig, ax = plt.subplots(figsize=(14, 10))
     mean_line = [np.mean(results[c]['acc']) for c in cut_lengths]
     min_line = [np.percentile(results[c]['acc'], 25) for c in cut_lengths]
@@ -336,7 +336,19 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
     ax.set_xlabel('Number of Steps Considered for Prediction')
     ax.set_ylabel('Accuracy')
-    plt.savefig(f'../plots/{target_activity}_acc.svg')
+    plt.savefig(f'../plots/{target_activity}_auc.svg')
+
+    # AUC ROC
+    fig, ax = plt.subplots(figsize=(14, 10))
+    mean_line = [np.mean(results[c]['auc']) for c in cut_lengths]
+    min_line = [np.percentile(results[c]['auc'], 25) for c in cut_lengths]
+    max_line = [np.percentile(results[c]['auc'], 75) for c in cut_lengths]
+
+    ax.plot(cut_lengths, mean_line)
+    ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
+    ax.set_xlabel('Number of Steps Considered for Prediction')
+    ax.set_ylabel('Accuracy')
+    plt.savefig(f'../plots/{target_activity}_auc.svg')
 
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final):
