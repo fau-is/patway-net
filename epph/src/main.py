@@ -47,7 +47,7 @@ static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
 seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Triage', 'ER Sepsis Triage',
                 'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
                 'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
-                'Release E']
+                'Release E', 'Dummy_Leucocytes', 'Dummy_CRP', 'Dummy_LacticAcid']
 
 
 # pre-processing
@@ -91,7 +91,6 @@ def get_data(target_activity):
                     found_target_flag = True
                 break
 
-            # todo: is this condition necessary?
             if x['Activity'] == target_activity:
                 y.append(1)
                 found_target_flag = True
