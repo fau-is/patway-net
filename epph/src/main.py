@@ -91,6 +91,7 @@ def get_data(target_activity):
                     found_target_flag = True
                 break
 
+            # todo: is this condition necessary?
             if x['Activity'] == target_activity:
                 y.append(1)
                 found_target_flag = True
@@ -107,7 +108,8 @@ def get_data(target_activity):
     assert len(x_seqs) == len(x_statics) == len(y)
 
     max_len = int(np.percentile([len(x) for x in x_seqs], 95))  # we cut the extreme cases for runtime
-    print(f'Cutting evrthing after {max_len} activities')
+
+    print(f'Cutting everything after {max_len} activities')
     x_seqs_final = np.zeros((len(x_seqs), max_len, len(x_seqs[0][0])), dtype=np.float32)
     for i, x in enumerate(x_seqs):
         if len(x) > 0:
@@ -125,8 +127,6 @@ def my_palplot(pal, size=1, ax=None):
     ax.imshow(np.arange(n).reshape(n, 1),
               cmap=matplotlib.colors.ListedColormap(list(pal)),
               interpolation="nearest", aspect="auto")
-
-    # )
 
 
 def compute_shap_summary_plot(X_all):
@@ -249,6 +249,29 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
     return model
 
 
+def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
+
+    X_seq_ts = np.zeros((X_seq.shape[0] * X_seq.shape[1], X_seq.shape[1], X_seq.shape[2]))
+    X_stat_ts = np.zeros((X_stat.shape[0] * X_seq.shape[1], X_stat.shape[1]))
+    y_ts = np.zeros((len(y) * X_seq.shape[1]))
+
+    idx = 0
+    ts = []
+    for idx_seq in range(0, X_seq.shape[0]):
+        for idx_ts in range(1, X_seq.shape[1] + 1):
+            X_seq_ts[idx, :idx_ts, :] = X_seq[idx_seq, :idx_ts, :]
+            X_stat_ts[idx] = X_stat_ts[idx_seq]
+            y_ts[idx] = y[idx_seq]
+            ts.append(idx_ts)
+            idx += 1
+
+    if ts_info:
+        return X_seq_ts, X_stat_ts, y_ts, ts
+    else:
+        return X_seq_ts, X_stat_ts, y_ts
+
+
+
 def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
@@ -258,31 +281,50 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     else:
         skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=None)
 
-    cut_lengths = [1, 5, 10, 15, 20, 25]
+
+    # model training
     results = {}
-    for cut_len in cut_lengths:
-        results[cut_len] = {}
-        # aucs = []
-        accs = []
-        for train_index, test_index in skf.split(np.zeros(len(y_final)), y_final):
-            X_train_seq = x_seqs_final[train_index][:, :cut_len, :]
-            X_train_stat = x_statics_final[train_index]
-            y_train = y_final[train_index]
+    for train_index, test_index in skf.split(np.zeros(len(y_final)), y_final):
 
-            X_test_seq = x_seqs_final[test_index][:, :cut_len, :]
-            X_test_stat = x_statics_final[test_index]
-            y_test = y_final[test_index]
+        X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs_final[train_index],
+                                                               x_statics_final[train_index],
+                                                               y_final[train_index])
 
-            model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
-            pred = model.predict([X_test_seq, X_test_stat])
-            # auc = metrics.roc_auc_score(y_test, pred)
-            acc = metrics.accuracy_score(y_test, pred > 0.5)
+        X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs_final[test_index],
+                                                            x_statics_final[test_index],
+                                                            y_final[test_index], ts_info=True)
 
-            # aucs.append(auc)
-            accs.append(acc)
+        model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
+        preds_proba = model.predict([X_test_seq, X_test_stat])
 
-        # results[cut_len]['auc'] = aucs
-        results[cut_len]['acc'] = accs
+        results['preds'] = [int(round(pred[0])) for pred in preds_proba]
+        results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
+        results['gts'] = [int(y) for y in y_test]
+        results['ts'] = ts
+
+        results_temp = pd.DataFrame(
+            list(zip(results['ts'],
+                     results['preds'],
+                     results['preds_proba'],
+                     results['gts'])),
+            columns=['ts', 'preds', 'preds_proba', 'gts'])
+
+        cut_lengths = [1, 3, 5, 10, 15]
+
+        # init
+        if cut_lengths[0] not in results:
+            for cut_len in cut_lengths:
+                results[cut_len] = {}
+                results[cut_len]['acc'] = list()
+                results[cut_len]['auc'] = list()
+
+        for cut_len in cut_lengths:
+            results_temp_cut = results_temp[results_temp.ts == cut_len]
+
+            if not results_temp_cut.empty:  # if cut length is longer than max trace length
+                results[cut_len]['acc'].append(metrics.accuracy_score(y_true=results_temp_cut['gts'], y_pred=results_temp_cut['preds']))
+                results[cut_len]['auc'].append(metrics.roc_auc_score(y_true=results_temp_cut['gts'], y_score=results_temp_cut['preds_proba']))
+
 
     # Make plots
     fig, ax = plt.subplots(figsize=(14, 10))
@@ -298,7 +340,11 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
 
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final):
-    model = train_lstm(x_seqs_final, x_statics_final, y_final.reshape(-1, 1))
+    x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
+                                                           x_statics_final,
+                                                           y_final.reshape(-1, 1))
+
+    model = train_lstm(x_seqs_final, x_statics_final, y_final)
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
     # output_names = [f'Hidden State {i}' for i in range(2 * n_hidden)] + static_features
     output_names = static_features
