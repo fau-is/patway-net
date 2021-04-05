@@ -47,7 +47,7 @@ static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
 seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Triage', 'ER Sepsis Triage',
                 'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
                 'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
-                'Release E', 'Dummy_Leucocytes', 'Dummy_CRP', 'Dummy_LacticAcid']
+                'Release E']
 
 
 # pre-processing
