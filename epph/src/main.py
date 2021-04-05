@@ -318,7 +318,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
 
         for cut_len in cut_lengths:
             # todo: <= or == ?
-            results_temp_cut = results_temp[results_temp.ts <= cut_len]
+            results_temp_cut = results_temp[results_temp.ts == cut_len]
 
             if not results_temp_cut.empty:  # if cut length is longer than max trace length
                 results[cut_len]['acc'].append(metrics.accuracy_score(y_true=results_temp_cut['gts'], y_pred=results_temp_cut['preds']))
