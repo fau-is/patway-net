@@ -106,7 +106,7 @@ def get_data(target_activity):
 
     assert len(x_seqs) == len(x_statics) == len(y)
 
-    max_len = int(np.percentile([len(x) for x in x_seqs], 95))  # we cut the extreme cases for runtime
+    max_len = 25  # we cut the extreme cases for runtime
     print(f'Cutting everything after {max_len} activities')
     x_seqs_final = np.zeros((len(x_seqs), max_len, len(x_seqs[0][0])), dtype=np.float32)
     for i, x in enumerate(x_seqs):
@@ -275,9 +275,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     matplotlib.rcParams.update({'font.size': 16})
 
     if seed:
-        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed_val)
+        skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=seed_val)
     else:
-        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=None)
+        skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=None)
 
 
     # model training
@@ -317,7 +317,6 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
                 results[cut_len]['auc'] = list()
 
         for cut_len in cut_lengths:
-            # todo: <= or == ?
             results_temp_cut = results_temp[results_temp.ts == cut_len]
 
             if not results_temp_cut.empty:  # if cut length is longer than max trace length
