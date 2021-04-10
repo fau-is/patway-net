@@ -56,9 +56,10 @@ df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
 diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))  # ordinal encoding
 print(diagnose_mapping)
 df['Diagnose'] = df['Diagnose'].apply(lambda x: diagnose_mapping[x])
-df['Age'] = df['Age'].fillna(-1.)
+df['Diagnose'] = df['Diagnose'].apply(lambda x: x / max(df['Diagnose']))
+df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
 
-
+# remove outliers
 max_leucocytes = np.percentile(df['Leucocytes'].dropna(), 95)
 max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)
 
@@ -275,9 +276,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     matplotlib.rcParams.update({'font.size': 16})
 
     if seed:
-        skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=seed_val)
+        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed_val)
     else:
-        skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=None)
+        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=None)
 
 
     # model training
