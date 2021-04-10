@@ -306,7 +306,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
                      results['gts'])),
             columns=['ts', 'preds', 'preds_proba', 'gts'])
 
-        cut_lengths = range(1, X_train_seq.shape[1])
+        cut_lengths = range(1, X_train_seq.shape[1] + 1)
 
         # init
         if cut_lengths[0] not in results:
@@ -332,7 +332,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
     ax.set_xlabel('Size of Process Instance Prefix for Prediction')
-    ax.set_xticklabels(range(1, max_len))
+    ax.set_xlim(1, max_len)
     ax.set_ylabel('Accuracy')
     plt.savefig(f'../plots/{target_activity}_acc.svg')
 
@@ -345,7 +345,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
     ax.set_xlabel('Size of Process Instance Prefix for Prediction')
-    ax.set_xticklabels(range(1, max_len))
+    ax.set_xlim(1, max_len)
     ax.set_ylabel(r'$AUC_{ROC}$')
     plt.savefig(f'../plots/{target_activity}_auc.svg')
 
