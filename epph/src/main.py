@@ -20,7 +20,7 @@ import shap
 import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
-n_hidden = 8
+n_hidden = 16
 target_activity = 'Admission IC'
 # Release A: Very good
 # Release B: bad
@@ -30,6 +30,7 @@ target_activity = 'Admission IC'
 
 seed_val = 1377
 seed = True
+num_folds = 3
 
 if seed:
     np.random.seed(1377)
@@ -241,7 +242,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
               verbose=1,
               callbacks=[early_stopping, model_checkpoint, lr_reducer],
               batch_size=16,
-              epochs=1)
+              epochs=100)
 
     return model
 
@@ -274,9 +275,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     matplotlib.rcParams.update({'font.size': 16})
 
     if seed:
-        skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=seed_val)
+        skf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=seed_val)
     else:
-        skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=None)
+        skf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=None)
 
 
     # model training
@@ -314,7 +315,11 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
                 results[cut_len] = {}
                 results[cut_len]['acc'] = list()
                 results[cut_len]['auc'] = list()
+                results['all'] = {}
+                results['all']['rep'] = list()
+                results['all']['auc'] = list()
 
+        # metrics per cut
         for cut_len in cut_lengths:
             results_temp_cut = results_temp[results_temp.ts == cut_len]
 
@@ -322,6 +327,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
                 results[cut_len]['acc'].append(metrics.accuracy_score(y_true=results_temp_cut['gts'], y_pred=results_temp_cut['preds']))
                 results[cut_len]['auc'].append(metrics.roc_auc_score(y_true=results_temp_cut['gts'], y_score=results_temp_cut['preds_proba']))
 
+        # metrics across cuts
+        results['all']['rep'].append(metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds']))
+        results['all']['auc'].append(metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
 
     # Accuracy
     fig, ax = plt.subplots(figsize=(14, 10))
