@@ -21,7 +21,7 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Release A'
+target_activity = 'Admission IC'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
@@ -30,7 +30,7 @@ target_activity = 'Release A'
 
 seed_val = 1377
 seed = True
-num_folds = 3
+num_folds = 10
 
 if seed:
     np.random.seed(1377)
@@ -242,7 +242,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
               verbose=1,
               callbacks=[early_stopping, model_checkpoint, lr_reducer],
               batch_size=16,
-              epochs=1)
+              epochs=100)
 
     return model
 
@@ -338,6 +338,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     max_line = [np.percentile(results[c]['acc'], 75) for c in cut_lengths]
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
+    # ax.set_title(r'$M_{AIC}$')
     ax.set_xlabel('Size of Process Instance Prefix for Prediction')
     ax.set_xticks(np.arange(1, max_len + 1, step=2))
     ax.set_ylabel('Accuracy')
@@ -351,6 +352,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     max_line = [np.percentile(results[c]['auc'], 75) for c in cut_lengths]
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
+    # ax.set_title(r'$M_{AIC}$')
     ax.set_xlabel('Size of Process Instance Prefix for Prediction')
     ax.set_xticks(np.arange(1, max_len + 1, step=2))
     ax.set_ylabel(r'$AUC_{ROC}$')
