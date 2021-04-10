@@ -20,8 +20,8 @@ import shap
 import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
-n_hidden = 16
-target_activity = 'Admission IC'
+n_hidden = 8
+target_activity = 'Release A'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
@@ -242,7 +242,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
               verbose=1,
               callbacks=[early_stopping, model_checkpoint, lr_reducer],
               batch_size=16,
-              epochs=100)
+              epochs=1)
 
     return model
 
@@ -328,15 +328,14 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
                 results[cut_len]['auc'].append(metrics.roc_auc_score(y_true=results_temp_cut['gts'], y_score=results_temp_cut['preds_proba']))
 
         # metrics across cuts
-        results['all']['rep'].append(metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds']))
+        results['all']['rep'].append(metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds'], output_dict=True))
         results['all']['auc'].append(metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
 
-    # Accuracy
+    # print accuracy plot
     fig, ax = plt.subplots(figsize=(14, 10))
     mean_line = [np.mean(results[c]['acc']) for c in cut_lengths]
     min_line = [np.percentile(results[c]['acc'], 25) for c in cut_lengths]
     max_line = [np.percentile(results[c]['acc'], 75) for c in cut_lengths]
-
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
     ax.set_xlabel('Size of Process Instance Prefix for Prediction')
@@ -345,12 +344,11 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     ax.set_ylim(0.0, 1)
     plt.savefig(f'../plots/{target_activity}_acc.svg')
 
-    # AUC ROC
+    # print auc roc plot
     fig, ax = plt.subplots(figsize=(14, 10))
     mean_line = [np.mean(results[c]['auc']) for c in cut_lengths]
     min_line = [np.percentile(results[c]['auc'], 25) for c in cut_lengths]
     max_line = [np.percentile(results[c]['auc'], 75) for c in cut_lengths]
-
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
     ax.set_xlabel('Size of Process Instance Prefix for Prediction')
@@ -358,6 +356,26 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     ax.set_ylabel(r'$AUC_{ROC}$')
     ax.set_ylim(0.4, 0.9)
     plt.savefig(f'../plots/{target_activity}_auc.svg')
+
+    # print metrics across cuts
+    metrics_ = ["auc", "precision", "recall", "f1-score", "support", "accuracy"]
+    labels = ["0", "1"]
+
+    for metric_ in metrics_:
+        vals = []
+        if metric_ == "auc":
+            for idx_fold in range(0, num_folds):
+                vals.append(results['all']['auc'][idx_fold])
+            print("Avg. value of metric %s: %s" % (metric_, sum(vals) / len(vals)))
+        elif metric_ == "accuracy":
+            for idx_fold in range(0, num_folds):
+                vals.append(results['all']['rep'][idx_fold][metric_])
+            print("Avg. value of metric %s: %s" % (metric_, sum(vals) / len(vals)))
+        else:
+            for label in labels:
+                for idx_fold in range(0, num_folds):
+                    vals.append(results['all']['rep'][idx_fold][label][metric_])
+                print("Avg. value of metric %s for label %s: %s" % (metric_, label, sum(vals)/len(vals)))
 
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final):
