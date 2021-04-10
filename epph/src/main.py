@@ -21,12 +21,13 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Admission IC'
+target_activity = 'Release A'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
 # Admission IC: Good
 # Admission NC: Bad
+# target_activity_abbreviation = 'REA'
 
 seed_val = 1377
 seed = True
@@ -338,10 +339,10 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     max_line = [np.percentile(results[c]['acc'], 75) for c in cut_lengths]
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
-    # ax.set_title(r'$M_{AIC}$')
-    ax.set_xlabel('Size of Process Instance Prefix for Prediction')
+    # ax.set_title(r'$M_{%s}$' % target_activity_abbreviation, fontsize=30)
+    ax.set_xlabel('Size of Process Instance Prefix for Prediction', fontsize=20)
     ax.set_xticks(np.arange(1, max_len + 1, step=2))
-    ax.set_ylabel('Accuracy')
+    ax.set_ylabel('Accuracy', fontsize=20)
     ax.set_ylim(0.0, 1)
     plt.savefig(f'../plots/{target_activity}_acc.svg')
 
@@ -352,10 +353,10 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     max_line = [np.percentile(results[c]['auc'], 75) for c in cut_lengths]
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
-    # ax.set_title(r'$M_{AIC}$')
-    ax.set_xlabel('Size of Process Instance Prefix for Prediction')
+    # ax.set_title(r'$M_{%s}$' % target_activity_abbreviation, fontsize=30)
+    ax.set_xlabel('Size of Process Instance Prefix for Prediction', fontsize=20)
     ax.set_xticks(np.arange(1, max_len + 1, step=2))
-    ax.set_ylabel(r'$AUC_{ROC}$')
+    ax.set_ylabel(r'$AUC_{ROC}$', fontsize=20)
     ax.set_ylim(0.4, 0.9)
     plt.savefig(f'../plots/{target_activity}_auc.svg')
 
