@@ -3,7 +3,7 @@
 """
 Created on Tue Mar  9 13:49:26 2021
 
-@author: makraus
+@author: makraus, svwe
 """
 
 import pandas as pd
@@ -54,20 +54,19 @@ seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Triage', 'ER Sepsis Triag
 df = pd.read_csv(ds_path)
 df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
 diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))  # ordinal encoding
-print(diagnose_mapping)
 df['Diagnose'] = df['Diagnose'].apply(lambda x: diagnose_mapping[x])
-df['Diagnose'] = df['Diagnose'].apply(lambda x: x / max(df['Diagnose']))
+df['Diagnose'] = df['Diagnose'].apply(lambda x: x / max(df['Diagnose']))  # normalise ordinal encoding
+df['Age'] = df['Age'].fillna(-1)
 df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
 
-# remove outliers
-max_leucocytes = np.percentile(df['Leucocytes'].dropna(), 95)
-max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)
-
+max_leucocytes = np.percentile(df['Leucocytes'].dropna(), 95)  # remove outliers
+max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)  # remove outliers
 
 x_seqs = []
 x_statics = []
 y = []
 
+max_len = 20  # we cut the extreme cases for runtime
 
 def get_data(target_activity):
     x_seqs = []
@@ -107,7 +106,6 @@ def get_data(target_activity):
 
     assert len(x_seqs) == len(x_statics) == len(y)
 
-    max_len = 25  # we cut the extreme cases for runtime
     print(f'Cutting everything after {max_len} activities')
     x_seqs_final = np.zeros((len(x_seqs), max_len, len(x_seqs[0][0])), dtype=np.float32)
     for i, x in enumerate(x_seqs):
@@ -243,7 +241,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
               verbose=1,
               callbacks=[early_stopping, model_checkpoint, lr_reducer],
               batch_size=16,
-              epochs=100)
+              epochs=1)
 
     return model
 
@@ -276,9 +274,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
     matplotlib.rcParams.update({'font.size': 16})
 
     if seed:
-        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed_val)
+        skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=seed_val)
     else:
-        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=None)
+        skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=None)
 
 
     # model training
@@ -308,7 +306,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
                      results['gts'])),
             columns=['ts', 'preds', 'preds_proba', 'gts'])
 
-        cut_lengths = range(1, X_train_seq.shape[1])  # [1, 3, 5, 10, 15]
+        cut_lengths = range(1, X_train_seq.shape[1])
 
         # init
         if cut_lengths[0] not in results:
@@ -333,7 +331,8 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
 
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
-    ax.set_xlabel('Number of Steps Considered for Prediction')
+    ax.set_xlabel('Size of Process Instance Prefix for Prediction')
+    ax.set_xticklabels(range(1, max_len))
     ax.set_ylabel('Accuracy')
     plt.savefig(f'../plots/{target_activity}_acc.svg')
 
@@ -345,8 +344,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
 
     ax.plot(cut_lengths, mean_line)
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
-    ax.set_xlabel('Number of Steps Considered for Prediction')
-    ax.set_ylabel('AUC ROC')
+    ax.set_xlabel('Size of Process Instance Prefix for Prediction')
+    ax.set_xticklabels(range(1, max_len))
+    ax.set_ylabel(r'$AUC_{ROC}$')
     plt.savefig(f'../plots/{target_activity}_auc.svg')
 
 
@@ -373,7 +373,6 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
 
 
 x_seqs_final, x_statics_final, y_final = get_data(target_activity)
-
 
 # Run CV on cuts to plot results --> Figure 1
 evaluate_on_cut(x_seqs_final, x_statics_final, y_final)
