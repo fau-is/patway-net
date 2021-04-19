@@ -21,7 +21,7 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Release A'
+target_activity = 'Admission IC'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
@@ -32,6 +32,9 @@ target_activity = 'Release A'
 seed_val = 1377
 seed = True
 num_folds = 10
+
+mode = "complete"  # complete; static; sequential; dt, lg
+
 
 if seed:
     np.random.seed(1377)
@@ -243,7 +246,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
               verbose=1,
               callbacks=[early_stopping, model_checkpoint, lr_reducer],
               batch_size=16,
-              epochs=2)
+              epochs=100)
 
     return model
 
@@ -270,7 +273,8 @@ def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
         return X_seq_ts, X_stat_ts, y_ts
 
 
-def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
+def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
+
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
@@ -291,6 +295,8 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
         X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs_final[test_index],
                                                             x_statics_final[test_index],
                                                             y_final[test_index], ts_info=True)
+
+
 
         model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
         preds_proba = model.predict([X_test_seq, X_test_stat])
@@ -405,20 +411,22 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
 x_seqs_final, x_statics_final, y_final = get_data(target_activity)
 
 # Run CV on cuts to plot results --> Figure 1
-evaluate_on_cut(x_seqs_final, x_statics_final, y_final)
+evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode)
 
-# Train model and plot linear coeff --> Figure 2
-model = run_coefficient(x_seqs_final, x_statics_final, y_final)
 
-# Get Explanations for LSTM inputs --> Figure 3
-explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
-shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+if mode == "complete":
+    # Train model and plot linear coeff --> Figure 2
+    model = run_coefficient(x_seqs_final, x_statics_final, y_final)
 
-seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
-                        columns=seq_features)
-seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                          columns=[f'SHAP {x}' for x in seq_features])
-seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+    # Get Explanations for LSTM inputs --> Figure 3
+    explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
+    shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
 
-compute_shap_summary_plot(seq_value_shape)
+    seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
+                            columns=seq_features)
+    seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                              columns=[f'SHAP {x}' for x in seq_features])
+    seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+
+    compute_shap_summary_plot(seq_value_shape)
 
