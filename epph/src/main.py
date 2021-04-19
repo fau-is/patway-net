@@ -9,6 +9,7 @@ Created on Tue Mar  9 13:49:26 2021
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+
 tf.compat.v1.disable_v2_behavior()
 import matplotlib.pyplot as plt
 import matplotlib
@@ -35,7 +36,6 @@ num_folds = 10
 
 mode = "complete"  # complete; static; sequential; dt, lg
 
-
 if seed:
     np.random.seed(1377)
     tf.random.set_seed(1377)
@@ -54,7 +54,6 @@ seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Triage', 'ER Sepsis Triag
                 'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
                 'Release E']
 
-
 # pre-processing
 df = pd.read_csv(ds_path)
 df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
@@ -72,6 +71,7 @@ x_statics = []
 y = []
 
 max_len = 20  # we cut the extreme cases for runtime
+
 
 def get_data(target_activity):
     x_seqs = []
@@ -193,66 +193,153 @@ def compute_shap_summary_plot(X_all):
     plt.savefig(f'../plots/{target_activity}_shap.svg', bbox_inches="tight")
 
 
-def train_lstm(x_train_seq, x_train_stat, y_train):
+def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
 
-    # Bidirectional LSTM
-    # Input layer
-    input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
-    input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
+    if mode == "complete":
+        # Bidirectional LSTM
+        # Input layer
+        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
+        input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
-    # Hidden layer
-    hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
-        units=n_hidden,
-        return_sequences=False))(input_layer_seq)
+        # Hidden layer
+        hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
+            units=n_hidden,
+            return_sequences=False))(input_layer_seq)
 
-    concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
+        concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
 
-    print(concatenate_layer)
+        print(concatenate_layer)
 
-    # Output layer
-    output_layer = tf.keras.layers.Dense(1,
-                                         activation='sigmoid',
-                                         name='output_layer')(concatenate_layer)
+        # Output layer
+        output_layer = tf.keras.layers.Dense(1,
+                                             activation='sigmoid',
+                                             name='output_layer')(concatenate_layer)
 
-    model = tf.keras.models.Model(inputs=[input_layer_seq, input_layer_static],
-                                  outputs=[output_layer])
+        model = tf.keras.models.Model(inputs=[input_layer_seq, input_layer_static],
+                                      outputs=[output_layer])
 
-    model.compile(loss='binary_crossentropy',
-                  optimizer='Adam',
-                  metrics=['accuracy'])
-    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-    model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
-                                                          monitor='val_loss',
+        model.compile(loss='binary_crossentropy',
+                      optimizer='Adam',
+                      metrics=['accuracy'])
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                              monitor='val_loss',
+                                                              verbose=0,
+                                                              save_best_only=True,
+                                                              save_weights_only=False,
+                                                              mode='auto')
+
+        lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                          factor=0.5,
+                                                          patience=10,
                                                           verbose=0,
-                                                          save_best_only=True,
-                                                          save_weights_only=False,
-                                                          mode='auto')
+                                                          mode='auto',
+                                                          min_delta=0.0001,
+                                                          cooldown=0,
+                                                          min_lr=0)
 
-    lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
-                                                      factor=0.5,
-                                                      patience=10,
-                                                      verbose=0,
-                                                      mode='auto',
-                                                      min_delta=0.0001,
-                                                      cooldown=0,
-                                                      min_lr=0)
+        model.summary()
+        model.fit([x_train_seq, x_train_stat], y_train,
+                  validation_split=0.1,
+                  verbose=1,
+                  callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                  batch_size=16,
+                  epochs=100)
 
-    model.summary()
-    model.fit([x_train_seq, x_train_stat], y_train,
-              validation_split=0.1,
-              verbose=1,
-              callbacks=[early_stopping, model_checkpoint, lr_reducer],
-              batch_size=16,
-              epochs=100)
+    if mode == "static":
+        # Bidirectional LSTM
+        # Input layer
+        input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
+
+        # Output layer
+        output_layer = tf.keras.layers.Dense(1,
+                                             activation='sigmoid',
+                                             name='output_layer')(input_layer_static)
+
+        model = tf.keras.models.Model(inputs=[input_layer_static],
+                                      outputs=[output_layer])
+
+        model.compile(loss='binary_crossentropy',
+                      optimizer='Adam',
+                      metrics=['accuracy'])
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                              monitor='val_loss',
+                                                              verbose=0,
+                                                              save_best_only=True,
+                                                              save_weights_only=False,
+                                                              mode='auto')
+
+        lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                          factor=0.5,
+                                                          patience=10,
+                                                          verbose=0,
+                                                          mode='auto',
+                                                          min_delta=0.0001,
+                                                          cooldown=0,
+                                                          min_lr=0)
+
+        model.summary()
+        model.fit([x_train_stat], y_train,
+                  validation_split=0.1,
+                  verbose=1,
+                  callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                  batch_size=16,
+                  epochs=100)
+
+    if mode == "sequential":
+        # Bidirectional LSTM
+        # Input layer
+        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
+
+        # Hidden layer
+        hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
+            units=n_hidden,
+            return_sequences=False))(input_layer_seq)
+
+        # Output layer
+        output_layer = tf.keras.layers.Dense(1,
+                                             activation='sigmoid',
+                                             name='output_layer')(hidden_layer)
+
+        model = tf.keras.models.Model(inputs=[input_layer_seq],
+                                      outputs=[output_layer])
+
+        model.compile(loss='binary_crossentropy',
+                      optimizer='Adam',
+                      metrics=['accuracy'])
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                              monitor='val_loss',
+                                                              verbose=0,
+                                                              save_best_only=True,
+                                                              save_weights_only=False,
+                                                              mode='auto')
+
+        lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                          factor=0.5,
+                                                          patience=10,
+                                                          verbose=0,
+                                                          mode='auto',
+                                                          min_delta=0.0001,
+                                                          cooldown=0,
+                                                          min_lr=0)
+
+        model.summary()
+        model.fit([x_train_seq], y_train,
+                  validation_split=0.1,
+                  verbose=1,
+                  callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                  batch_size=16,
+                  epochs=100)
 
     return model
 
 
 def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
-
     X_seq_ts = np.zeros((X_seq.shape[0] * X_seq.shape[1], X_seq.shape[1], X_seq.shape[2]))
     X_stat_ts = np.zeros((X_stat.shape[0] * X_seq.shape[1], X_stat.shape[1]))
     y_ts = np.zeros((len(y) * X_seq.shape[1]))
@@ -274,7 +361,6 @@ def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
 
 
 def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
-
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
@@ -282,7 +368,6 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
         skf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=seed_val)
     else:
         skf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=None)
-
 
     # model training
     results = {}
@@ -293,13 +378,20 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
                                                                y_final[train_index])
 
         X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs_final[test_index],
-                                                            x_statics_final[test_index],
-                                                            y_final[test_index], ts_info=True)
+                                                                x_statics_final[test_index],
+                                                                y_final[test_index], ts_info=True)
 
+        if mode == "complete":
+            model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
+            preds_proba = model.predict([X_test_seq, X_test_stat])
 
+        elif mode == "static":
+            model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
+            preds_proba = model.predict([X_test_stat])
 
-        model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
-        preds_proba = model.predict([X_test_seq, X_test_stat])
+        elif mode == "sequential":
+            model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
+            preds_proba = model.predict([X_test_seq])
 
         results['preds'] = [int(round(pred[0])) for pred in preds_proba]
         results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
@@ -330,12 +422,16 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
             results_temp_cut = results_temp[results_temp.ts == cut_len]
 
             if not results_temp_cut.empty:  # if cut length is longer than max trace length
-                results[cut_len]['acc'].append(metrics.accuracy_score(y_true=results_temp_cut['gts'], y_pred=results_temp_cut['preds']))
-                results[cut_len]['auc'].append(metrics.roc_auc_score(y_true=results_temp_cut['gts'], y_score=results_temp_cut['preds_proba']))
+                results[cut_len]['acc'].append(
+                    metrics.accuracy_score(y_true=results_temp_cut['gts'], y_pred=results_temp_cut['preds']))
+                results[cut_len]['auc'].append(
+                    metrics.roc_auc_score(y_true=results_temp_cut['gts'], y_score=results_temp_cut['preds_proba']))
 
         # metrics across cuts
-        results['all']['rep'].append(metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds'], output_dict=True))
-        results['all']['auc'].append(metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
+        results['all']['rep'].append(
+            metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds'], output_dict=True))
+        results['all']['auc'].append(
+            metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
 
     # print accuracy plot
     fig, ax = plt.subplots(figsize=(14, 10))
@@ -383,13 +479,13 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
             for label in labels:
                 for idx_fold in range(0, num_folds):
                     vals.append(results['all']['rep'][idx_fold][label][metric_])
-                print("Avg. value of metric %s for label %s: %s" % (metric_, label, sum(vals)/len(vals)))
+                print("Avg. value of metric %s for label %s: %s" % (metric_, label, sum(vals) / len(vals)))
 
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final):
     x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
-                                                           x_statics_final,
-                                                           y_final.reshape(-1, 1))
+                                                               x_statics_final,
+                                                               y_final.reshape(-1, 1))
 
     model = train_lstm(x_seqs_final, x_statics_final, y_final)
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
@@ -413,7 +509,6 @@ x_seqs_final, x_statics_final, y_final = get_data(target_activity)
 # Run CV on cuts to plot results --> Figure 1
 evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode)
 
-
 if mode == "complete":
     # Train model and plot linear coeff --> Figure 2
     model = run_coefficient(x_seqs_final, x_statics_final, y_final)
@@ -423,10 +518,9 @@ if mode == "complete":
     shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
 
     seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
-                            columns=seq_features)
+                           columns=seq_features)
     seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                              columns=[f'SHAP {x}' for x in seq_features])
+                             columns=[f'SHAP {x}' for x in seq_features])
     seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
 
     compute_shap_summary_plot(seq_value_shape)
-
