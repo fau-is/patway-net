@@ -17,6 +17,8 @@ import seaborn as sns
 import epph.src.util as util
 from sklearn.model_selection import StratifiedKFold
 from sklearn import metrics
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 import shap
 import itertools
 
@@ -34,7 +36,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "static"  # complete; static; sequential; dt, lg
+mode = "dt"  # complete; static; sequential; dt, lg
 
 if seed:
     np.random.seed(1377)
@@ -191,6 +193,30 @@ def compute_shap_summary_plot(X_all):
 
     fig11.tight_layout()
     plt.savefig(f'../plots/{target_activity}_shap.svg', bbox_inches="tight")
+
+
+def concatenate_tensor_matrix(x_seq, x_stat):
+    x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
+    x_concat = np.concatenate((x_train_seq_, x_stat), axis=1)
+
+    return x_concat
+
+
+def train_dt(x_train_seq, x_train_stat, y_train):
+    x_concat = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+
+    model = DecisionTreeClassifier(max_depth=20)
+    model.fit(x_concat, y_train)
+
+    return model
+
+def train_lg(x_train_seq, x_train_stat, y_train):
+    x_concat = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+
+    model = LogisticRegression()
+    model.fit(x_concat, y_train)
+
+    return model
 
 
 def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
@@ -388,6 +414,15 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
         elif mode == "sequential":
             model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
             preds_proba = model.predict([X_test_seq])
+
+        elif mode == "dt":
+            model = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
+            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+
+        elif mode == "lg":
+            model = train_lg(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
+            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+
 
         results['preds'] = [int(round(pred[0])) for pred in preds_proba]
         results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
