@@ -31,7 +31,7 @@ target_activity = 'Release A'
 
 seed_val = 1377
 seed = True
-num_folds = 10
+num_folds = 2
 
 if seed:
     np.random.seed(1377)
@@ -123,7 +123,7 @@ def my_palplot(pal, size=1, ax=None):
     n = 5
     if ax is None:
         f, ax = plt.subplots(1, 1, figsize=(n * size, size))
-    ax.imshow(np.arange(n).reshape(n, 1),
+    ax.imshow(np.arange(n)[::-1].reshape(n, 1),
               cmap=matplotlib.colors.ListedColormap(list(pal)),
               interpolation="nearest", aspect="auto")
 
@@ -243,7 +243,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
               verbose=1,
               callbacks=[early_stopping, model_checkpoint, lr_reducer],
               batch_size=16,
-              epochs=100)
+              epochs=2)
 
     return model
 
@@ -259,7 +259,7 @@ def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
     for idx_seq in range(0, X_seq.shape[0]):
         for idx_ts in range(1, X_seq.shape[1] + 1):
             X_seq_ts[idx, :idx_ts, :] = X_seq[idx_seq, :idx_ts, :]
-            X_stat_ts[idx] = X_stat_ts[idx_seq]
+            X_stat_ts[idx] = X_stat[idx_seq]
             y_ts[idx] = y[idx_seq]
             ts.append(idx_ts)
             idx += 1
@@ -388,6 +388,7 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
 
     model = train_lstm(x_seqs_final, x_statics_final, y_final)
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
+    output_weights = model.get_layer(name='output_layer').get_weights()
     # output_names = [f'Hidden State {i}' for i in range(2 * n_hidden)] + static_features
     output_names = static_features
 
