@@ -34,7 +34,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "complete"  # complete; static; sequential; dt, lg
+mode = "static"  # complete; static; sequential; dt, lg
 
 if seed:
     np.random.seed(1377)
@@ -199,7 +199,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
     num_features_stat = x_train_stat.shape[1]
 
     if mode == "complete":
-        # Bidirectional LSTM
         # Input layer
         input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
         input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
@@ -210,8 +209,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
             return_sequences=False))(input_layer_seq)
 
         concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
-
-        print(concatenate_layer)
 
         # Output layer
         output_layer = tf.keras.layers.Dense(1,
@@ -250,7 +247,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
                   epochs=100)
 
     if mode == "static":
-        # Bidirectional LSTM
         # Input layer
         input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
