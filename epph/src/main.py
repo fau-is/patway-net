@@ -243,7 +243,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
               verbose=1,
               callbacks=[early_stopping, model_checkpoint, lr_reducer],
               batch_size=16,
-              epochs=100)
+              epochs=2)
 
     return model
 
@@ -268,7 +268,6 @@ def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
         return X_seq_ts, X_stat_ts, y_ts, ts
     else:
         return X_seq_ts, X_stat_ts, y_ts
-
 
 
 def evaluate_on_cut(x_seqs_final, x_statics_final, y_final):
@@ -388,7 +387,6 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
 
     model = train_lstm(x_seqs_final, x_statics_final, y_final)
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
-    output_weights = model.get_layer(name='output_layer').get_weights()
     # output_names = [f'Hidden State {i}' for i in range(2 * n_hidden)] + static_features
     output_names = static_features
 
