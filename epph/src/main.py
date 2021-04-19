@@ -31,7 +31,7 @@ target_activity = 'Release A'
 
 seed_val = 1377
 seed = True
-num_folds = 2
+num_folds = 10
 
 if seed:
     np.random.seed(1377)
@@ -243,7 +243,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train):
               verbose=1,
               callbacks=[early_stopping, model_checkpoint, lr_reducer],
               batch_size=16,
-              epochs=2)
+              epochs=100)
 
     return model
 
