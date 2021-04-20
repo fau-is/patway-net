@@ -419,7 +419,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
             model = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
 
-        elif mode == "lg":
+        elif mode == "lr":
             model = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
 
