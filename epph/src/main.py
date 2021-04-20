@@ -36,7 +36,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "static"  # complete; static; sequential; dt, lg
+mode = "dt"  # complete; static; sequential; dt, lg
 
 if seed:
     np.random.seed(1377)
