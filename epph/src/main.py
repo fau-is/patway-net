@@ -24,7 +24,7 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Admission IC'
+target_activity = 'Release A'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
@@ -36,7 +36,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "dt"  # complete; static; sequential; dt, lg
+mode = "lr"  # complete; static; sequential; dt, lr
 
 if seed:
     np.random.seed(1377)
@@ -210,7 +210,7 @@ def train_dt(x_train_seq, x_train_stat, y_train):
 
     return model
 
-def train_lg(x_train_seq, x_train_stat, y_train):
+def train_lr(x_train_seq, x_train_stat, y_train):
     x_concat = concatenate_tensor_matrix(x_train_seq, x_train_stat)
 
     model = LogisticRegression()
@@ -420,7 +420,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
 
         elif mode == "lg":
-            model = train_lg(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
+            model = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
 
 
