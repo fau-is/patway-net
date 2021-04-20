@@ -24,19 +24,18 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Release A'
+target_activity = 'Admission IC'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
 # Admission IC: Good
 # Admission NC: Bad
-# target_activity_abbreviation = 'REA'
 
 seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "lr"  # complete; static; sequential; dt, lr
+mode = "dt"  # complete; static; sequential; dt, lr
 
 if seed:
     np.random.seed(1377)
@@ -513,6 +512,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
                     vals.append(results['all']['rep'][idx_fold][label][metric_])
                 print("Avg. value of metric %s for label %s: %s" % (metric_, label, sum(vals) / len(vals)))
 
+    print(0)
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final):
     x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
