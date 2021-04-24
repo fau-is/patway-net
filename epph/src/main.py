@@ -24,7 +24,7 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Release A'
+target_activity = 'Admission IC'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
@@ -35,7 +35,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "dt"  # complete; static; sequential; dt, lr
+mode = "sequential"  # complete; static; sequential; dt, lr
 
 if seed:
     np.random.seed(1377)
@@ -404,26 +404,34 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
         if mode == "complete":
             model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
             preds_proba = model.predict([X_test_seq, X_test_stat])
+            results['preds'] = [int(round(pred[0])) for pred in preds_proba]
+            results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "static":
             model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
             preds_proba = model.predict([X_test_stat])
+            results['preds'] = [int(round(pred[0])) for pred in preds_proba]
+            results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "sequential":
             model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
             preds_proba = model.predict([X_test_seq])
+            results['preds'] = [int(round(pred[0])) for pred in preds_proba]
+            results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "dt":
             model = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
+            results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "lr":
             model = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
+            results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
 
-        results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
-        results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
         results['gts'] = [int(y) for y in y_test]
         results['ts'] = ts
 
