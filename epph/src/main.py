@@ -24,7 +24,7 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Admission IC'
+target_activity = 'Release A'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
@@ -35,7 +35,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "complete"  # complete; static; sequential; dt, lr
+mode = "dt"  # complete; static; sequential; dt, lr
 
 if seed:
     np.random.seed(1377)
@@ -228,7 +228,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
         input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
         input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
-        # Hidden layer
         hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
             units=n_hidden,
             return_sequences=False))(input_layer_seq)
@@ -244,7 +243,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
                                       outputs=[output_layer])
 
         model.compile(loss='binary_crossentropy',
-                      optimizer='Adam',
+                      optimizer='adam',
                       metrics=['accuracy'])
         early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
         model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
@@ -329,7 +328,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
                                       outputs=[output_layer])
 
         model.compile(loss='binary_crossentropy',
-                      optimizer='Adam',
+                      optimizer='nadam',
                       metrics=['accuracy'])
         early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
         model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
