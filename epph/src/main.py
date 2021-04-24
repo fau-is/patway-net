@@ -35,7 +35,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "dt"  # complete; static; sequential; dt, lr
+mode = "complete"  # complete; static; sequential; dt, lr
 
 if seed:
     np.random.seed(1377)
@@ -168,7 +168,7 @@ def compute_shap_summary_plot(X_all):
         else:
             # ax.arrow(0., 0., 1., 0.)
             # ax.arrow(0., 0., -2., 0.)
-            ax.set_xlabel('SHAP value (effect on model output)')
+            ax.set_xlabel('SHAP Value (Effect on Model Output)')
             # ax.set_xticklabels(['-1\n(Euglycemia)', '-0.5', '-0.25', '0', '2', '4', '6', '8\n(Hypoglycemia)'])
         ax = fig11.add_subplot(grid[i, 0])
         ax.text(0, 0.3, col)
@@ -269,7 +269,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
                   verbose=1,
                   callbacks=[early_stopping, model_checkpoint, lr_reducer],
                   batch_size=16,
-                  epochs=100)
+                  epochs=1)
 
     if mode == "static":
         # Input layer
@@ -312,7 +312,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
                   epochs=100)
 
     if mode == "sequential":
-        # Bidirectional LSTM
         # Input layer
         input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
 
@@ -529,7 +528,7 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
     ax.barh(y_pos, output_weights)
     ax.set_yticks(y_pos)
     ax.set_yticklabels(output_names)
-    ax.set_xlabel('Values of Coefficient in Last Layer')
+    ax.set_xlabel('Coefficient Value in Last Layer')
     fig.tight_layout()
     plt.savefig(f'../plots/{target_activity}_coefs.svg')
 
