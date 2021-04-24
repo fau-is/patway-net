@@ -24,7 +24,7 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Admission IC'
+target_activity = 'Release A'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
@@ -35,7 +35,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "complete"  # complete; static; sequential; dt, lr
+mode = "dt"  # complete; static; sequential; dt, lr
 
 if seed:
     np.random.seed(1377)
@@ -269,7 +269,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
                   verbose=1,
                   callbacks=[early_stopping, model_checkpoint, lr_reducer],
                   batch_size=16,
-                  epochs=1)
+                  epochs=100)
 
     if mode == "static":
         # Input layer
@@ -422,8 +422,8 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
 
 
-        results['preds'] = [int(round(pred[0])) for pred in preds_proba]
-        results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
+        results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
+        results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
         results['gts'] = [int(y) for y in y_test]
         results['ts'] = ts
 
@@ -511,7 +511,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
                     vals.append(results['all']['rep'][idx_fold][label][metric_])
                 print("Avg. value of metric %s for label %s: %s" % (metric_, label, sum(vals) / len(vals)))
 
-    print(0)
+
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final):
     x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
@@ -529,6 +529,7 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
     ax.set_yticks(y_pos)
     ax.set_yticklabels(output_names)
     ax.set_xlabel('Coefficient Value in Last Layer')
+    ax.set_xlim(-3.0, 3.0)
     fig.tight_layout()
     plt.savefig(f'../plots/{target_activity}_coefs.svg')
 
