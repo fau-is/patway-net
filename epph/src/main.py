@@ -35,7 +35,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "sequential"  # complete; static; sequential; dt, lr
+mode = "complete"  # complete; static; sequential; dt, lr
 
 if seed:
     np.random.seed(1377)
@@ -204,7 +204,7 @@ def concatenate_tensor_matrix(x_seq, x_stat):
 def train_dt(x_train_seq, x_train_stat, y_train):
     x_concat = concatenate_tensor_matrix(x_train_seq, x_train_stat)
 
-    model = DecisionTreeClassifier(max_depth=20)
+    model = DecisionTreeClassifier()
     model.fit(x_concat, y_train)
 
     return model
