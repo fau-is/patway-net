@@ -35,7 +35,7 @@ seed_val = 1377
 seed = True
 num_folds = 10
 
-mode = "dt"  # complete; static; sequential; dt, lr
+mode = "complete"  # complete; static; sequential; dt, lr
 
 if seed:
     np.random.seed(1377)
@@ -139,10 +139,23 @@ def compute_shap_summary_plot(X_all):
     shap_values = [
         'SHAP Leucocytes',
         'SHAP CRP',
-        'SHAP LacticAcid']
+        'SHAP LacticAcid',
+        'SHAP ER Triage',
+        # 'SHAP ER Sepsis Triage',
+        'SHAP IV Liquid',
+        'SHAP IV Antibiotics'
+        # 'SHAP Admission NC',
+        # 'SHAP Admission IC',
+        # 'SHAP Return ER',
+        # 'SHAP Release A',
+        # 'SHAP Release B',
+        # 'SHAP Release C',
+        # 'SHAP Release D',
+        # 'SHAP Release E',
+    ]
 
-    fig11 = plt.figure(figsize=(16, 8), constrained_layout=False)
-    grid = fig11.add_gridspec(3, 3, width_ratios=[2, 20, 0.2], wspace=0.2, hspace=0.0)
+    fig11 = plt.figure(figsize=(16, 14), constrained_layout=False)  # 16, 8
+    grid = fig11.add_gridspec(6, 3, width_ratios=[2, 20, 0.2], wspace=0.2, hspace=0.0)  # 3,3
 
     for i, c in enumerate(shap_values):
         ax = fig11.add_subplot(grid[i, 1])
@@ -168,8 +181,9 @@ def compute_shap_summary_plot(X_all):
         else:
             # ax.arrow(0., 0., 1., 0.)
             # ax.arrow(0., 0., -2., 0.)
-            ax.set_xlabel('SHAP Value (Effect on Model Output)')
-            # ax.set_xticklabels(['-1\n(Euglycemia)', '-0.5', '-0.25', '0', '2', '4', '6', '8\n(Hypoglycemia)'])
+            ax.set_xlabel('Shapley Value (Effect on Model Output)')
+            # ax.set_xticklabels(
+            # ['-1\n(Euglycemia)', '-0.5', '-0.25', '0', '2', '4', '6', '8\n(Hypoglycemia)'])
         ax = fig11.add_subplot(grid[i, 0])
         ax.text(0, 0.3, col)
         ax.set_yticks([])
@@ -182,8 +196,8 @@ def compute_shap_summary_plot(X_all):
 
     ax = fig11.add_subplot(grid[1:-1, 2])
     my_palplot(sns.color_palette("viridis"), ax=ax)
-    ax.text(-4.2, 6.9, '   Low\nfeature\n  value')
-    ax.text(-4.2, -1.2, '  High\nfeature\n  value')
+    ax.text(-4.2, 5.6, '   Low\nfeature\n  value')  # 6.9
+    ax.text(-4.2, -1.2, '  High\nfeature\n  value')  # -1.2
     # ax.text(0.0, 5.5, 'Likely Hypo')
     ax.set_yticks([])
     ax.set_xticks([])
@@ -521,6 +535,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
 
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final):
+
     x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
                                                                x_statics_final,
                                                                y_final.reshape(-1, 1))
@@ -546,13 +561,21 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
 x_seqs_final, x_statics_final, y_final = get_data(target_activity)
 
 # Run CV on cuts to plot results --> Figure 1
-evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode)
+# evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode)
 
 if mode == "complete":
     # Train model and plot linear coeff --> Figure 2
     model = run_coefficient(x_seqs_final, x_statics_final, y_final)
 
     # Get Explanations for LSTM inputs --> Figure 3
+    """
+    x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
+                                                               x_statics_final,
+                                                               y_final.reshape(-1, 1))
+    x_seqs_final = x_seqs_final[:1000]
+    x_statics_final = x_statics_final[:1000]
+    """
+
     explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
     shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
 
