@@ -1,3 +1,3 @@
-# Explainable process predictions in healthcare
+# Explainable Predictions for Medical Pathways (XPreM)
 
 

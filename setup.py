@@ -9,9 +9,9 @@ with open('LICENSE') as f:
     license = f.read()
 
 setup(
-    name='epph',
+    name='xprem',
     version='1.0.0',
-    description='Explainable Process Predictions Healthcare',
+    description='Explainable Predictions for Medical Pathways',
     long_description=readme,
     author='xx',
     author_email='xx',
