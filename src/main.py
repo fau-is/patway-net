@@ -14,7 +14,7 @@ tf.compat.v1.disable_v2_behavior()
 import matplotlib.pyplot as plt
 import matplotlib
 import seaborn as sns
-import epph.src.util as util
+import src.util as util
 from sklearn.model_selection import StratifiedKFold
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
@@ -24,7 +24,7 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Release A'
+target_activity = 'Admission IC'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
@@ -181,7 +181,7 @@ def compute_shap_summary_plot(X_all):
         else:
             # ax.arrow(0., 0., 1., 0.)
             # ax.arrow(0., 0., -2., 0.)
-            ax.set_xlabel('Shapley Value (Effect on Model Output)')
+            ax.set_xlabel('SHAP Value (Effect on Model Output)')
             # ax.set_xticklabels(
             # ['-1\n(Euglycemia)', '-0.5', '-0.25', '0', '2', '4', '6', '8\n(Hypoglycemia)'])
         ax = fig11.add_subplot(grid[i, 0])

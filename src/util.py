@@ -1,7 +1,7 @@
 import numpy as np
 
-def get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid):
 
+def get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid):
     if x['Activity'] == 'Leucocytes':
         ret = [0, min(x['Leucocytes'], max_leucocytes) / max_leucocytes]
         if np.isnan(ret[1]):
@@ -42,5 +42,3 @@ def get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid):
     one_hot[ret[0]] = ret[1]
 
     return one_hot
-
-
