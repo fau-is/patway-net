@@ -13,8 +13,8 @@ setup(
     version='1.0.0',
     description='Explainable Predictions for Medical Pathways',
     long_description=readme,
-    author='xx',
-    author_email='xx',
+    author=['Mathias Kraus', 'Sven Weinzierl'],
+    author_email=['mathias.kraus@fau.de', 'sven.weinzierl@fau.de'],
     url='https://github.com/fau-is/explainable-process-predictions-healthcare',
     license=license,
     packages=find_packages(exclude=('tests', 'docs'))

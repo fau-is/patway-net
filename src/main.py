@@ -24,7 +24,7 @@ import itertools
 
 ds_path = '../data/Sepsis Cases - Event Log.csv'
 n_hidden = 8
-target_activity = 'Admission IC'
+target_activity = 'Release A'
 # Release A: Very good
 # Release B: bad
 # Release C-E: Few samples
