@@ -159,7 +159,7 @@ def compute_shap_summary_plot(X_all):
 
     for i, c in enumerate(shap_values):
         ax = fig11.add_subplot(grid[i, 1])
-        ax.set_xlim([-0.1, 0.1])
+        ax.set_xlim([-0.1, 0.1])  # -0.1, 0.1
         col = c.replace('SHAP ', '')
         X_tmp = X_all[X_all[col] > 0.]
         bins = np.linspace(X_tmp[col].min(), X_tmp[col].max(), 5)
@@ -196,8 +196,8 @@ def compute_shap_summary_plot(X_all):
 
     ax = fig11.add_subplot(grid[1:-1, 2])
     my_palplot(sns.color_palette("viridis"), ax=ax)
-    ax.text(-4.2, 5.6, '   Low\nfeature\n  value')  # 6.9
-    ax.text(-4.2, -1.2, '  High\nfeature\n  value')  # -1.2
+    ax.text(-4.2, 5.6, '   Low\nFeature\n  Value')  # 6.9
+    ax.text(-4.2, -1.2, '  High\nFeature\n  Value')  # -1.2
     # ax.text(0.0, 5.5, 'Likely Hypo')
     ax.set_yticks([])
     ax.set_xticks([])
