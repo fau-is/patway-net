@@ -35,7 +35,7 @@ max_len = 20  # we cut the extreme cases for runtime
 seed = False
 # num_folds = 10
 num_repetitions = 10
-mode = "dt"  # complete; static; sequential; dt, lr
+mode = "lr"  # complete; static; sequential; dt, lr
 train_size = 0.8
 
 # if seed:
@@ -167,10 +167,10 @@ def compute_shap_summary_plot(X_all):
 
         palette = itertools.cycle(sns.color_palette("viridis"))
         for b in np.unique(digitized):
-            if seed:
-                X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=seed_val)
-            else:
-                X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=None)
+            # if seed:
+            #    X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=seed_val)
+            # else:
+            X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=None)
             sns.swarmplot(data=X_dat, x=c, color=next(palette), alpha=1., size=4, ax=ax)
         [s.set_visible(False) for s in ax.spines.values()]
         if i != (len(shap_values) - 1):
@@ -226,8 +226,8 @@ def train_dt(x_train_seq, x_train_stat, y_train):
 def train_lr(x_train_seq, x_train_stat, y_train):
     x_concat = concatenate_tensor_matrix(x_train_seq, x_train_stat)
 
-    model = LogisticRegression()
-    model.fit(x_concat, y_train)
+    model = LogisticRegression(random_state=True, solver='sag')
+    model.fit(x_concat, np.ravel(y_train))
 
     return model
 
