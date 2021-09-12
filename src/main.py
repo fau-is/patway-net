@@ -31,13 +31,15 @@ target_activity = 'Release A'
 # Admission IC: Good
 # Admission NC: Bad
 
-seed_val = 1377
-seed = True
-num_folds = 10
-
-mode = "complete"  # complete; static; sequential; dt, lr
+max_len = 20  # we cut the extreme cases for runtime
+seed = False
+# num_folds = 10
+num_repetitions = 10
+mode = "static"  # complete; static; sequential; dt, lr
+train_size = 0.8
 
 if seed:
+    seed_val = 1377
     np.random.seed(1377)
     tf.random.set_seed(1377)
 
@@ -70,8 +72,6 @@ max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)  # remove outliers
 x_seqs = []
 x_statics = []
 y = []
-
-max_len = 20  # we cut the extreme cases for runtime
 
 
 def get_data(target_activity):
@@ -397,14 +397,23 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
+    """
     if seed:
         skf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=seed_val)
     else:
         skf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=None)
+    """
+
+    data_index = list(range(0, len(y_final)))
+    train_index = data_index[0: int(train_size * len(y_final))]
+    test_index = data_index[int(train_size * len(y_final)):]
+
 
     # model training
     results = {}
-    for train_index, test_index in skf.split(np.zeros(len(y_final)), y_final):
+
+    for repetition in range(0, num_repetitions):
+    # for train_index, test_index in skf.split(np.zeros(len(y_final)), y_final):
 
         X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs_final[train_index],
                                                                x_statics_final[train_index],
@@ -518,18 +527,23 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
     for metric_ in metrics_:
         vals = []
         if metric_ == "auc":
-            for idx_fold in range(0, num_folds):
-                vals.append(results['all']['auc'][idx_fold])
+            for idx_ in range(0, num_repetitions):
+                vals.append(results['all']['auc'][idx_])
+                print("Value of metric %s: %s" % (metric_, vals[-1]))
             print("Avg. value of metric %s: %s" % (metric_, sum(vals) / len(vals)))
+
         elif metric_ == "accuracy":
-            for idx_fold in range(0, num_folds):
-                vals.append(results['all']['rep'][idx_fold][metric_])
+            for idx_ in range(0, num_repetitions):
+                vals.append(results['all']['rep'][idx_][metric_])
+                print("Value of metric %s: %s" % (metric_, vals[-1]))
             print("Avg. value of metric %s: %s" % (metric_, sum(vals) / len(vals)))
+
         else:
             for label in labels:
                 vals = []
-                for idx_fold in range(0, num_folds):
-                    vals.append(results['all']['rep'][idx_fold][label][metric_])
+                for idx_ in range(0, num_repetitions):
+                    vals.append(results['all']['rep'][idx_][label][metric_])
+                    print("Value of metric %s for label %s: %s" % (metric_, label, vals[-1]))
                 print("Avg. value of metric %s for label %s: %s" % (metric_, label, sum(vals) / len(vals)))
 
 
@@ -561,7 +575,7 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
 x_seqs_final, x_statics_final, y_final = get_data(target_activity)
 
 # Run CV on cuts to plot results --> Figure 1
-# evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode)
+evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode)
 
 if mode == "complete":
     # Train model and plot linear coeff --> Figure 2
