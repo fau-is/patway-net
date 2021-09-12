@@ -35,13 +35,13 @@ max_len = 20  # we cut the extreme cases for runtime
 seed = False
 # num_folds = 10
 num_repetitions = 10
-mode = "static"  # complete; static; sequential; dt, lr
+mode = "dt"  # complete; static; sequential; dt, lr
 train_size = 0.8
 
-if seed:
-    seed_val = 1377
-    np.random.seed(1377)
-    tf.random.set_seed(1377)
+# if seed:
+#    seed_val = 1377
+#    np.random.seed(1377)
+#    tf.random.set_seed(1377)
 
 static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                    'SIRSCritTachypnea', 'Hypotensie',
