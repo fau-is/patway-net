@@ -226,7 +226,7 @@ def train_dt(x_train_seq, x_train_stat, y_train):
 def train_lr(x_train_seq, x_train_stat, y_train):
     x_concat = concatenate_tensor_matrix(x_train_seq, x_train_stat)
 
-    model = LogisticRegression(random_state=True, solver='sag')
+    model = LogisticRegression(random_state=True, max_iter=300)
     model.fit(x_concat, np.ravel(y_train))
 
     return model
