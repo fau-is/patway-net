@@ -21,6 +21,8 @@ import shap
 import itertools
 import src.data as data
 
+
+data_set = "mimic"  # sepsis
 n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 seed = False
@@ -38,27 +40,37 @@ def my_palplot(pal, size=1, ax=None):
               interpolation="nearest", aspect="auto")
 
 
-def compute_shap_summary_plot(X_all):
+def compute_shap_summary_plot(X_all, data_set):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
-    shap_values = [
-        'SHAP Leucocytes',
-        'SHAP CRP',
-        'SHAP LacticAcid',
-        'SHAP ER Triage',
-        # 'SHAP ER Sepsis Triage',
-        'SHAP IV Liquid',
-        'SHAP IV Antibiotics'
-        # 'SHAP Admission NC',
-        # 'SHAP Admission IC',
-        # 'SHAP Return ER',
-        # 'SHAP Release A',
-        # 'SHAP Release B',
-        # 'SHAP Release C',
-        # 'SHAP Release D',
-        # 'SHAP Release E',
-    ]
+    if data_set == "sepsis":
+
+        shap_values = [
+            'SHAP Leucocytes',
+            'SHAP CRP',
+            'SHAP LacticAcid',
+            'SHAP ER Triage',
+            # 'SHAP ER Sepsis Triage',
+            'SHAP IV Liquid',
+            'SHAP IV Antibiotics'
+            # 'SHAP Admission NC',
+            # 'SHAP Admission IC',
+            # 'SHAP Return ER',
+            # 'SHAP Release A',
+            # 'SHAP Release B',
+            # 'SHAP Release C',
+            # 'SHAP Release D',
+            # 'SHAP Release E',
+        ]
+
+    elif data_set == "mimic":
+
+        shap_values = []
+
+    else:
+        print("Data set not available!")
+
 
     fig11 = plt.figure(figsize=(16, 14), constrained_layout=False)  # 16, 8
     grid = fig11.add_gridspec(6, 3, width_ratios=[2, 20, 0.2], wspace=0.2, hspace=0.0)  # 3,3
@@ -467,58 +479,61 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, sta
 
     return model
 
-"""
-# Sepsis
-target_activity = 'Release A'
-# Release A: Very good
-# Release B: bad
-# Release C-E: Few samples
-# Admission IC: Good
-# Admission NC: Bad
+if data_set == "sepsis":
 
-x_seqs_final, x_statics_final, y_final, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(target_activity, max_len)
+    # Sepsis
+    target_activity = 'Release A'
+    # Release A: Very good
+    # Release B: bad
+    # Release C-E: Few samples
+    # Admission IC: Good
+    # Admission NC: Bad
 
-# Run CV on cuts to plot results --> Figure 1
-evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, x_time_vals_final)
+    x_seqs_final, x_statics_final, y_final, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(target_activity, max_len)
 
-if mode == "complete":
-    # Train model and plot linear coeff --> Figure 2
-    model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
+    # Run CV on cuts to plot results --> Figure 1
+    evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, x_time_vals_final)
 
-    # Get Explanations for LSTM inputs --> Figure 3
-    explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
-    shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+    if mode == "complete":
+        # Train model and plot linear coeff --> Figure 2
+        model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
 
-    seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
-                           columns=seq_features)
-    seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                             columns=[f'SHAP {x}' for x in seq_features])
-    seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+        # Get Explanations for LSTM inputs --> Figure 3
+        explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
+        shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
 
-    compute_shap_summary_plot(seq_value_shape)
-"""
+        seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
+                               columns=seq_features)
+        seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                 columns=[f'SHAP {x}' for x in seq_features])
+        seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
 
-    
-# MIMIC
-target_activity = 'Emergency Department Observation'
-x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity, max_len)
+        compute_shap_summary_plot(seq_value_shape, data_set)
 
-# Run CV on cuts to plot results --> Figure 1
-evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity)
+elif data_set == "mimic":
 
-if mode == "complete":
-    # Train model and plot linear coeff --> Figure 2
-    model = run_coefficient(x_seqs_final, x_statics_final, y_final)
+    # MIMIC
+    target_activity = 'Emergency Department Observation'
+    x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity, max_len)
 
-    # Get Explanations for LSTM inputs --> Figure 3
-    explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
-    shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+    # Run CV on cuts to plot results --> Figure 1
+    evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity)
 
-    seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
-                           columns=seq_features)
-    seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                             columns=[f'SHAP {x}' for x in seq_features])
-    seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+    if mode == "complete":
+        # Train model and plot linear coeff --> Figure 2
+        model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
 
-    compute_shap_summary_plot(seq_value_shape)
+        # Get Explanations for LSTM inputs --> Figure 3
+        explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
+        shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
 
+        seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
+                               columns=seq_features)
+        seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                 columns=[f'SHAP {x}' for x in seq_features])
+        seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+
+        compute_shap_summary_plot(seq_value_shape, data_set)
+
+else:
+    print("Data set not available!")
