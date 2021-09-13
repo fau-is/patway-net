@@ -77,6 +77,7 @@ y = []
 def get_data(target_activity):
     x_seqs = []
     x_statics = []
+    x_time_vals = []
     y = []
 
     for case in df['Case ID'].unique():
@@ -87,6 +88,7 @@ def get_data(target_activity):
         for _, x in df_tmp.iterrows():
             if x['Activity'] == 'ER Registration':
                 x_statics.append(x[static_features].values.astype(float))
+                x_time_vals.append([])
                 x_seqs.append([])
                 after_registration_flag = True
                 continue
@@ -103,24 +105,26 @@ def get_data(target_activity):
                 break
 
             if after_registration_flag:
-                x_seqs[-1].append(util.get_custom_one_hot_of_activity(x,
-                                                                      max_leucocytes,
-                                                                      max_lacticacid))
+                x_seqs[-1].append(util.get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid))
+                x_time_vals[-1].append(x['Complete Timestamp'])
 
         if not found_target_flag and after_registration_flag:
             y.append(0)
 
-    assert len(x_seqs) == len(x_statics) == len(y)
+    assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
 
     print(f'Cutting everything after {max_len} activities')
     x_seqs_final = np.zeros((len(x_seqs), max_len, len(x_seqs[0][0])), dtype=np.float32)
+    x_time_vals_final = []
     for i, x in enumerate(x_seqs):
         if len(x) > 0:
             x_seqs_final[i, :min(len(x), max_len), :] = np.array(x[:max_len])
+            x_time_vals_final.append(x_time_vals[i][:max_len])
+
     x_statics_final = np.array(x_statics)
     y_final = np.array(y).astype(np.int32)
 
-    return x_seqs_final, x_statics_final, y_final
+    return x_seqs_final, x_statics_final, y_final, x_time_vals
 
 
 def my_palplot(pal, size=1, ax=None):
@@ -223,10 +227,11 @@ def train_dt(x_train_seq, x_train_stat, y_train):
 
     return model
 
+
 def train_lr(x_train_seq, x_train_stat, y_train):
     x_concat = concatenate_tensor_matrix(x_train_seq, x_train_stat)
 
-    model = LogisticRegression(random_state=True, max_iter=300)
+    model = LogisticRegression()
     model.fit(x_concat, np.ravel(y_train))
 
     return model
@@ -393,7 +398,7 @@ def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
         return X_seq_ts, X_stat_ts, y_ts
 
 
-def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
+def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, x_time_vals_final):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
@@ -408,6 +413,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode):
     train_index = data_index[0: int(train_size * len(y_final))]
     test_index = data_index[int(train_size * len(y_final)):]
 
+    print(0)
 
     # model training
     results = {}
@@ -572,10 +578,10 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final):
     return model
 
 
-x_seqs_final, x_statics_final, y_final = get_data(target_activity)
+x_seqs_final, x_statics_final, y_final, x_time_vals_final = get_data(target_activity)
 
 # Run CV on cuts to plot results --> Figure 1
-evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode)
+evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, x_time_vals_final)
 
 if mode == "complete":
     # Train model and plot linear coeff --> Figure 2
