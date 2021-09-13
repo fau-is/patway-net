@@ -21,8 +21,7 @@ import shap
 import itertools
 import src.data as data
 
-
-data_set = "mimic"  # sepsis
+data_set = "sepsis"  # sepsis
 n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 seed = False
@@ -66,11 +65,14 @@ def compute_shap_summary_plot(X_all, data_set):
 
     elif data_set == "mimic":
 
-        shap_values = []
+        shap_values = [
+            'Neurology',
+            'Vascular',
+            'Medicine'
+        ]
 
     else:
         print("Data set not available!")
-
 
     fig11 = plt.figure(figsize=(16, 14), constrained_layout=False)  # 16, 8
     grid = fig11.add_gridspec(6, 3, width_ratios=[2, 20, 0.2], wspace=0.2, hspace=0.0)  # 3,3
@@ -312,7 +314,7 @@ def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
         return X_seq_ts, X_stat_ts, y_ts
 
 
-def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, x_time_vals_final=None):
+def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set, x_time_vals_final=None):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
@@ -437,24 +439,43 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
     for metric_ in metrics_:
         vals = []
         if metric_ == "auc":
+            f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+            f.write(metric_ + '\n')
+            print(metric_)
             for idx_ in range(0, num_repetitions):
                 vals.append(results['all']['auc'][idx_])
-                print("Value of metric %s: %s" % (metric_, vals[-1]))
-            print("Avg. value of metric %s: %s" % (metric_, sum(vals) / len(vals)))
+                print(f'{idx_},{vals[-1]}')
+                f.write(f'{idx_},{vals[-1]}')
+            print(f'Avg.: {sum(vals) / len(vals)}')
+            f.write(f'Avg,{sum(vals) / len(vals)}')
+            f.close()
 
         elif metric_ == "accuracy":
+            f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+            f.write(metric_ + '\n')
+            print(metric_)
             for idx_ in range(0, num_repetitions):
                 vals.append(results['all']['rep'][idx_][metric_])
-                print("Value of metric %s: %s" % (metric_, vals[-1]))
-            print("Avg. value of metric %s: %s" % (metric_, sum(vals) / len(vals)))
+                print(f'{idx_},{vals[-1]}')
+                f.write(f'{idx_},{vals[-1]}')
+            print(f'Avg.: {sum(vals) / len(vals)}')
+            f.write(f'Avg,{sum(vals) / len(vals)}')
+            f.close()
 
         else:
             for label in labels:
+                f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+                f.write(metric_ + f' ({label})\n')
+                print(metric_ + f' ({label})\n')
                 vals = []
                 for idx_ in range(0, num_repetitions):
                     vals.append(results['all']['rep'][idx_][label][metric_])
-                    print("Value of metric %s for label %s: %s" % (metric_, label, vals[-1]))
-                print("Avg. value of metric %s for label %s: %s" % (metric_, label, sum(vals) / len(vals)))
+                    print(f'{idx_},{vals[-1]}')
+                    f.write(f'{idx_},{vals[-1]}')
+
+                print(f'Avg.: {sum(vals) / len(vals)}')
+                f.write(f'Avg,{sum(vals) / len(vals)}')
+                f.close()
 
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features):
@@ -479,6 +500,7 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, sta
 
     return model
 
+
 if data_set == "sepsis":
 
     # Sepsis
@@ -489,10 +511,11 @@ if data_set == "sepsis":
     # Admission IC: Good
     # Admission NC: Bad
 
-    x_seqs_final, x_statics_final, y_final, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(target_activity, max_len)
+    x_seqs_final, x_statics_final, y_final, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
+        target_activity, max_len)
 
     # Run CV on cuts to plot results --> Figure 1
-    evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, x_time_vals_final)
+    evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set, x_time_vals_final)
 
     if mode == "complete":
         # Train model and plot linear coeff --> Figure 2
@@ -514,10 +537,13 @@ elif data_set == "mimic":
 
     # MIMIC
     target_activity = 'Emergency Department Observation'
-    x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity, max_len)
+    # Emergency Department Observation: medium
+
+    x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity,
+                                                                                                max_len)
 
     # Run CV on cuts to plot results --> Figure 1
-    evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity)
+    evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set)
 
     if mode == "complete":
         # Train model and plot linear coeff --> Figure 2
