@@ -73,17 +73,22 @@ def get_sepsis_data(target_activity, max_len, min_len):
     assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
 
     print(f'Cutting everything after {max_len} activities')
-    x_seqs_final = np.zeros((len(x_seqs), max_len, len(x_seqs[0][0])), dtype=np.float32)
-    x_time_vals_final = []
+    x_seqs_, x_statics_, y_, x_time_vals_ = [], [], [], []
     for i, x in enumerate(x_seqs):
-        if len(x) > 0:
-            x_seqs_final[i, :min(len(x), max_len), :] = np.array(x[:max_len])
-            x_time_vals_final.append(x_time_vals[i][:max_len])
+        if min_len <= len(x) <= max_len:
+            x_seqs_.append(x)
+            x_statics_.append(x_statics[i])
+            y_.append(y[i])
+            x_time_vals_.append(x_time_vals[i])
 
-    x_statics_final = np.array(x_statics)
-    y_final = np.array(y).astype(np.int32)
+    x_seqs_final = np.zeros((len(x_seqs_), max_len, len(x_seqs_[0][0])), dtype=np.float32)
+    for i, x in enumerate(x_seqs):
+        x_seqs_final[i, :len(x), :] = np.array(x)
 
-    return x_seqs_final, x_statics_final, y_final, x_time_vals, seq_features, static_features
+    x_statics_final = np.array(x_statics_)
+    y_final = np.array(y_).astype(np.int32)
+
+    return x_seqs_final, x_statics_final, y_final, x_time_vals_, seq_features, static_features
 
 
 def get_data_mimic(target, max_len, min_len):
@@ -120,7 +125,7 @@ def get_data_mimic(target, max_len, min_len):
 
     subj_id_to_seq['careunit'] = subj_id_to_seq.careunit.apply(cut_at_target)
     subj_id_to_seq['len'] = subj_id_to_seq.careunit.apply(lambda x: len(x))
-    subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len > min_len]
+    subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len >= min_len]
     subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len <= max_len]
 
     subj_id_to_seq['y'] = subj_id_to_seq.careunit.apply(lambda x: 1 if x[-1] == target else 0)

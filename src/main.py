@@ -21,7 +21,7 @@ import shap
 import itertools
 import src.data as data
 
-data_set = "sepsis"  # sepsis
+data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
