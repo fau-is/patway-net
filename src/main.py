@@ -444,10 +444,10 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
             print(metric_)
             for idx_ in range(0, num_repetitions):
                 vals.append(results['all']['auc'][idx_])
+                f.write(f'{idx_},{vals[-1]}\n')
                 print(f'{idx_},{vals[-1]}')
-                f.write(f'{idx_},{vals[-1]}')
+            f.write(f'Avg,{sum(vals) / len(vals)}\n')
             print(f'Avg.: {sum(vals) / len(vals)}')
-            f.write(f'Avg,{sum(vals) / len(vals)}')
             f.close()
 
         elif metric_ == "accuracy":
@@ -458,23 +458,21 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
                 vals.append(results['all']['rep'][idx_][metric_])
                 print(f'{idx_},{vals[-1]}')
                 f.write(f'{idx_},{vals[-1]}')
+            f.write(f'Avg,{sum(vals) / len(vals)}\n')
             print(f'Avg.: {sum(vals) / len(vals)}')
-            f.write(f'Avg,{sum(vals) / len(vals)}')
             f.close()
-
         else:
             for label in labels:
                 f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
                 f.write(metric_ + f' ({label})\n')
-                print(metric_ + f' ({label})\n')
+                print(metric_ + f' ({label})')
                 vals = []
                 for idx_ in range(0, num_repetitions):
                     vals.append(results['all']['rep'][idx_][label][metric_])
+                    f.write(f'{idx_},{vals[-1]}\n')
                     print(f'{idx_},{vals[-1]}')
-                    f.write(f'{idx_},{vals[-1]}')
-
+                f.write(f'Avg,{sum(vals) / len(vals)}\n')
                 print(f'Avg.: {sum(vals) / len(vals)}')
-                f.write(f'Avg,{sum(vals) / len(vals)}')
                 f.close()
 
 
