@@ -19,6 +19,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import RobustScaler
 import shap
 import itertools
 
@@ -125,6 +126,59 @@ def get_data(target_activity):
     y_final = np.array(y).astype(np.int32)
 
     return x_seqs_final, x_statics_final, y_final, x_time_vals
+
+
+def get_data_mimic(target):
+    def cut_at_target(l):
+        try:
+            target_index = l.index(target) + 1
+        except:
+            target_index = None
+        return l[:target_index]
+    
+    df = pd.read_csv('../data/transfers.csv.gz')
+    
+    df = df[~pd.isnull(df.careunit)]
+    df = df[df.eventtype == 'admit']
+    
+    carunit2ind = dict(zip(df.careunit.unique(), range(len(df.careunit.unique()))))
+    max_index = len(df.careunit.unique()) + 1
+    
+    subj_id_to_seq = df.groupby(by='subject_id').agg({'careunit': list})
+    
+    subj_id_to_seq['careunit'] = subj_id_to_seq.careunit.apply(cut_at_target)
+    subj_id_to_seq['len'] = subj_id_to_seq.careunit.apply(lambda x: len(x))
+    subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len > 3]
+    subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len <= max_len]
+    
+    subj_id_to_seq['y'] = subj_id_to_seq.careunit.apply(lambda x: 1 if x[-1] == target else 0)
+    subj_id_to_seq['careunit'] = subj_id_to_seq.careunit.apply(lambda x: x[:-1])
+    
+    df = pd.read_csv('../data/patients.csv.gz')
+    
+    subj_id_to_stat = df.groupby(by='subject_id').agg({'gender': 'first', 'anchor_age': 'mean'})
+    
+    Xy = subj_id_to_seq.join(subj_id_to_stat)
+    
+    x_seqs = pd.DataFrame(Xy.careunit.tolist())
+    x_seqs = x_seqs.fillna(max_index - 1)
+    for c in x_seqs.columns:
+        x_seqs[c] = x_seqs[c].replace(carunit2ind)
+        
+    x_seqs_ext = np.zeros((len(x_seqs), max_len, max_index), dtype=np.float32)
+    
+    for c in x_seqs.columns:
+        x_seqs_ext[:,c,:] = np.eye(max_index)[x_seqs[c]]
+    
+    x_seqs_ext = x_seqs_ext[:,:,:-1]
+    
+    Xy['gender'] = Xy['gender'].apply(lambda x: 1 if x == 'F' else 0)
+    Xy['anchor_age'] = RobustScaler().fit_transform(Xy['anchor_age'].values.reshape(-1,1))
+    x_static = Xy[['gender', 'anchor_age']].values
+    
+    y = Xy['y'].values.reshape(-1,1)
+    
+    return x_seqs_ext, x_static, y
 
 
 def my_palplot(pal, size=1, ax=None):
@@ -582,6 +636,37 @@ x_seqs_final, x_statics_final, y_final, x_time_vals_final = get_data(target_acti
 
 # Run CV on cuts to plot results --> Figure 1
 evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, x_time_vals_final)
+
+if mode == "complete":
+    # Train model and plot linear coeff --> Figure 2
+    model = run_coefficient(x_seqs_final, x_statics_final, y_final)
+
+    # Get Explanations for LSTM inputs --> Figure 3
+    """
+    x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
+                                                               x_statics_final,
+                                                               y_final.reshape(-1, 1))
+    x_seqs_final = x_seqs_final[:1000]
+    x_statics_final = x_statics_final[:1000]
+    """
+
+    explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
+    shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+
+    seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
+                           columns=seq_features)
+    seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                             columns=[f'SHAP {x}' for x in seq_features])
+    seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+
+    compute_shap_summary_plot(seq_value_shape)
+    
+    
+# MIMIC
+x_seqs_final, x_statics_final, y_final = get_data_mimic('Emergency Department Observation')
+
+# Run CV on cuts to plot results --> Figure 1
+evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode)
 
 if mode == "complete":
     # Train model and plot linear coeff --> Figure 2
