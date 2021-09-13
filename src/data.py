@@ -4,7 +4,7 @@ import src.util as util
 import numpy as np
 
 
-def get_sepsis_data(target_activity, max_len):
+def get_sepsis_data(target_activity, max_len, min_len):
 
     ds_path = '../data/Sepsis Cases - Event Log.csv'
 
@@ -33,10 +33,6 @@ def get_sepsis_data(target_activity, max_len):
 
     max_leucocytes = np.percentile(df['Leucocytes'].dropna(), 95)  # remove outliers
     max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)  # remove outliers
-
-    x_seqs = []
-    x_statics = []
-    y = []
 
     x_seqs = []
     x_statics = []
@@ -90,7 +86,7 @@ def get_sepsis_data(target_activity, max_len):
     return x_seqs_final, x_statics_final, y_final, x_time_vals, seq_features, static_features
 
 
-def get_data_mimic(target, max_len):
+def get_data_mimic(target, max_len, min_len):
 
     def cut_at_target(l):
         try:
@@ -112,7 +108,6 @@ def get_data_mimic(target, max_len):
                     'Neuro ermediate', 'Hematology/Oncology ermediate', 'Surgery/Vascular/ermediate',
                     'Cardiology Surgery ermediate']
 
-
     df = pd.read_csv('../data/transfers.csv.gz')
 
     df = df[~pd.isnull(df.careunit)]
@@ -125,7 +120,7 @@ def get_data_mimic(target, max_len):
 
     subj_id_to_seq['careunit'] = subj_id_to_seq.careunit.apply(cut_at_target)
     subj_id_to_seq['len'] = subj_id_to_seq.careunit.apply(lambda x: len(x))
-    subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len > 3]
+    subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len > min_len]
     subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len <= max_len]
 
     subj_id_to_seq['y'] = subj_id_to_seq.careunit.apply(lambda x: 1 if x[-1] == target else 0)

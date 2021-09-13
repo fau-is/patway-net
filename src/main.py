@@ -24,6 +24,7 @@ import src.data as data
 data_set = "sepsis"  # sepsis
 n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
+min_len = 3
 seed = False
 num_repetitions = 10
 mode = "dt"  # complete; static; sequential; dt, lr
@@ -447,7 +448,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
                 f.write(f'{idx_},{vals[-1]}\n')
                 print(f'{idx_},{vals[-1]}')
             f.write(f'Avg,{sum(vals) / len(vals)}\n')
-            print(f'Avg.: {sum(vals) / len(vals)}')
+            f.write(f'Std,{np.std(vals, ddof=1)}\n')
+            print(f'Avg,{sum(vals) / len(vals)}')
+            print(f'Std,{np.std(vals, ddof=1)}\n')
             f.close()
 
         elif metric_ == "accuracy":
@@ -456,10 +459,12 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
             print(metric_)
             for idx_ in range(0, num_repetitions):
                 vals.append(results['all']['rep'][idx_][metric_])
+                f.write(f'{idx_},{vals[-1]}\n')
                 print(f'{idx_},{vals[-1]}')
-                f.write(f'{idx_},{vals[-1]}')
             f.write(f'Avg,{sum(vals) / len(vals)}\n')
-            print(f'Avg.: {sum(vals) / len(vals)}')
+            f.write(f'Std,{np.std(vals, ddof=1)}\n')
+            print(f'Avg,{sum(vals) / len(vals)}')
+            print(f'Std,{np.std(vals, ddof=1)}\n')
             f.close()
         else:
             for label in labels:
@@ -472,7 +477,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
                     f.write(f'{idx_},{vals[-1]}\n')
                     print(f'{idx_},{vals[-1]}')
                 f.write(f'Avg,{sum(vals) / len(vals)}\n')
-                print(f'Avg.: {sum(vals) / len(vals)}')
+                f.write(f'Std,{np.std(vals, ddof=1)}\n')
+                print(f'Avg,{sum(vals) / len(vals)}')
+                print(f'Std,{np.std(vals, ddof=1)}')
                 f.close()
 
 
@@ -510,7 +517,7 @@ if data_set == "sepsis":
     # Admission NC: Bad
 
     x_seqs_final, x_statics_final, y_final, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
-        target_activity, max_len)
+        target_activity, max_len, min_len)
 
     # Run CV on cuts to plot results --> Figure 1
     evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set, x_time_vals_final)
@@ -538,7 +545,7 @@ elif data_set == "mimic":
     # Emergency Department Observation: medium
 
     x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity,
-                                                                                                max_len)
+                                                                                                max_len, min_len)
 
     # Run CV on cuts to plot results --> Figure 1
     evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set)
