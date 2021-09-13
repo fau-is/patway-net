@@ -14,11 +14,9 @@ tf.compat.v1.disable_v2_behavior()
 import matplotlib.pyplot as plt
 import matplotlib
 import seaborn as sns
-import src.util as util
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.preprocessing import RobustScaler
 import shap
 import itertools
 import src.data as data
@@ -27,7 +25,7 @@ n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 seed = False
 num_repetitions = 10
-mode = "lr"  # complete; static; sequential; dt, lr
+mode = "dt"  # complete; static; sequential; dt, lr
 train_size = 0.8
 
 
@@ -302,7 +300,7 @@ def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
         return X_seq_ts, X_stat_ts, y_ts
 
 
-def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, x_time_vals_final, target_activity):
+def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, x_time_vals_final=None):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
@@ -502,10 +500,11 @@ if mode == "complete":
 
     
 # MIMIC
-x_seqs_final, x_statics_final, y_final, x_time_vals_final, seq_features, static_features = data.get_data_mimic('Emergency Department Observation', max_len)
+target_activity = 'Emergency Department Observation'
+x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity, max_len)
 
 # Run CV on cuts to plot results --> Figure 1
-evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, x_time_vals_final)
+evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity)
 
 if mode == "complete":
     # Train model and plot linear coeff --> Figure 2
