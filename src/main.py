@@ -348,27 +348,29 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
     # model training
     results = {}
 
-    if x_time is not None:
-        for repetition in range(0, num_repetitions):
+    for repetition in range(0, num_repetitions):
+
+        # timestamp exists
+        if x_time is not None:
             X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * len(y))],
-                                                                   x_statics[0: int(train_size * len(y))],
-                                                                   y[0: int(train_size * len(y))],
-                                                                   max_len,
-                                                                   ts_info=False,
-                                                                   x_time=time_start_test,
-                                                                   x_time_vals=x_time)
-    else:
-        for repetition in range(0, num_repetitions):
+                                                                       x_statics[0: int(train_size * len(y))],
+                                                                       y[0: int(train_size * len(y))],
+                                                                       max_len,
+                                                                       ts_info=False,
+                                                                       x_time=time_start_test,
+                                                                       x_time_vals=x_time)
+        # no timestamp exists
+        else:
             X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * len(y))],
-                                                                   x_statics[0: int(train_size * len(y))],
-                                                                   y[0: int(train_size * len(y))],
-                                                                   max_len)
+                                                                       x_statics[0: int(train_size * len(y))],
+                                                                       y[0: int(train_size * len(y))],
+                                                                       max_len)
 
         X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
-                                                                x_statics[int(train_size * len(y)):],
-                                                                y[int(train_size * len(y)):],
-                                                                max_len,
-                                                                ts_info=True)
+                                                                    x_statics[int(train_size * len(y)):],
+                                                                    y[int(train_size * len(y)):],
+                                                                    max_len,
+                                                                    ts_info=True)
 
         if mode == "complete":
             model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
@@ -588,7 +590,7 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     # MIMIC
-    target_activity = 'Emergency Department Observation'
+    target_activity = 'Medicine'
     # Emergency Department Observation: medium
 
     x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity,
