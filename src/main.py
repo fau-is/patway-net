@@ -27,7 +27,7 @@ max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
 num_repetitions = 10
-mode = "dt"  # complete; static; sequential; dt, lr
+mode = "complete"  # complete; static; sequential; dt, lr
 train_size = 0.8
 
 
@@ -463,7 +463,6 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
     ax.set_ylim(0.4, 0.9)
     plt.savefig(f'../plots/{target_activity}_auc.svg')
 
-
     # print metrics across cuts
     metrics_ = ["auc", "precision", "recall", "f1-score", "support", "accuracy"]
     labels = ["0", "1"]
@@ -607,4 +606,3 @@ elif data_set == "mimic":
 else:
     print("Data set not available!")
 
-"""
