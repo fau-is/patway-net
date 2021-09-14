@@ -21,13 +21,13 @@ import shap
 import itertools
 import src.data as data
 
-data_set = "sepsis"  # sepsis; mimic
+data_set = "mimic"  # sepsis; mimic
 n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
 num_repetitions = 10
-mode = "complete"  # complete; static; sequential; dt, lr
+mode = "dt"  # complete; static; sequential; dt, lr
 train_size = 0.8
 
 

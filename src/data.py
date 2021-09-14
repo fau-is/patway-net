@@ -156,4 +156,17 @@ def get_data_mimic(target, max_len, min_len):
 
     y = Xy['y'].values.reshape(-1, 1)
 
-    return x_seqs_ext, x_static, y, seq_features, static_features
+    # create lists
+    x_seqs_, x_stats_, y_ = [], [], []
+
+    for idx in range(0, x_seqs_ext.shape[0]):
+        x_seqs_temp = []
+        for idx_ts in range(0, x_seqs_ext.shape[1]):
+            x_seqs_temp.append(x_seqs_ext[idx, idx_ts, :])
+        x_seqs_.append(x_seqs_temp)
+
+    for idx in range(0, x_static.shape[0]):
+        x_stats_.append(x_static[idx, :])
+    y_ = [i[0] for i in y.tolist()]
+
+    return x_seqs_, x_stats_, y_, seq_features, static_features
