@@ -520,9 +520,12 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
 
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features):
+
+    """
     x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
                                                                x_statics_final,
                                                                y_final.reshape(-1, 1))
+    """
 
     model = train_lstm(x_seqs_final, x_statics_final, y_final)
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
