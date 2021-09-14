@@ -21,7 +21,7 @@ import shap
 import itertools
 import src.data as data
 
-data_set = "mimic"  # sepsis; mimic
+data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
@@ -590,8 +590,9 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     # MIMIC
-    target_activity = 'Medicine'
-    # Emergency Department Observation: medium
+    target_activity = 'Emergency Department Observation'
+    # Emergency Department Observation: maybe
+    # Neurology: not good
 
     x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity,
                                                                                                 max_len, min_len)

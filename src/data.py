@@ -8,6 +8,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
 
     ds_path = '../data/Sepsis Cases - Event Log_sub.csv'
 
+
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
                        'SIRSCritHeartRate', 'Infusion', 'DiagnosticArtAstrup', 'Age',
@@ -21,6 +22,8 @@ def get_sepsis_data(target_activity, max_len, min_len):
                     'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
                     'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
                     'Release E']
+
+    int2act = dict(zip(range(len(seq_features)), seq_features))
 
     # pre-processing
     df = pd.read_csv(ds_path)
@@ -88,6 +91,18 @@ def get_sepsis_data(target_activity, max_len, min_len):
             x_statics_.append(x_statics[i])
             y_.append(y[i])
             x_time_vals_.append(x_time_vals[i])
+
+    """
+    # create event log
+    f = open(f'../output/sepsis.txt', "w+")
+    f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])} \n')
+    for idx in range(0, len(x_seqs_)):
+        for idx_ts in range(0, len(x_seqs_[idx])):
+
+            f.write(f'{idx},{int2act[np.argmax(x_seqs_[idx][idx_ts])]},'
+                    f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])}\n')
+    f.close()
+    """
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
 
@@ -173,7 +188,7 @@ def get_data_mimic(target, max_len, min_len):
     """
     # create event log
     f = open(f'../output/mimic_patients_transfers.txt', "w+")
-    f.write('Case ID, Event, gender, anchor_age\n')
+    f.write('Case ID, Activity, gender, anchor_age\n')
     for idx in range(0, len(x_seqs_)):
         for idx_ts in range(0, len(x_seqs_[1])):
             f.write(f'{idx},{ind2carunit[np.argmax(x_seqs_[idx][idx_ts])]},{x_stats_[idx][0]},{x_stats_[idx][1]}\n')
