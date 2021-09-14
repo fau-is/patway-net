@@ -24,6 +24,14 @@ def get_sepsis_data(target_activity, max_len, min_len):
 
     # pre-processing
     df = pd.read_csv(ds_path)
+
+    # sorting event log
+    df_ = df.groupby('Case ID').first()
+    df_ = df_.sort_values(by='Complete Timestamp')
+    x = pd.CategoricalDtype(df_.index.values, ordered=True)
+    df['Case ID'] = df['Case ID'].astype(x)
+    df = df.sort_values(['Case ID', 'Complete Timestamp'])
+
     df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
     diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))  # ordinal encoding
     df['Diagnose'] = df['Diagnose'].apply(lambda x: diagnose_mapping[x])
@@ -82,7 +90,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
             x_time_vals_.append(x_time_vals[i])
 
     x_seqs_final = np.zeros((len(x_seqs_), max_len, len(x_seqs_[0][0])), dtype=np.float32)
-    for i, x in enumerate(x_seqs):
+    for i, x in enumerate(x_seqs_):
         x_seqs_final[i, :len(x), :] = np.array(x)
 
     x_statics_final = np.array(x_statics_)

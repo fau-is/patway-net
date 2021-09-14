@@ -294,15 +294,22 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
     return model
 
 
-def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
+def time_step_blow_up(X_seq, X_stat, y, ts_info=False, x_time=None, x_time_vals=None):
     X_seq_ts = np.zeros((X_seq.shape[0] * X_seq.shape[1], X_seq.shape[1], X_seq.shape[2]))
     X_stat_ts = np.zeros((X_stat.shape[0] * X_seq.shape[1], X_stat.shape[1]))
     y_ts = np.zeros((len(y) * X_seq.shape[1]))
 
     idx = 0
     ts = []
+    time_train_test = [0] * X_seq_ts.shape[0]
+
     for idx_seq in range(0, X_seq.shape[0]):
         for idx_ts in range(1, X_seq.shape[1] + 1):
+
+            if x_time is not None:
+                if x_time_vals[idx_seq][idx_ts-1].value > x_time.value:
+                    time_train_test[idx] = 1
+
             X_seq_ts[idx, :idx_ts, :] = X_seq[idx_seq, :idx_ts, :]
             X_stat_ts[idx] = X_stat[idx_seq]
             y_ts[idx] = y[idx_seq]
@@ -315,7 +322,7 @@ def time_step_blow_up(X_seq, X_stat, y, ts_info=False):
         return X_seq_ts, X_stat_ts, y_ts
 
 
-def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set, x_time_vals_final=None):
+def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set, x_time=None):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
@@ -323,7 +330,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
     train_index = data_index[0: int(train_size * len(y_final))]
     test_index = data_index[int(train_size * len(y_final)):]
 
-    print(0)
+    if x_time is not None:
+        time_start_test = x_time[test_index[0]][0]
+        x_time = x_time[0: int(train_size * len(y_final))]
 
     # model training
     results = {}
@@ -331,7 +340,9 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
     for repetition in range(0, num_repetitions):
         X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs_final[train_index],
                                                                x_statics_final[train_index],
-                                                               y_final[train_index])
+                                                               y_final[train_index], ts_info=False,
+                                                               x_time=time_start_test,
+                                                               x_time_vals=x_time)
 
         X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs_final[test_index],
                                                                 x_statics_final[test_index],
