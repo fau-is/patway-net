@@ -120,6 +120,7 @@ def get_data_mimic(target, max_len, min_len):
     df = df[df.eventtype == 'admit']
 
     carunit2ind = dict(zip(df.careunit.unique(), range(len(df.careunit.unique()))))
+    ind2carunit = dict(zip(range(len(df.careunit.unique())), df.careunit.unique()))
     max_index = len(df.careunit.unique()) + 1
 
     subj_id_to_seq = df.groupby(by='subject_id').agg({'careunit': list})
@@ -169,4 +170,18 @@ def get_data_mimic(target, max_len, min_len):
         x_stats_.append(x_static[idx, :])
     y_ = [i[0] for i in y.tolist()]
 
+    """
+    # create event log
+    f = open(f'../output/mimic_patients_transfers.txt', "w+")
+    f.write('Case ID, Event, gender, anchor_age\n')
+    for idx in range(0, len(x_seqs_)):
+        for idx_ts in range(0, len(x_seqs_[1])):
+            f.write(f'{idx},{ind2carunit[np.argmax(x_seqs_[idx][idx_ts])]},{x_stats_[idx][0]},{x_stats_[idx][1]}\n')
+    f.close()
+    """
+
     return x_seqs_, x_stats_, y_, seq_features, static_features
+
+
+
+
