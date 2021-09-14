@@ -348,14 +348,21 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
     # model training
     results = {}
 
-    for repetition in range(0, num_repetitions):
-        X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * len(y))],
-                                                               x_statics[0: int(train_size * len(y))],
-                                                               y[0: int(train_size * len(y))],
-                                                               max_len,
-                                                               ts_info=False,
-                                                               x_time=time_start_test,
-                                                               x_time_vals=x_time)
+    if x_time is not None:
+        for repetition in range(0, num_repetitions):
+            X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * len(y))],
+                                                                   x_statics[0: int(train_size * len(y))],
+                                                                   y[0: int(train_size * len(y))],
+                                                                   max_len,
+                                                                   ts_info=False,
+                                                                   x_time=time_start_test,
+                                                                   x_time_vals=x_time)
+    else:
+        for repetition in range(0, num_repetitions):
+            X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * len(y))],
+                                                                   x_statics[0: int(train_size * len(y))],
+                                                                   y[0: int(train_size * len(y))],
+                                                                   max_len)
 
         X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
                                                                 x_statics[int(train_size * len(y)):],
