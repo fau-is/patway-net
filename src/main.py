@@ -294,62 +294,74 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
     return model
 
 
-def time_step_blow_up(X_seq, X_stat, y, ts_info=False, x_time=None, x_time_vals=None):
-    X_seq_ts = np.zeros((X_seq.shape[0] * X_seq.shape[1], X_seq.shape[1], X_seq.shape[2]))
-    X_stat_ts = np.zeros((X_stat.shape[0] * X_seq.shape[1], X_stat.shape[1]))
-    y_ts = np.zeros((len(y) * X_seq.shape[1]))
+def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_time_vals=None):
 
-    idx = 0
-    ts = []
-    time_train_test = [0] * X_seq_ts.shape[0]
-
-    for idx_seq in range(0, X_seq.shape[0]):
-        for idx_ts in range(1, X_seq.shape[1] + 1):
-
-            try:
-                if x_time is not None:
-                    if x_time_vals[idx_seq][idx_ts-1].value > x_time.value:
-                        time_train_test[idx] = 1
-            except:
-                pass
-
-            X_seq_ts[idx, :idx_ts, :] = X_seq[idx_seq, :idx_ts, :]
-            X_stat_ts[idx] = X_stat[idx_seq]
-            y_ts[idx] = y[idx_seq]
+    # blow up
+    X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
+    for idx_seq in range(0, len(X_seq)):
+        for idx_ts in range(1, len(X_seq[idx_seq]) + 1):
+            X_seq_prefix.append(X_seq[idx_seq][0:idx_ts])
+            X_stat_prefix.append(X_stat[idx_seq])
+            y_prefix.append(y[idx_seq])
+            if x_time is not None:
+                x_time_vals_prefix.append(x_time_vals[idx_seq][0:idx_ts])
             ts.append(idx_ts)
-            idx += 1
+
+    # remove prefixes with future event from training set
+    if x_time is not None:
+        X_seq_prefix_temp, X_stat_prefix_temp, y_prefix_temp, ts_temp = [], [], [], []
+
+        for idx_prefix in range(0, len(X_seq_prefix)):
+            if x_time_vals_prefix[idx_prefix][-1].value <= x_time.value:
+                X_seq_prefix_temp.append(X_seq_prefix[idx_prefix])
+                X_stat_prefix_temp.append(X_stat_prefix[idx_prefix])
+                y_prefix_temp.append(y_prefix[idx_prefix])
+                ts_temp.append(ts[idx_prefix])
+
+        X_seq_prefix, X_stat_prefix, y_prefix, ts = X_seq_prefix_temp, X_stat_prefix_temp, y_prefix_temp, ts_temp
+
+    # vectorization
+    X_seq_final = np.zeros((len(X_seq_prefix), max_len, len(X_seq_prefix[0][0])), dtype=np.float32)
+    X_stat_final = np.zeros((len(X_seq_prefix), len(X_stat_prefix[0])))
+    for i, x in enumerate(X_seq_prefix):
+        X_seq_final[i, :len(x), :] = np.array(x)
+        X_stat_final[i, :] = np.array(X_stat_prefix[i])
+    y_final = np.array(y_prefix).astype(np.int32)
 
     if ts_info:
-        return X_seq_ts, X_stat_ts, y_ts, ts
+        return X_seq_final, X_stat_final, y_final, ts
     else:
-        return X_seq_ts, X_stat_ts, y_ts
+        return X_seq_final, X_stat_final, y_final
 
 
-def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set, x_time=None):
+def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_time=None):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
-    data_index = list(range(0, len(y_final)))
-    train_index = data_index[0: int(train_size * len(y_final))]
-    test_index = data_index[int(train_size * len(y_final)):]
+    data_index = list(range(0, len(y)))
+    test_index = data_index[int(train_size * len(y)):]
 
     if x_time is not None:
         time_start_test = x_time[test_index[0]][0]
-        x_time = x_time[0: int(train_size * len(y_final))]
+        x_time = x_time[0: int(train_size * len(y))]
 
     # model training
     results = {}
 
     for repetition in range(0, num_repetitions):
-        X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs_final[train_index],
-                                                               x_statics_final[train_index],
-                                                               y_final[train_index], ts_info=False,
+        X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * len(y))],
+                                                               x_statics[0: int(train_size * len(y))],
+                                                               y[0: int(train_size * len(y))],
+                                                               max_len,
+                                                               ts_info=False,
                                                                x_time=time_start_test,
                                                                x_time_vals=x_time)
 
-        X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs_final[test_index],
-                                                                x_statics_final[test_index],
-                                                                y_final[test_index], ts_info=True)
+        X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
+                                                                x_statics[int(train_size * len(y)):],
+                                                                y[int(train_size * len(y)):],
+                                                                max_len,
+                                                                ts_info=True)
 
         if mode == "complete":
             model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
@@ -391,7 +403,8 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
                      results['gts'])),
             columns=['ts', 'preds', 'preds_proba', 'gts'])
 
-        cut_lengths = range(1, X_train_seq.shape[1] + 1)
+        cut_lengths = range(1, 12 + 1)  # range(1, X_train_seq.shape[1] + 1)
+
 
         # init
         if cut_lengths[0] not in results:
@@ -419,6 +432,8 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
         results['all']['auc'].append(
             metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
 
+
+    """
     # print accuracy plot
     fig, ax = plt.subplots(figsize=(14, 10))
     mean_line = [np.mean(results[c]['acc']) for c in cut_lengths]
@@ -432,6 +447,7 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
     ax.set_ylabel('Accuracy', fontsize=20)
     ax.set_ylim(0.0, 1)
     plt.savefig(f'../plots/{target_activity}_acc.svg')
+    """
 
     # print auc roc plot
     fig, ax = plt.subplots(figsize=(14, 10))
@@ -442,10 +458,11 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
     ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
     # ax.set_title(r'$M_{%s}$' % target_activity_abbreviation, fontsize=30)
     ax.set_xlabel('Size of Process Instance Prefix for Prediction', fontsize=20)
-    ax.set_xticks(np.arange(1, max_len + 1, step=2))
+    ax.set_xticks(np.arange(1, max(cut_lengths) + 1, step=2))
     ax.set_ylabel(r'$AUC_{ROC}$', fontsize=20)
     ax.set_ylim(0.4, 0.9)
     plt.savefig(f'../plots/{target_activity}_auc.svg')
+
 
     # print metrics across cuts
     metrics_ = ["auc", "precision", "recall", "f1-score", "support", "accuracy"]
@@ -496,6 +513,12 @@ def evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activit
                 print(f'Std,{np.std(vals, ddof=1)}')
                 f.close()
 
+    X_seq = np.concatenate((X_train_seq, X_test_seq), axis=0)
+    X_stat = np.concatenate((X_train_stat, X_test_stat), axis=0)
+    y = np.concatenate((y_train, y_test), axis=0)
+
+    return X_seq, X_stat, y
+
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features):
     x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
@@ -530,11 +553,12 @@ if data_set == "sepsis":
     # Admission IC: Good
     # Admission NC: Bad
 
-    x_seqs_final, x_statics_final, y_final, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
+    x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
         target_activity, max_len, min_len)
 
     # Run CV on cuts to plot results --> Figure 1
-    evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set, x_time_vals_final)
+    x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
+                                                             data_set, x_time_vals_final)
 
     if mode == "complete":
         # Train model and plot linear coeff --> Figure 2
@@ -582,3 +606,5 @@ elif data_set == "mimic":
 
 else:
     print("Data set not available!")
+
+"""

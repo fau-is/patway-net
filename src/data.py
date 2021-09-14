@@ -6,7 +6,7 @@ import numpy as np
 
 def get_sepsis_data(target_activity, max_len, min_len):
 
-    ds_path = '../data/Sepsis Cases - Event Log.csv'
+    ds_path = '../data/Sepsis Cases - Event Log_sub.csv'
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
@@ -89,14 +89,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
             y_.append(y[i])
             x_time_vals_.append(x_time_vals[i])
 
-    x_seqs_final = np.zeros((len(x_seqs_), max_len, len(x_seqs_[0][0])), dtype=np.float32)
-    for i, x in enumerate(x_seqs_):
-        x_seqs_final[i, :len(x), :] = np.array(x)
-
-    x_statics_final = np.array(x_statics_)
-    y_final = np.array(y_).astype(np.int32)
-
-    return x_seqs_final, x_statics_final, y_final, x_time_vals_, seq_features, static_features
+    return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
 
 
 def get_data_mimic(target, max_len, min_len):
