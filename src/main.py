@@ -416,7 +416,6 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
 
         cut_lengths = range(1, 12 + 1)  # range(1, X_train_seq.shape[1] + 1)
 
-
         # init
         if cut_lengths[0] not in results:
             for cut_len in cut_lengths:
@@ -443,23 +442,14 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
         results['all']['auc'].append(
             metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
 
+    # save all results
+    f = open(f'../output/{data_set}_{mode}_{target_activity}_summary.txt', 'w')
+    results_ = results
+    del results_['preds'], results_['preds_proba'], results_['gts'], results_['ts']
+    f.write(str(results_))
+    f.close()
 
     """
-    # print accuracy plot
-    fig, ax = plt.subplots(figsize=(14, 10))
-    mean_line = [np.mean(results[c]['acc']) for c in cut_lengths]
-    min_line = [np.percentile(results[c]['acc'], 25) for c in cut_lengths]
-    max_line = [np.percentile(results[c]['acc'], 75) for c in cut_lengths]
-    ax.plot(cut_lengths, mean_line)
-    ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
-    # ax.set_title(r'$M_{%s}$' % target_activity_abbreviation, fontsize=30)
-    ax.set_xlabel('Size of Process Instance Prefix for Prediction', fontsize=20)
-    ax.set_xticks(np.arange(1, max_len + 1, step=2))
-    ax.set_ylabel('Accuracy', fontsize=20)
-    ax.set_ylim(0.0, 1)
-    plt.savefig(f'../plots/{target_activity}_acc.svg')
-    """
-
     # print auc roc plot
     fig, ax = plt.subplots(figsize=(14, 10))
     mean_line = [np.mean(results[c]['auc']) for c in cut_lengths]
@@ -473,8 +463,9 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
     ax.set_ylabel(r'$AUC_{ROC}$', fontsize=20)
     ax.set_ylim(0.4, 0.9)
     plt.savefig(f'../plots/{target_activity}_auc.svg')
+    """
 
-    # print metrics across cuts
+    # print metrics
     metrics_ = ["auc", "precision", "recall", "f1-score", "support", "accuracy"]
     labels = ["0", "1"]
 

@@ -39,7 +39,7 @@ def plot_line_plots(cut_lengths, means_acc, mins_acc, maxes_acc,
         ax.title.set_text(title)
         
     plot_on_axes(ax1, means_acc, mins_acc, maxes_acc, title='Accuracy')
-    plot_on_axes(ax2, means_auc, mins_auc, maxes_auc, title='Area under receiver operating characteristic (AUROC)')
+    plot_on_axes(ax2, means_auc, mins_auc, maxes_auc, title='Area under receiver operating characteristic (AUCROC)')
     
     ax1.legend(ncol=2, loc='lower left', 
            columnspacing=1.3, labelspacing=0.0,
@@ -49,11 +49,10 @@ def plot_line_plots(cut_lengths, means_acc, mins_acc, maxes_acc,
     y_axis = ax2.axes.get_yaxis()
     y_axis.set_visible(False)
 
-    
     fig.text(0.5, -0.01, 'Size of process instance prefix for prediction', ha='center')
 
     plt.tight_layout()
-    plt.savefig('tmp.png', bbox_inches="tight")
+    plt.savefig('tmp.pdf', bbox_inches="tight")
     
     
 # There are three args for acc and three args for auc
