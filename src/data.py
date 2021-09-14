@@ -25,7 +25,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
     # pre-processing
     df = pd.read_csv(ds_path)
 
-    # sorting event log
+    # sort case id by timestamp of first event
     df_ = df.groupby('Case ID').first()
     df_ = df_.sort_values(by='Complete Timestamp')
     x = pd.CategoricalDtype(df_.index.values, ordered=True)

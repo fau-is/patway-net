@@ -306,9 +306,12 @@ def time_step_blow_up(X_seq, X_stat, y, ts_info=False, x_time=None, x_time_vals=
     for idx_seq in range(0, X_seq.shape[0]):
         for idx_ts in range(1, X_seq.shape[1] + 1):
 
-            if x_time is not None:
-                if x_time_vals[idx_seq][idx_ts-1].value > x_time.value:
-                    time_train_test[idx] = 1
+            try:
+                if x_time is not None:
+                    if x_time_vals[idx_seq][idx_ts-1].value > x_time.value:
+                        time_train_test[idx] = 1
+            except:
+                pass
 
             X_seq_ts[idx, :idx_ts, :] = X_seq[idx_seq, :idx_ts, :]
             X_stat_ts[idx] = X_stat[idx_seq]
