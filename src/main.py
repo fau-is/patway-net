@@ -67,9 +67,11 @@ def compute_shap_summary_plot(X_all, data_set):
     elif data_set == "mimic":
 
         shap_values = [
-            'Neurology',
-            'Vascular',
-            'Medicine'
+            'SHAP Emergency Department Observation',
+            'SHAP Hematology/Oncology',
+            'SHAP Medicine/Cardiology',
+            'SHAP Transplant',
+            'SHAP Med/Surg'
         ]
 
     else:
@@ -591,8 +593,11 @@ elif data_set == "mimic":
 
     # MIMIC
     target_activity = 'Emergency Department Observation'
-    # Emergency Department Observation: maybe
-    # Neurology: not good
+    # Emergency Department Observation:
+    # Hematology/Oncology:
+    # Medicine/Cardiology
+    # Transplant
+    # Med/Surg
 
     x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity,
                                                                                                 max_len, min_len)
