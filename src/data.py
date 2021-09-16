@@ -6,7 +6,7 @@ import numpy as np
 
 def get_sepsis_data(target_activity, max_len, min_len):
 
-    ds_path = '../data/Sepsis Cases - Event Log_sub.csv'
+    ds_path = '../data/Sepsis Cases - Event Log.csv'
 
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
@@ -18,7 +18,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                        'Oligurie', 'DiagnosticLacticAcid', 'Diagnose', 'Hypoxie',
                        'DiagnosticUrinarySediment', 'DiagnosticECG']
 
-    seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Triage', 'ER Sepsis Triage',
+    seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
                     'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
                     'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
                     'Release E']
@@ -34,6 +34,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
     x = pd.CategoricalDtype(df_.index.values, ordered=True)
     df['Case ID'] = df['Case ID'].astype(x)
     df = df.sort_values(['Case ID', 'Complete Timestamp'])
+    df = df.reset_index()
 
     df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
     diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))  # ordinal encoding
@@ -55,13 +56,14 @@ def get_sepsis_data(target_activity, max_len, min_len):
         found_target_flag = False
         df_tmp = df[df['Case ID'] == case]
         df_tmp = df_tmp.sort_values(by='Complete Timestamp')
+
         for _, x in df_tmp.iterrows():
             if x['Activity'] == 'ER Registration':
                 x_statics.append(x[static_features].values.astype(float))
                 x_time_vals.append([])
                 x_seqs.append([])
                 after_registration_flag = True
-                continue
+                # continue
 
             if 'Release' in x['Activity']:
                 if x['Activity'] == target_activity:
@@ -74,7 +76,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                 found_target_flag = True
                 break
 
-            if after_registration_flag:
+            if after_registration_flag or x['Activity'] == 'ER Registration':
                 x_seqs[-1].append(util.get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid))
                 x_time_vals[-1].append(x['Complete Timestamp'])
 
@@ -92,7 +94,6 @@ def get_sepsis_data(target_activity, max_len, min_len):
             y_.append(y[i])
             x_time_vals_.append(x_time_vals[i])
 
-    """
     # create event log
     f = open(f'../output/sepsis.txt', "w+")
     f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])} \n')
@@ -102,7 +103,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
             f.write(f'{idx},{int2act[np.argmax(x_seqs_[idx][idx_ts])]},'
                     f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])}\n')
     f.close()
-    """
+    print(0)
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
 

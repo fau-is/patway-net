@@ -7,8 +7,8 @@ import seaborn as sns
 task_1 = "Release Type A (REA)"
 task_2 = "Admission IC (AIC)"
 
-coef_values_task_1 = [-0.2888972, -0.001997236, -0.23954397, -0.2559873, -0.45435518, 0.07244425, 0.03626472, -0.16619293, -0.038904637, 0.037489716, 0.1976995, 0.07379714, 0.11746674, 0.3859931, 0.2782478, 0.4835849, -0.3130332, -0.43463305, -0.294928, -0.062663764, 0.9346965, -0.12880808, 0.28425518, 0.4040266]
-coef_values_task_2 = [-0.2888972, -0.001997236, -0.23954397, -0.2559873, -0.45435518, 0.07244425, 0.03626472, -0.16619293, -0.038904637, 0.037489716, 0.1976995, 0.07379714, 0.11746674, 0.3859931, 0.2782478, 0.4835849, -0.3130332, -0.43463305, -0.294928, -0.062663764, 0.9346965, -0.12880808, 0.28425518, 0.4040266]
+coef_values_task_1 = [-0.2888972, -0.001997236, -0.23954397, -0.2559873, -0.45435518, 0.07244425, 0.03626472, -0.16619293, -0.038904637, 0.037489716, 0.1976995, 0.07379714, 0.11746674, 0.3859931, 0.2782478, 0.4835849, -0.3130332, -0.43463305, -0.294928, -0.062663764, 0.09346965, -0.12880808, 0.28425518, 0.4040266]
+coef_values_task_2 = [-0.2888972, -0.001997236, -0.23954397, -0.2559873, -0.45435518, 0.07244425, 0.03626472, -0.16619293, -0.038904637, 0.037489716, 0.1976995, 0.07379714, 0.11746674, 0.3859931, 0.2782478, 0.4835849, -0.3130332, -0.43463305, -0.294928, -0.062663764, 0.09346965, -0.12880808, 0.28425518, 0.4040266]
 
 static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
@@ -40,12 +40,12 @@ def my_palplot(pal, size=1, ax=None):
 
 
 def plot_box_plots(coefs_1, coefs_2):
-    matplotlib.rcParams.update({'font.size': 20})
+    matplotlib.rcParams.update({'font.size': 20, 'figure.figsize': (8,8)})
     
     max_v = max(max(list(coefs_1.values())), max(list(coefs_2.values())))
     min_v = min(min(list(coefs_1.values())), min(list(coefs_2.values())))
     
-    fig = plt.figure(figsize=(30, 14), constrained_layout=False)
+    fig = plt.figure(figsize=(30, 15), constrained_layout=False)
     grid = fig.add_gridspec(1, 3, width_ratios=[10, 10, 0.2], wspace=0.2, hspace=0.0)
     
     ax1 = fig.add_subplot(grid[0, 0])
@@ -55,8 +55,9 @@ def plot_box_plots(coefs_1, coefs_2):
     def plot_on_ax(ax, coefs, title):
         coefs_values = list(coefs.values())
         coefs_names = list(coefs.keys())
-        sns.barplot(x=coefs_values, y=coefs_names, orient='h', 
+        sns.barplot(x=coefs_values, y=coefs_names, orient='h', ci=0,
                     palette=colors_from_values(coefs_values, "viridis"), ax=ax)
+
         ax.set_xlim(min_v - 0.1*max_v, max_v + 0.1*max_v)
         ax.title.set_text(title)
     
