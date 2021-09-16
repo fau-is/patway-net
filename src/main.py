@@ -26,8 +26,8 @@ n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 10
-mode = "dt"  # complete; static; sequential; dt, lr
+num_repetitions = 1
+mode = "complete"  # complete; static; sequential; dt, lr
 train_size = 0.8
 
 
@@ -449,21 +449,6 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
     f.write(str(results_))
     f.close()
 
-    """
-    # print auc roc plot
-    fig, ax = plt.subplots(figsize=(14, 10))
-    mean_line = [np.mean(results[c]['auc']) for c in cut_lengths]
-    min_line = [np.percentile(results[c]['auc'], 25) for c in cut_lengths]
-    max_line = [np.percentile(results[c]['auc'], 75) for c in cut_lengths]
-    ax.plot(cut_lengths, mean_line)
-    ax.fill_between(cut_lengths, min_line, max_line, alpha=.2)
-    # ax.set_title(r'$M_{%s}$' % target_activity_abbreviation, fontsize=30)
-    ax.set_xlabel('Size of Process Instance Prefix for Prediction', fontsize=20)
-    ax.set_xticks(np.arange(1, max(cut_lengths) + 1, step=2))
-    ax.set_ylabel(r'$AUC_{ROC}$', fontsize=20)
-    ax.set_ylim(0.4, 0.9)
-    plt.savefig(f'../plots/{target_activity}_auc.svg')
-    """
 
     # print metrics
     metrics_ = ["auc", "precision", "recall", "f1-score", "support", "accuracy"]
@@ -523,26 +508,14 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features):
 
-    """
-    x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs_final,
-                                                               x_statics_final,
-                                                               y_final.reshape(-1, 1))
-    """
-
     model = train_lstm(x_seqs_final, x_statics_final, y_final)
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
-    # output_names = [f'Hidden State {i}' for i in range(2 * n_hidden)] + static_features
     output_names = static_features
 
-    fig, ax = plt.subplots(figsize=(10, 10))
-    y_pos = np.arange(len(output_names))
-    ax.barh(y_pos, output_weights)
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(output_names)
-    ax.set_xlabel('Coefficient Value in Last Layer')
-    ax.set_xlim(-3.0, 3.0)
-    fig.tight_layout()
-    plt.savefig(f'../plots/{target_activity}_coefs.svg')
+    f = open(f'../output/{data_set}_{mode}_{target_activity}_coef.txt', 'w')
+    f.write(",".join([str(x) for x in output_names]) + '\n')
+    f.write(",".join([str(x) for x in output_weights]))
+    f.close()
 
     return model
 

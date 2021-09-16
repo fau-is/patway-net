@@ -4,9 +4,23 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Example values for coefs of two tasks
-coefs_1 = dict(zip([f'Feat {x}' for x in range(20)], 2 * np.random.rand(20) - 1))
-coefs_2 = dict(zip([f'Feat {x}' for x in range(20)], 2 * np.random.rand(20) - 1))
-######
+task_1 = "Release Type A (REA)"
+task_2 = "Admission IC (AIC)"
+
+coef_values_task_1 = [-0.2888972, -0.001997236, -0.23954397, -0.2559873, -0.45435518, 0.07244425, 0.03626472, -0.16619293, -0.038904637, 0.037489716, 0.1976995, 0.07379714, 0.11746674, 0.3859931, 0.2782478, 0.4835849, -0.3130332, -0.43463305, -0.294928, -0.062663764, 0.9346965, -0.12880808, 0.28425518, 0.4040266]
+coef_values_task_2 = [-0.2888972, -0.001997236, -0.23954397, -0.2559873, -0.45435518, 0.07244425, 0.03626472, -0.16619293, -0.038904637, 0.037489716, 0.1976995, 0.07379714, 0.11746674, 0.3859931, 0.2782478, 0.4835849, -0.3130332, -0.43463305, -0.294928, -0.062663764, 0.9346965, -0.12880808, 0.28425518, 0.4040266]
+
+static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
+                       'SIRSCritTachypnea', 'Hypotensie',
+                       'SIRSCritHeartRate', 'Infusion', 'DiagnosticArtAstrup', 'Age',
+                       'DiagnosticIC', 'DiagnosticSputum', 'DiagnosticLiquor',
+                       'DiagnosticOther', 'SIRSCriteria2OrMore', 'DiagnosticXthorax',
+                       'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos',
+                       'Oligurie', 'DiagnosticLacticAcid', 'Diagnose', 'Hypoxie',
+                       'DiagnosticUrinarySediment', 'DiagnosticECG']
+
+coefs_task_1 = dict(zip([x for x in static_features], np.array(coef_values_task_1)))
+coefs_task_2 = dict(zip([x for x in static_features], np.array(coef_values_task_2)))
 
 
 def colors_from_values(values, palette_name):
@@ -23,6 +37,7 @@ def my_palplot(pal, size=1, ax=None):
     ax.imshow(np.arange(n)[::-1].reshape(n, 1),
               cmap=matplotlib.colors.ListedColormap(list(pal)),
               interpolation="nearest", aspect="auto")
+
 
 def plot_box_plots(coefs_1, coefs_2):
     matplotlib.rcParams.update({'font.size': 20})
@@ -45,8 +60,8 @@ def plot_box_plots(coefs_1, coefs_2):
         ax.set_xlim(min_v - 0.1*max_v, max_v + 0.1*max_v)
         ax.title.set_text(title)
     
-    plot_on_ax(ax1, coefs_1, title='Release Type A (REA)')
-    plot_on_ax(ax2, coefs_2, title='Admission IC (AIC)')
+    plot_on_ax(ax1, coefs_1, title=task_1)
+    plot_on_ax(ax2, coefs_2, title=task_2)
     
     fig.text(0.5, 0.03, 'Value of corresponding coefficient', ha='center')
 
@@ -60,8 +75,6 @@ def plot_box_plots(coefs_1, coefs_2):
 
     plt.tight_layout()
     plt.savefig('tmp.png', bbox_inches="tight")
-    
 
-# Args are two dictionaries (one for REA and one for AIC)
-# with feature names as keys and coefficient values as values
-plot_box_plots(coefs_1, coefs_2)
+
+plot_box_plots(coefs_task_1, coefs_task_2)
