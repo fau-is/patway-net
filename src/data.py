@@ -5,9 +5,7 @@ import numpy as np
 
 
 def get_sepsis_data(target_activity, max_len, min_len):
-
     ds_path = '../data/Sepsis Cases - Event Log.csv'
-
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
@@ -52,40 +50,37 @@ def get_sepsis_data(target_activity, max_len, min_len):
     y = []
 
     for case in df['Case ID'].unique():
+
         after_registration_flag = False
         found_target_flag = False
+
         df_tmp = df[df['Case ID'] == case]
         df_tmp = df_tmp.sort_values(by='Complete Timestamp')
 
+        idx = -1
         for _, x in df_tmp.iterrows():
-            if x['Activity'] == 'ER Registration':
+            idx = idx + 1
+            if x['Activity'] == 'ER Registration' and idx == 0:
                 x_statics.append(x[static_features].values.astype(float))
                 x_time_vals.append([])
                 x_seqs.append([])
                 after_registration_flag = True
-                # continue
 
-            if 'Release' in x['Activity']:
-                if x['Activity'] == target_activity:
-                    y.append(1)
-                    found_target_flag = True
-                break
-
-            if x['Activity'] == target_activity:
-                y.append(1)
+            if x['Activity'] == target_activity and after_registration_flag:
                 found_target_flag = True
-                break
 
-            if after_registration_flag or x['Activity'] == 'ER Registration':
+            if after_registration_flag:
                 x_seqs[-1].append(util.get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid))
                 x_time_vals[-1].append(x['Complete Timestamp'])
 
-        if not found_target_flag and after_registration_flag:
-            y.append(0)
+        if after_registration_flag:
+            if found_target_flag:
+                y.append(1)
+            else:
+                y.append(0)
 
     assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
 
-    print(f'Cutting everything after {max_len} activities')
     x_seqs_, x_statics_, y_, x_time_vals_ = [], [], [], []
     for i, x in enumerate(x_seqs):
         if min_len <= len(x) <= max_len:
@@ -99,17 +94,15 @@ def get_sepsis_data(target_activity, max_len, min_len):
     f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])} \n')
     for idx in range(0, len(x_seqs_)):
         for idx_ts in range(0, len(x_seqs_[idx])):
-
             f.write(f'{idx},{int2act[np.argmax(x_seqs_[idx][idx_ts])]},'
                     f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])}\n')
     f.close()
-    print(0)
+
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
 
 
 def get_data_mimic(target, max_len, min_len):
-
     def cut_at_target(l):
         try:
             target_index = l.index(target) + 1
@@ -119,13 +112,20 @@ def get_data_mimic(target, max_len, min_len):
 
     static_features = ['gender', 'anchor_age']
 
-    seq_features = ['Neurology', 'Vascular', 'Medicine', 'PACU', 'Cardiac Surgery', 'Thoracic Surgery', 'Labor & Delivery',
-                    'Surgery/Trauma', 'Trauma SICU TSICU', 'Med/Surg', 'Hematology/Oncology', 'Transplant', 'Nursery , Well Babies',
-                    'Surgery', 'Med/Surg/Trauma', 'Psychiatry', 'Med/Surg/GYN', 'Observation', 'Surgical ensive Care Unit SICU',
-                    'Medical/Surgical Gynecology', 'Medical ensive Care Unit MICU', 'Medicine/Cardiology', 'Coronary Care Unit CCU',
-                    'Surgery/Pancreatic/Biliary/Bariatric', 'Medical/Surgical ensive Care Unit MICU/SICU', 'Neonatal ensive Care Unit NICU',
-                    'Emergency Department Observation', 'Cardiac Vascular ensive Care Unit CVICU', 'Obstetrics Postpartum & Antepartum',
-                    'Unknown', 'Special Care Nursery SCN', 'Neuro Surgical ensive Care Unit Neuro SICU', 'Neuro Stepdown',
+    seq_features = ['Neurology', 'Vascular', 'Medicine', 'PACU', 'Cardiac Surgery', 'Thoracic Surgery',
+                    'Labor & Delivery',
+                    'Surgery/Trauma', 'Trauma SICU TSICU', 'Med/Surg', 'Hematology/Oncology', 'Transplant',
+                    'Nursery , Well Babies',
+                    'Surgery', 'Med/Surg/Trauma', 'Psychiatry', 'Med/Surg/GYN', 'Observation',
+                    'Surgical ensive Care Unit SICU',
+                    'Medical/Surgical Gynecology', 'Medical ensive Care Unit MICU', 'Medicine/Cardiology',
+                    'Coronary Care Unit CCU',
+                    'Surgery/Pancreatic/Biliary/Bariatric', 'Medical/Surgical ensive Care Unit MICU/SICU',
+                    'Neonatal ensive Care Unit NICU',
+                    'Emergency Department Observation', 'Cardiac Vascular ensive Care Unit CVICU',
+                    'Obstetrics Postpartum & Antepartum',
+                    'Unknown', 'Special Care Nursery SCN', 'Neuro Surgical ensive Care Unit Neuro SICU',
+                    'Neuro Stepdown',
                     'Obstetrics Antepartum', 'Cardiology', 'Obstetrics Postpartum', 'Medicine/Cardiology ermediate',
                     'Neuro ermediate', 'Hematology/Oncology ermediate', 'Surgery/Vascular/ermediate',
                     'Cardiology Surgery ermediate']
@@ -197,7 +197,3 @@ def get_data_mimic(target, max_len, min_len):
     """
 
     return x_seqs_, x_stats_, y_, seq_features, static_features
-
-
-
-
