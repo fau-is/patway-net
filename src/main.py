@@ -422,6 +422,11 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, sta
     return model
 
 
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+
+
 if data_set == "sepsis":
 
     for mode in ['complete', 'static', 'sequential', 'dt', 'lr']:
