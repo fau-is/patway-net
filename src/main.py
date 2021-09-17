@@ -11,14 +11,11 @@ import numpy as np
 import tensorflow as tf
 import pickle
 tf.compat.v1.disable_v2_behavior()
-import matplotlib.pyplot as plt
 import matplotlib
-import seaborn as sns
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 import shap
-import itertools
 import src.data as data
 
 data_set = "sepsis"  # sepsis; mimic
@@ -427,37 +424,39 @@ def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, sta
 
 if data_set == "sepsis":
 
-    # Sepsis
-    target_activity = 'Release A'
-    # Release A: Very good
-    # Release B: bad
-    # Release C-E: Few samples
-    # Admission IC: Good
-    # Admission NC: Bad
+    for mode in ['complete', 'static', 'sequential', 'dt', 'lr']:
 
-    x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
-        target_activity, max_len, min_len)
+        # Sepsis
+        target_activity = 'Release A'
+        # Release A: Very good
+        # Release B: bad
+        # Release C-E: Few samples
+        # Admission IC: Good
+        # Admission NC: Bad
 
-    # Run CV on cuts to plot results --> Figure 1
-    x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
-                                                             data_set, x_time_vals_final)
+        x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
+            target_activity, max_len, min_len)
 
-    if mode == "complete":
-        # Train model and plot linear coeff --> Figure 2
-        model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
+        # Run CV on cuts to plot results --> Figure 1
+        x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
+                                                                 data_set, x_time_vals_final)
 
-        # Get Explanations for LSTM inputs --> Figure 3
-        explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
-        shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+        if mode == "complete":
+            # Train model and plot linear coeff --> Figure 2
+            model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
 
-        seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
-                               columns=seq_features)
-        seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                                 columns=[f'SHAP {x}' for x in seq_features])
-        seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+            # Get Explanations for LSTM inputs --> Figure 3
+            explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
+            shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
 
-        with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
-            pickle.dump(seq_value_shape, f)
+            seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
+                                   columns=seq_features)
+            seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                     columns=[f'SHAP {x}' for x in seq_features])
+            seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+
+            with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
+                pickle.dump(seq_value_shape, f)
 
 
 elif data_set == "mimic":
