@@ -23,7 +23,7 @@ n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "complete"  # complete; static; sequential; dt, lr
 train_size = 0.8
 
@@ -429,39 +429,39 @@ for gpu in gpus:
 
 if data_set == "sepsis":
 
-    for mode in ['complete', 'static', 'sequential', 'dt', 'lr']:
+    for mode in ['complete']:  # ['complete', 'static', 'sequential', 'dt', 'lr']:
+        for target_activity in ['Release A']:  # ['Release A', 'Admission IC']:
 
-        # Sepsis
-        target_activity = 'Release A'
-        # Release A: Very good
-        # Release B: bad
-        # Release C-E: Few samples
-        # Admission IC: Good
-        # Admission NC: Bad
+            # target_activity = 'Release A'
+            # Release A: Very good
+            # Release B: bad
+            # Release C-E: Few samples
+            # Admission IC: Good
+            # Admission NC: Bad
 
-        x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
-            target_activity, max_len, min_len)
+            x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
+                target_activity, max_len, min_len)
 
-        # Run CV on cuts to plot results --> Figure 1
-        x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
-                                                                 data_set, x_time_vals_final)
+            # Run CV on cuts to plot results --> Figure 1
+            x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
+                                                                     data_set, x_time_vals_final)
 
-        if mode == "complete":
-            # Train model and plot linear coeff --> Figure 2
-            model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
+            if mode == "complete":
+                # Train model and plot linear coeff --> Figure 2
+                model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
 
-            # Get Explanations for LSTM inputs --> Figure 3
-            explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
-            shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+                # Get Explanations for LSTM inputs --> Figure 3
+                explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
+                shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
 
-            seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
-                                   columns=seq_features)
-            seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                                     columns=[f'SHAP {x}' for x in seq_features])
-            seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+                seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
+                                       columns=seq_features)
+                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                         columns=[f'SHAP {x}' for x in seq_features])
+                seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
 
-            with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
-                pickle.dump(seq_value_shape, f)
+                with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
+                    pickle.dump(seq_value_shape, f)
 
 
 elif data_set == "mimic":
