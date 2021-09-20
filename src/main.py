@@ -67,6 +67,9 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+        f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
         return best_model, best_hpos
@@ -106,6 +109,9 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+        f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
         return best_model, best_hpos
@@ -145,6 +151,9 @@ def train_svm(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+        f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
         return best_model, best_hpos
@@ -184,6 +193,9 @@ def train_gb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+        f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
         return best_model, best_hpos
@@ -222,7 +234,10 @@ def train_ada(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
                     best_hpos = {"n_estimators": n_estimators, "learning_rate": learning_rate}
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-        f.write(str(best_hpos))
+        f.write(str(best_hpos)+'\n')
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+        f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
         return best_model, best_hpos
@@ -663,7 +678,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['gb']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+    for mode in ['ada']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
         for target_activity in ['Release A']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few
