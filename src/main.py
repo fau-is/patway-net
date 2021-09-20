@@ -327,7 +327,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             best_hpos = {"size": size, "learning_rate": learning_rate, "batch_size": batch_size}
 
             f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-            f.write(str(best_hpos))
+            f.write(str(best_hpos) + '\n')
             f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
             f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
             f.write(f'Std,{np.std(aucs, ddof=1)}\n')
@@ -447,7 +447,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                         best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size}
 
             f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-            f.write(str(best_hpos))
+            f.write(str(best_hpos) + '\n')
             f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
             f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
             f.write(f'Std,{np.std(aucs, ddof=1)}\n')
@@ -567,7 +567,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             best_hpos = {"size": size, "learning_rate": learning_rate, "batch_size": batch_size}
 
             f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-            f.write(str(best_hpos))
+            f.write(str(best_hpos) + '\n')
             f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
             f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
             f.write(f'Std,{np.std(aucs, ddof=1)}\n')
