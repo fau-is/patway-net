@@ -23,7 +23,7 @@ n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "complete"  # complete; static; sequential; dt, lr
 train_size = 0.8
 
@@ -236,7 +236,7 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
         return X_seq_final, X_stat_final, y_final
 
 
-def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_time=None):
+def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, param, x_time=None):
     matplotlib.style.use('default')
     matplotlib.rcParams.update({'font.size': 16})
 
@@ -345,12 +345,11 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
             metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
 
     # save all results
-    f = open(f'../output/{data_set}_{mode}_{target_activity}_summary.txt', 'w')
+    f = open(f'../output/{data_set}_{mode}_{target_activity}_{param}_summary.txt', 'w')
     results_ = results
     del results_['preds'], results_['preds_proba'], results_['gts'], results_['ts']
     f.write(str(results_))
     f.close()
-
 
     # print metrics
     metrics_ = ["auc", "precision", "recall", "f1-score", "support", "accuracy"]
@@ -359,7 +358,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
     for metric_ in metrics_:
         vals = []
         if metric_ == "auc":
-            f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+            f = open(f'../output/{data_set}_{mode}_{target_activity}_{param}.txt', "a+")
             f.write(metric_ + '\n')
             print(metric_)
             for idx_ in range(0, num_repetitions):
@@ -373,7 +372,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
             f.close()
 
         elif metric_ == "accuracy":
-            f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+            f = open(f'../output/{data_set}_{mode}_{target_activity}_{param}.txt', "a+")
             f.write(metric_ + '\n')
             print(metric_)
             for idx_ in range(0, num_repetitions):
@@ -387,7 +386,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, x_tim
             f.close()
         else:
             for label in labels:
-                f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+                f = open(f'../output/{data_set}_{mode}_{target_activity}_{param}.txt', "a+")
                 f.write(metric_ + f' ({label})\n')
                 print(metric_ + f' ({label})')
                 vals = []
@@ -429,39 +428,43 @@ for gpu in gpus:
 
 if data_set == "sepsis":
 
-    for mode in ['complete', 'static', 'sequential', 'dt', 'lr']:
+    param = ""
 
-        # Sepsis
-        target_activity = 'Release A'
-        # Release A: Very good
-        # Release B: bad
-        # Release C-E: Few samples
-        # Admission IC: Good
-        # Admission NC: Bad
+    for mode in ['complete']:  # 'dt', 'lr'
+        for target_activity in ['Admission IC', 'Release B', 'Admission NC']:  # Release A, Admission IC
+            for n_hidden in [4, 16, 32, 64, 128]:
+                param = n_hidden
 
-        x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
-            target_activity, max_len, min_len)
+                # Admission IC: Very good
+                # Release A: dt better
+                # Release B: good
+                # Admission NC: dt better
 
-        # Run CV on cuts to plot results --> Figure 1
-        x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
-                                                                 data_set, x_time_vals_final)
+                # Release C-E: Few samples
 
-        if mode == "complete":
-            # Train model and plot linear coeff --> Figure 2
-            model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
+                x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
+                    target_activity, max_len, min_len)
 
-            # Get Explanations for LSTM inputs --> Figure 3
-            explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
-            shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+                # Run CV on cuts to plot results --> Figure 1
+                x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
+                                                                         data_set, param, x_time_vals_final)
 
-            seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
-                                   columns=seq_features)
-            seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                                     columns=[f'SHAP {x}' for x in seq_features])
-            seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
-
-            with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
-                pickle.dump(seq_value_shape, f)
+                if mode == "complete":
+                    # Train model and plot linear coeff --> Figure 2
+                    model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
+    
+                    # Get Explanations for LSTM inputs --> Figure 3
+                    explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
+                    shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+    
+                    seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
+                                           columns=seq_features)
+                    seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                             columns=[f'SHAP {x}' for x in seq_features])
+                    seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+    
+                    with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
+                        pickle.dump(seq_value_shape, f)
 
 
 elif data_set == "mimic":
