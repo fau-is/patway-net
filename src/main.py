@@ -82,7 +82,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_lasso(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
 
@@ -91,18 +91,19 @@ def train_lasso(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val
         best_hpos = ""
         aucs = []
 
-        for alpha in hpos["lasso"]["reg_strength"]:
+        for c in hpos["lr"]["reg_strength"]:
+            for solver in hpos["lr"]["solver"]:
 
-            model = Lasso(alpha=alpha)
-            model.fit(x_concat_train, np.ravel(y_train))
-            preds_proba = model.predict_proba(x_concat_val)
-            preds_proba = [pred_proba[1] for pred_proba in preds_proba]
-            auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
-            aucs.append(auc)
+                model = LogisticRegression(C=c, solver=solver)
+                model.fit(x_concat_train, np.ravel(y_train))
+                preds_proba = model.predict_proba(x_concat_val)
+                preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                aucs.append(auc)
 
-            if auc >= max(aucs):
-                best_model = model
-                best_hpos = {"alpha": alpha}
+                if auc >= max(aucs):
+                    best_model = model
+                    best_hpos = {"c": c, "solver": solver}
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
@@ -114,7 +115,7 @@ def train_lasso(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val
         x_concat = np.concatenate((x_concat_train, x_concat_val), axis=0)
         y = np.concatenate((y_train, y_val), axis=0)
 
-        model = Lasso()
+        model = LogisticRegression()
         model.fit(x_concat, np.ravel(y))
 
         return model
@@ -377,8 +378,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
-        elif mode == "lasso":
-            model = train_lasso(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+        elif mode == "lr":
+            model, _ = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -518,8 +519,7 @@ hpos = {
         "complete": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
         "sequential": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
         "static": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
-        "lasso": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
-        "ridge": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
+        "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs", "sag", "newton-cg"]},
         "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
         "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]}
     }
@@ -527,7 +527,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['lasso']:  # static, complete, sequential, 'lasso', 'ridge', 'rf', 'svm',
+    for mode in ['lr']:  # static, complete, sequential, 'lr', 'rf', 'svm',
         for target_activity in ['Release A']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few
