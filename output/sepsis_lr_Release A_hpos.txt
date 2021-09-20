@@ -1,0 +1,1 @@
+{'c': 0.01, 'solver': 'newton-cg'}

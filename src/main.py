@@ -15,8 +15,7 @@ tf.compat.v1.disable_v2_behavior()
 import matplotlib
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import RidgeClassifier, Lasso
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.svm import SVC
 import shap
 import src.data as data
@@ -116,6 +115,123 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         y = np.concatenate((y_train, y_val), axis=0)
 
         model = LogisticRegression()
+        model.fit(x_concat, np.ravel(y))
+
+        return model
+
+
+def train_svm(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+    x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+    x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
+
+    if hpo:
+        best_model = ""
+        best_hpos = ""
+        aucs = []
+
+        for kern_fkt in hpos["svm"]["kern_fkt"]:
+            for cost in hpos["svm"]["cost"]:
+
+                model = SVC(C=cost, kernel=kern_fkt, probability=True)
+                model.fit(x_concat_train, np.ravel(y_train))
+                preds_proba = model.predict_proba(x_concat_val)
+                preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                aucs.append(auc)
+
+                if auc >= max(aucs):
+                    best_model = model
+                    best_hpos = {"cost": cost, "kernel": kern_fkt}
+
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f.write(str(best_hpos))
+        f.close()
+
+        return best_model, best_hpos
+
+    else:
+        x_concat = np.concatenate((x_concat_train, x_concat_val), axis=0)
+        y = np.concatenate((y_train, y_val), axis=0)
+
+        model = SVC(probability=True)
+        model.fit(x_concat, np.ravel(y))
+
+        return model
+
+
+def train_gb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+    x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+    x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
+
+    if hpo:
+        best_model = ""
+        best_hpos = ""
+        aucs = []
+
+        for n_estimators in hpos["gb"]["n_estimators"]:
+            for learning_rate in hpos["gb"]["learning_rate"]:
+
+                model = GradientBoostingClassifier(n_estimators=n_estimators, learning_rate=learning_rate)
+                model.fit(x_concat_train, np.ravel(y_train))
+                preds_proba = model.predict_proba(x_concat_val)
+                preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                aucs.append(auc)
+
+                if auc >= max(aucs):
+                    best_model = model
+                    best_hpos = {"n_estimators": n_estimators, "learning_rate": learning_rate}
+
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f.write(str(best_hpos))
+        f.close()
+
+        return best_model, best_hpos
+
+    else:
+        x_concat = np.concatenate((x_concat_train, x_concat_val), axis=0)
+        y = np.concatenate((y_train, y_val), axis=0)
+
+        model = GradientBoostingClassifier()
+        model.fit(x_concat, np.ravel(y))
+
+        return model
+
+
+def train_ada(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+    x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+    x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
+
+    if hpo:
+        best_model = ""
+        best_hpos = ""
+        aucs = []
+
+        for n_estimators in hpos["ada"]["n_estimators"]:
+            for learning_rate in hpos["ada"]["learning_rate"]:
+
+                model = AdaBoostClassifier(n_estimators=n_estimators, learning_rate=learning_rate)
+                model.fit(x_concat_train, np.ravel(y_train))
+                preds_proba = model.predict_proba(x_concat_val)
+                preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                aucs.append(auc)
+
+                if auc >= max(aucs):
+                    best_model = model
+                    best_hpos = {"n_estimators": n_estimators, "learning_rate": learning_rate}
+
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f.write(str(best_hpos))
+        f.close()
+
+        return best_model, best_hpos
+
+    else:
+        x_concat = np.concatenate((x_concat_train, x_concat_val), axis=0)
+        y = np.concatenate((y_train, y_val), axis=0)
+
+        model = AdaBoostClassifier()
         model.fit(x_concat, np.ravel(y))
 
         return model
@@ -384,6 +500,24 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
+        elif mode == "svm":
+            model, _ = train_svm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
+            results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
+
+        elif mode == "gb":
+            model, _ = train_gb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
+            results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
+
+        elif mode == "ada":
+            model, _ = train_ada(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
+            results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
+
         results['gts'] = [int(y) for y in y_test]
         results['ts'] = ts
 
@@ -521,13 +655,15 @@ hpos = {
         "static": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs", "sag", "newton-cg"]},
         "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
-        "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]}
+        # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
+        "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
+        "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
     }
 
 
 if data_set == "sepsis":
 
-    for mode in ['lr']:  # static, complete, sequential, 'lr', 'rf', 'svm',
+    for mode in ['gb']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
         for target_activity in ['Release A']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few
