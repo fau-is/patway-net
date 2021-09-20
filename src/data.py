@@ -98,7 +98,6 @@ def get_sepsis_data(target_activity, max_len, min_len):
                     f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])}\n')
     f.close()
 
-
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
 
 

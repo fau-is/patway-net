@@ -48,6 +48,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
     if hpo:
         best_model = ""
+        best_hpos = ""
         aucs = []
 
         for num_trees in hpos["rf"]["num_trees"]:
@@ -55,23 +56,28 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 for num_rand_vars in hpos["rf"]["num_rand_vars"]:
 
                     model = RandomForestClassifier(n_estimators=num_trees, max_depth=max_depth_trees, max_features=num_rand_vars)
-                    model.fit(x_concat_train, y_train)
-                    preds_proba = model.predict([x_concat_val])
-
+                    model.fit(x_concat_train, np.ravel(y_train))
+                    preds_proba = model.predict_proba(x_concat_val)
+                    preds_proba = [pred_proba[1] for pred_proba in preds_proba]
                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     aucs.append(auc)
 
-                    if auc > max(aucs):
+                    if auc >= max(aucs):
                         best_model = model
+                        best_hpos = {"num_trees": num_trees, "max_depth_trees": max_depth_trees, "num_rand_vars": num_rand_vars}
 
-        return best_model
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f.write(str(best_hpos))
+        f.close()
+
+        return best_model, best_hpos
 
     else:
         x_concat = np.concatenate((x_concat_train, x_concat_val), axis=0)
         y = np.concatenate((y_train, y_val), axis=0)
 
         model = RandomForestClassifier()
-        model.fit(x_concat, y)
+        model.fit(x_concat, np.ravel(y))
 
         return model
 
@@ -337,7 +343,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "rf":
-            model = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, _ = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -493,11 +499,11 @@ hpos = {
 if data_set == "sepsis":
 
     for mode in ['rf']:  # static, complete, sequential, 'lasso', 'ridge', 'rf', 'svm',
-        for target_activity in ['Admission IC']:  # 'Admission IC', 'Release B', 'Admission NC'
+        for target_activity in ['Release A']:  # 'Release A', 'Admission NC'
 
-            # Admission IC: Very good
+            # Admission IC: Very good; few
             # Release A: dt better
-            # Release B: good
+            # Release B: good; few
             # Admission NC: dt better
 
             # Release C-E: Few samples
