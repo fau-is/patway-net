@@ -10,11 +10,14 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 import pickle
+
 tf.compat.v1.disable_v2_behavior()
 import matplotlib
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import RidgeClassifier, Lasso
+from sklearn.svm import SVC
 import shap
 import src.data as data
 
@@ -23,12 +26,13 @@ n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 10
+num_repetitions = 1
 mode = "complete"  # complete; static; sequential; dt, lr
+val_size = 0.1
 train_size = 0.8
 
 
-
+hpo = False
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
@@ -38,13 +42,38 @@ def concatenate_tensor_matrix(x_seq, x_stat):
     return x_concat
 
 
-def train_dt(x_train_seq, x_train_stat, y_train):
-    x_concat = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+    x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+    x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
 
-    model = DecisionTreeClassifier()
-    model.fit(x_concat, y_train)
+    if hpo:
+        best_model = ""
+        aucs = []
 
-    return model
+        for num_trees in hpos["rf"]["num_trees"]:
+            for max_depth_trees in hpos["rf"]["max_depth_trees"]:
+                for num_rand_vars in hpos["rf"]["num_rand_vars"]:
+
+                    model = RandomForestClassifier(num_trees=num_trees, max_depth_trees=max_depth_trees, num_rand_vars=num_rand_vars)
+                    model.fit(x_concat_train, y_train)
+                    preds_proba = model.predict([x_concat_val])
+
+                    auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                    aucs.append(auc)
+
+                    if auc > max(aucs):
+                        best_model = model
+
+        return best_model
+
+    else:
+        x_concat = np.concatenate((x_concat_train, x_concat_val), axis=0)
+        y = np.concatenate((y_train, y_val), axis=0)
+
+        model = RandomForestClassifier()
+        model.fit(x_concat, y)
+
+        return model
 
 
 def train_lr(x_train_seq, x_train_stat, y_train):
@@ -197,7 +226,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
 
 
 def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_time_vals=None):
-
     # blow up
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
     for idx_seq in range(0, len(X_seq)):
@@ -236,16 +264,17 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
         return X_seq_final, X_stat_final, y_final
 
 
-def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, param, x_time=None):
-    matplotlib.style.use('default')
-    matplotlib.rcParams.update({'font.size': 16})
+def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, x_time=None):
 
     data_index = list(range(0, len(y)))
+    val_index = data_index[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))]
     test_index = data_index[int(train_size * len(y)):]
 
     if x_time is not None:
+        time_start_val = x_time[val_index[0]][0]
         time_start_test = x_time[test_index[0]][0]
-        x_time = x_time[0: int(train_size * len(y))]
+        x_time_train = x_time[0: int(train_size * (1 - val_size) * len(y))]
+        x_time_val = x_time[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))]
 
     # model training
     results = {}
@@ -254,25 +283,40 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, param
 
         # timestamp exists
         if x_time is not None:
-            X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * len(y))],
-                                                                       x_statics[0: int(train_size * len(y))],
-                                                                       y[0: int(train_size * len(y))],
-                                                                       max_len,
-                                                                       ts_info=False,
-                                                                       x_time=time_start_test,
-                                                                       x_time_vals=x_time)
+            X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
+                                                                   x_statics[0: int(train_size * (1 - val_size) * len(y))],
+                                                                   y[0: int(train_size * (1 - val_size) * len(y))],
+                                                                   max_len,
+                                                                   ts_info=False,
+                                                                   x_time=time_start_val,
+                                                                   x_time_vals=x_time_train)
+
+            X_val_seq, X_val_stat, y_val = time_step_blow_up(x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                                                                   x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                                                                   y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                                                                   max_len,
+                                                                   ts_info=False,
+                                                                   x_time=time_start_test,
+                                                                   x_time_vals=x_time_val)
+
         # no timestamp exists
         else:
-            X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * len(y))],
-                                                                       x_statics[0: int(train_size * len(y))],
-                                                                       y[0: int(train_size * len(y))],
-                                                                       max_len)
+            X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
+                                                                   x_statics[
+                                                                   0: int(train_size * (1 - val_size) * len(y))],
+                                                                   y[0: int(train_size * (1 - val_size) * len(y))],
+                                                                   max_len)
+
+            X_val_seq, X_val_stat, y_val = time_step_blow_up(x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                                                                   x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                                                                   y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                                                                   max_len)
 
         X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
-                                                                    x_statics[int(train_size * len(y)):],
-                                                                    y[int(train_size * len(y)):],
-                                                                    max_len,
-                                                                    ts_info=True)
+                                                                x_statics[int(train_size * len(y)):],
+                                                                y[int(train_size * len(y)):],
+                                                                max_len,
+                                                                ts_info=True)
 
         if mode == "complete":
             model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
@@ -292,8 +336,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, param
             results['preds'] = [int(round(pred[0])) for pred in preds_proba]
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
-        elif mode == "dt":
-            model = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
+        elif mode == "rf":
+            model = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -334,18 +378,23 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, param
                 results[cut_len]['acc'].append(
                     metrics.accuracy_score(y_true=results_temp_cut['gts'], y_pred=results_temp_cut['preds']))
                 try:
-                    results[cut_len]['auc'].append(metrics.roc_auc_score(y_true=results_temp_cut['gts'], y_score=results_temp_cut['preds_proba']))
+                    results[cut_len]['auc'].append(
+                        metrics.roc_auc_score(y_true=results_temp_cut['gts'], y_score=results_temp_cut['preds_proba']))
                 except:
                     pass
 
         # metrics across cuts
         results['all']['rep'].append(
             metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds'], output_dict=True))
-        results['all']['auc'].append(
-            metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
+
+        try:
+            results['all']['auc'].append(
+                metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
+        except:
+            pass
 
     # save all results
-    f = open(f'../output/{data_set}_{mode}_{target_activity}_{param}_summary.txt', 'w')
+    f = open(f'../output/{data_set}_{mode}_{target_activity}_summary.txt', 'w')
     results_ = results
     del results_['preds'], results_['preds_proba'], results_['gts'], results_['ts']
     f.write(str(results_))
@@ -358,21 +407,24 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, param
     for metric_ in metrics_:
         vals = []
         if metric_ == "auc":
-            f = open(f'../output/{data_set}_{mode}_{target_activity}_{param}.txt', "a+")
-            f.write(metric_ + '\n')
-            print(metric_)
-            for idx_ in range(0, num_repetitions):
-                vals.append(results['all']['auc'][idx_])
-                f.write(f'{idx_},{vals[-1]}\n')
-                print(f'{idx_},{vals[-1]}')
-            f.write(f'Avg,{sum(vals) / len(vals)}\n')
-            f.write(f'Std,{np.std(vals, ddof=1)}\n')
-            print(f'Avg,{sum(vals) / len(vals)}')
-            print(f'Std,{np.std(vals, ddof=1)}\n')
-            f.close()
+            try:
+                f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+                f.write(metric_ + '\n')
+                print(metric_)
+                for idx_ in range(0, num_repetitions):
+                    vals.append(results['all']['auc'][idx_])
+                    f.write(f'{idx_},{vals[-1]}\n')
+                    print(f'{idx_},{vals[-1]}')
+                f.write(f'Avg,{sum(vals) / len(vals)}\n')
+                f.write(f'Std,{np.std(vals, ddof=1)}\n')
+                print(f'Avg,{sum(vals) / len(vals)}')
+                print(f'Std,{np.std(vals, ddof=1)}\n')
+                f.close()
+            except:
+                pass
 
         elif metric_ == "accuracy":
-            f = open(f'../output/{data_set}_{mode}_{target_activity}_{param}.txt', "a+")
+            f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
             f.write(metric_ + '\n')
             print(metric_)
             for idx_ in range(0, num_repetitions):
@@ -386,19 +438,22 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, param
             f.close()
         else:
             for label in labels:
-                f = open(f'../output/{data_set}_{mode}_{target_activity}_{param}.txt', "a+")
-                f.write(metric_ + f' ({label})\n')
-                print(metric_ + f' ({label})')
-                vals = []
-                for idx_ in range(0, num_repetitions):
-                    vals.append(results['all']['rep'][idx_][label][metric_])
-                    f.write(f'{idx_},{vals[-1]}\n')
-                    print(f'{idx_},{vals[-1]}')
-                f.write(f'Avg,{sum(vals) / len(vals)}\n')
-                f.write(f'Std,{np.std(vals, ddof=1)}\n')
-                print(f'Avg,{sum(vals) / len(vals)}')
-                print(f'Std,{np.std(vals, ddof=1)}')
-                f.close()
+                try:
+                    f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+                    f.write(metric_ + f' ({label})\n')
+                    print(metric_ + f' ({label})')
+                    vals = []
+                    for idx_ in range(0, num_repetitions):
+                        vals.append(results['all']['rep'][idx_][label][metric_])
+                        f.write(f'{idx_},{vals[-1]}\n')
+                        print(f'{idx_},{vals[-1]}')
+                    f.write(f'Avg,{sum(vals) / len(vals)}\n')
+                    f.write(f'Std,{np.std(vals, ddof=1)}\n')
+                    print(f'Avg,{sum(vals) / len(vals)}')
+                    print(f'Std,{np.std(vals, ddof=1)}')
+                    f.close()
+                except:
+                    pass
 
     X_seq = np.concatenate((X_train_seq, X_test_seq), axis=0)
     X_stat = np.concatenate((X_train_stat, X_test_stat), axis=0)
@@ -408,7 +463,6 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, param
 
 
 def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features):
-
     model = train_lstm(x_seqs_final, x_statics_final, y_final)
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
     output_names = static_features
@@ -425,46 +479,53 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
+hpos = {
+        "complete": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
+        "sequential": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
+        "static": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
+        "lasso": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
+        "ridge": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
+        "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
+        "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]}
+    }
+
 
 if data_set == "sepsis":
 
-    param = ""
+    for mode in ['rf']:  # static, complete, sequential, 'lasso', 'ridge', 'rf', 'svm',
+        for target_activity in ['Admission IC']:  # 'Admission IC', 'Release B', 'Admission NC'
 
-    for mode in ['complete']:  # 'dt', 'lr'
-        for target_activity in ['Admission IC', 'Release B', 'Admission NC']:  # Release A, Admission IC
-            for n_hidden in [4, 16, 32, 64, 128]:
-                param = n_hidden
+            # Admission IC: Very good
+            # Release A: dt better
+            # Release B: good
+            # Admission NC: dt better
 
-                # Admission IC: Very good
-                # Release A: dt better
-                # Release B: good
-                # Admission NC: dt better
+            # Release C-E: Few samples
 
-                # Release C-E: Few samples
+            x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
+                target_activity, max_len, min_len)
 
-                x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
-                    target_activity, max_len, min_len)
 
-                # Run CV on cuts to plot results --> Figure 1
-                x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
-                                                                         data_set, param, x_time_vals_final)
+            # Run eval on cuts to plot results --> Figure 1
+            x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
+                                                                     data_set, hpos, hpo, x_time_vals_final)
 
-                if mode == "complete":
-                    # Train model and plot linear coeff --> Figure 2
-                    model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
-    
-                    # Get Explanations for LSTM inputs --> Figure 3
-                    explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
-                    shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
-    
-                    seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
-                                           columns=seq_features)
-                    seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                                             columns=[f'SHAP {x}' for x in seq_features])
-                    seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
-    
-                    with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
-                        pickle.dump(seq_value_shape, f)
+            if mode == "complete":
+                # Train model and plot linear coeff --> Figure 2
+                model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
+
+                # Get Explanations for LSTM inputs --> Figure 3
+                explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
+                shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+
+                seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
+                                       columns=seq_features)
+                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                         columns=[f'SHAP {x}' for x in seq_features])
+                seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+
+                with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
+                    pickle.dump(seq_value_shape, f)
 
 elif data_set == "mimic":
 
@@ -503,4 +564,3 @@ elif data_set == "mimic":
 
 else:
     print("Data set not available!")
-
