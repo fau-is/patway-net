@@ -341,7 +341,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
             hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
-                units=n_hidden,
+                units=hpos['size'],
                 return_sequences=False))(input_layer_seq)
 
             concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
@@ -354,8 +354,9 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             model = tf.keras.models.Model(inputs=[input_layer_seq, input_layer_static],
                                           outputs=[output_layer])
 
+            opt = tf.keras.optimizers.Adam(learning_rate=hpos['learning_rate'])
             model.compile(loss='binary_crossentropy',
-                          optimizer='adam',
+                          optimizer=opt,
                           metrics=['accuracy'])
             early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
             model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
@@ -379,7 +380,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                       validation_split=0.1,
                       verbose=1,
                       callbacks=[early_stopping, model_checkpoint, lr_reducer],
-                      batch_size=32,
+                      batch_size=hpos['batch_size'],
                       epochs=100)
 
             return model
@@ -466,8 +467,9 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             model = tf.keras.models.Model(inputs=[input_layer_static],
                                           outputs=[output_layer])
 
+            opt = tf.keras.optimizers.Adam(learning_rate=hpos['learning_rate'])
             model.compile(loss='binary_crossentropy',
-                          optimizer='adam',
+                          optimizer=opt,
                           metrics=['accuracy'])
             early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
             model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
@@ -491,7 +493,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                       validation_split=0.1,
                       verbose=1,
                       callbacks=[early_stopping, model_checkpoint, lr_reducer],
-                      batch_size=32,
+                      batch_size=hpos['batch_size'],
                       epochs=100)
 
             return model
@@ -580,7 +582,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
             # Hidden layer
             hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
-                units=n_hidden,
+                units=hpos['size'],
                 return_sequences=False))(input_layer_seq)
 
             # Output layer
@@ -591,8 +593,9 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             model = tf.keras.models.Model(inputs=[input_layer_seq],
                                           outputs=[output_layer])
 
+            opt = tf.keras.optimizers.Adam(learning_rate=hpos['learning_rate'])
             model.compile(loss='binary_crossentropy',
-                          optimizer='adam',
+                          optimizer=opt,
                           metrics=['accuracy'])
             early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
             model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
@@ -616,7 +619,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                       validation_split=0.1,
                       verbose=1,
                       callbacks=[early_stopping, model_checkpoint, lr_reducer],
-                      batch_size=32,
+                      batch_size=hpos['batch_size'],
                       epochs=100)
 
             return model
@@ -675,6 +678,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
     # model training
     results = {}
+    best_hpos_repetitions = ""
 
     for repetition in range(0, num_repetitions):
 
@@ -734,31 +738,31 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "rf":
-            model, _ = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "lr":
-            model, _ = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "svm":
-            model, _ = train_svm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_svm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "gb":
-            model, _ = train_gb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_gb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "ada":
-            model, _ = train_ada(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_ada(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -803,8 +807,12 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds'], output_dict=True))
 
         try:
-            results['all']['auc'].append(
-                metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba']))
+            auc = metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba'])
+            results['all']['auc'].append(auc)
+
+            if auc >= max(results['all']['auc']):
+                best_hpos_repetitions = best_hpos
+
         except:
             pass
 
@@ -835,6 +843,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                 print(f'Avg,{sum(vals) / len(vals)}')
                 print(f'Std,{np.std(vals, ddof=1)}\n')
                 f.close()
+
             except:
                 pass
 
@@ -874,11 +883,11 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
     X_stat = np.concatenate((X_train_stat, X_test_stat), axis=0)
     y = np.concatenate((y_train, y_test), axis=0)
 
-    return X_seq, X_stat, y
+    return X_seq, X_stat, y, best_hpos_repetitions
 
 
-def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features):
-    model = train_lstm(x_seqs_final, x_statics_final, y_final)
+def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features, best_hpos_repetitions):
+    model = train_lstm(x_seqs_final, x_statics_final, y_final, False, False, False, best_hpos_repetitions, False, mode="complete")
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
     output_names = static_features
 
@@ -908,7 +917,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['static']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+    for mode in ['complete']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
         for target_activity in ['Release A']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few
@@ -923,12 +932,12 @@ if data_set == "sepsis":
 
 
             # Run eval on cuts to plot results --> Figure 1
-            x_seqs_final, x_statics_final, y_final = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
+            x_seqs_final, x_statics_final, y_final, best_hpos_repetitions = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
                                                                      data_set, hpos, hpo, x_time_vals_final)
 
             if mode == "complete":
                 # Train model and plot linear coeff --> Figure 2
-                model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
+                model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features, best_hpos_repetitions)
 
                 # Get Explanations for LSTM inputs --> Figure 3
                 explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
