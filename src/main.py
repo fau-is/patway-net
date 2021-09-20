@@ -67,7 +67,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
-        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
@@ -109,7 +109,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
-        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
@@ -151,7 +151,7 @@ def train_svm(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
-        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
@@ -193,7 +193,7 @@ def train_gb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
-        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
@@ -235,7 +235,7 @@ def train_ada(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos)+'\n')
-        f.write("Validation aucs," + ",".join([str(x) for x in aucs]))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
@@ -252,144 +252,374 @@ def train_ada(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         return model
 
 
-def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
+def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False, hpo=False, mode="complete"):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
 
     if mode == "complete":
-        # Input layer
-        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
-        input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
-        hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
-            units=n_hidden,
-            return_sequences=False))(input_layer_seq)
+        if hpo:
+            best_model = ""
+            best_hpos = ""
+            aucs = []
 
-        concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
+            for size in hpos["complete"]["size"]:
+                for learning_rate in hpos["complete"]["learning_rate"]:
+                    for batch_size in hpos["complete"]["batch_size"]:
 
-        # Output layer
-        output_layer = tf.keras.layers.Dense(1,
-                                             activation='sigmoid',
-                                             name='output_layer')(concatenate_layer)
+                        # Input layer
+                        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
+                        input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
-        model = tf.keras.models.Model(inputs=[input_layer_seq, input_layer_static],
-                                      outputs=[output_layer])
+                        hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
+                            units=size,
+                            return_sequences=False))(input_layer_seq)
 
-        model.compile(loss='binary_crossentropy',
-                      optimizer='adam',
-                      metrics=['accuracy'])
-        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
-                                                              monitor='val_loss',
-                                                              verbose=0,
-                                                              save_best_only=True,
-                                                              save_weights_only=False,
-                                                              mode='auto')
+                        concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
 
-        lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
-                                                          factor=0.5,
-                                                          patience=10,
-                                                          verbose=0,
-                                                          mode='auto',
-                                                          min_delta=0.0001,
-                                                          cooldown=0,
-                                                          min_lr=0)
+                        # Output layer
+                        output_layer = tf.keras.layers.Dense(1,
+                                                             activation='sigmoid',
+                                                             name='output_layer')(concatenate_layer)
 
-        model.summary()
-        model.fit([x_train_seq, x_train_stat], y_train,
-                  validation_split=0.1,
-                  verbose=1,
-                  callbacks=[early_stopping, model_checkpoint, lr_reducer],
-                  batch_size=16,
-                  epochs=100)
+                        model = tf.keras.models.Model(inputs=[input_layer_seq, input_layer_static],
+                                                      outputs=[output_layer])
+
+                        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+
+                        model.compile(loss='binary_crossentropy',
+                                      optimizer=opt,
+                                      metrics=['accuracy'])
+                        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+                        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                                              monitor='val_loss',
+                                                                              verbose=0,
+                                                                              save_best_only=True,
+                                                                              save_weights_only=False,
+                                                                              mode='auto')
+
+                        lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                                          factor=0.5,
+                                                                          patience=10,
+                                                                          verbose=0,
+                                                                          mode='auto',
+                                                                          min_delta=0.0001,
+                                                                          cooldown=0,
+                                                                          min_lr=0)
+
+                        model.summary()
+                        model.fit([x_train_seq, x_train_stat], y_train,
+                                  validation_data=([x_val_seq, x_val_stat], y_val),
+                                  verbose=1,
+                                  callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                                  batch_size=batch_size,
+                                  epochs=100)
+
+                        preds_proba = model.predict([x_val_seq, x_val_stat])
+                        preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+
+                        auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                        aucs.append(auc)
+
+                        if auc >= max(aucs):
+                            best_model = model
+                            best_hpos = {"size": size, "learning_rate": learning_rate, "batch_size": batch_size}
+
+                f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+                f.write(str(best_hpos))
+                f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+                f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+                f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+                f.close()
+
+                return best_model, best_hpos
+
+            else:
+                # Input layer
+                input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
+                input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
+
+                hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
+                    units=n_hidden,
+                    return_sequences=False))(input_layer_seq)
+
+                concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
+
+                # Output layer
+                output_layer = tf.keras.layers.Dense(1,
+                                                     activation='sigmoid',
+                                                     name='output_layer')(concatenate_layer)
+
+                model = tf.keras.models.Model(inputs=[input_layer_seq, input_layer_static],
+                                              outputs=[output_layer])
+
+                model.compile(loss='binary_crossentropy',
+                              optimizer='adam',
+                              metrics=['accuracy'])
+                early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+                model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                                      monitor='val_loss',
+                                                                      verbose=0,
+                                                                      save_best_only=True,
+                                                                      save_weights_only=False,
+                                                                      mode='auto')
+
+                lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                                  factor=0.5,
+                                                                  patience=10,
+                                                                  verbose=0,
+                                                                  mode='auto',
+                                                                  min_delta=0.0001,
+                                                                  cooldown=0,
+                                                                  min_lr=0)
+
+                model.summary()
+                model.fit([x_train_seq, x_train_stat], y_train,
+                          validation_split=0.1,
+                          verbose=1,
+                          callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                          batch_size=32,
+                          epochs=100)
+
+                return model
 
     if mode == "static":
-        # Input layer
-        input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
-        # Output layer
-        output_layer = tf.keras.layers.Dense(1,
-                                             activation='sigmoid',
-                                             name='output_layer')(input_layer_static)
+        if hpo:
+            best_model = ""
+            best_hpos = ""
+            aucs = []
 
-        model = tf.keras.models.Model(inputs=[input_layer_static],
-                                      outputs=[output_layer])
+            for learning_rate in hpos["complete"]["learning_rate"]:
+                for batch_size in hpos["complete"]["batch_size"]:
 
-        model.compile(loss='binary_crossentropy',
-                      optimizer='Adam',
-                      metrics=['accuracy'])
-        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
-                                                              monitor='val_loss',
+                    # Input layer
+                    input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
+
+                    # Output layer
+                    output_layer = tf.keras.layers.Dense(1,
+                                                         activation='sigmoid',
+                                                         name='output_layer')(input_layer_static)
+
+                    model = tf.keras.models.Model(inputs=[input_layer_static],
+                                                  outputs=[output_layer])
+
+                    opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+
+                    model.compile(loss='binary_crossentropy',
+                                  optimizer=opt,
+                                  metrics=['accuracy'])
+                    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+                    model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                                          monitor='val_loss',
+                                                                          verbose=0,
+                                                                          save_best_only=True,
+                                                                          save_weights_only=False,
+                                                                          mode='auto')
+
+                    lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                                      factor=0.5,
+                                                                      patience=10,
+                                                                      verbose=0,
+                                                                      mode='auto',
+                                                                      min_delta=0.0001,
+                                                                      cooldown=0,
+                                                                      min_lr=0)
+
+                    model.summary()
+                    model.fit([x_train_stat], y_train,
+                              validation_data=([x_val_seq, x_val_stat], y_val),
+                              verbose=1,
+                              callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                              batch_size=batch_size,
+                              epochs=100)
+
+                    preds_proba = model.predict([x_val_seq, x_val_stat])
+                    preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+
+                    auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                    aucs.append(auc)
+
+                    if auc >= max(aucs):
+                        best_model = model
+                        best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size}
+
+                f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+                f.write(str(best_hpos))
+                f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+                f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+                f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+                f.close()
+
+                return best_model, best_hpos
+
+        else:
+            # Input layer
+            input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
+
+            # Output layer
+            output_layer = tf.keras.layers.Dense(1,
+                                                 activation='sigmoid',
+                                                 name='output_layer')(input_layer_static)
+
+            model = tf.keras.models.Model(inputs=[input_layer_static],
+                                          outputs=[output_layer])
+
+            model.compile(loss='binary_crossentropy',
+                          optimizer='adam',
+                          metrics=['accuracy'])
+            early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+            model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                                  monitor='val_loss',
+                                                                  verbose=0,
+                                                                  save_best_only=True,
+                                                                  save_weights_only=False,
+                                                                  mode='auto')
+
+            lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                              factor=0.5,
+                                                              patience=10,
                                                               verbose=0,
-                                                              save_best_only=True,
-                                                              save_weights_only=False,
-                                                              mode='auto')
+                                                              mode='auto',
+                                                              min_delta=0.0001,
+                                                              cooldown=0,
+                                                              min_lr=0)
 
-        lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
-                                                          factor=0.5,
-                                                          patience=10,
-                                                          verbose=0,
-                                                          mode='auto',
-                                                          min_delta=0.0001,
-                                                          cooldown=0,
-                                                          min_lr=0)
+            model.summary()
+            model.fit([x_train_stat], y_train,
+                      validation_split=0.1,
+                      verbose=1,
+                      callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                      batch_size=32,
+                      epochs=100)
 
-        model.summary()
-        model.fit([x_train_stat], y_train,
-                  validation_split=0.1,
-                  verbose=1,
-                  callbacks=[early_stopping, model_checkpoint, lr_reducer],
-                  batch_size=16,
-                  epochs=100)
+            return model
 
     if mode == "sequential":
-        # Input layer
-        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
 
-        # Hidden layer
-        hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
-            units=n_hidden,
-            return_sequences=False))(input_layer_seq)
+        if hpo:
+            best_model = ""
+            best_hpos = ""
+            aucs = []
 
-        # Output layer
-        output_layer = tf.keras.layers.Dense(1,
-                                             activation='sigmoid',
-                                             name='output_layer')(hidden_layer)
+            for size in hpos["compete"]["size"]:
+                for learning_rate in hpos["complete"]["learning_rate"]:
+                    for batch_size in hpos["complete"]["batch_size"]:
 
-        model = tf.keras.models.Model(inputs=[input_layer_seq],
-                                      outputs=[output_layer])
+                        # Input layer
+                        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
 
-        model.compile(loss='binary_crossentropy',
-                      optimizer='nadam',
-                      metrics=['accuracy'])
-        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
-                                                              monitor='val_loss',
+                        # Hidden layer
+                        hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
+                            units=size,
+                            return_sequences=False))(input_layer_seq)
+
+                        # Output layer
+                        output_layer = tf.keras.layers.Dense(1,
+                                                             activation='sigmoid',
+                                                             name='output_layer')(hidden_layer)
+
+                        model = tf.keras.models.Model(inputs=[input_layer_seq],
+                                                      outputs=[output_layer])
+
+                        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+
+                        model.compile(loss='binary_crossentropy',
+                                      optimizer=opt,
+                                      metrics=['accuracy'])
+
+                        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+                        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                                              monitor='val_loss',
+                                                                              verbose=0,
+                                                                              save_best_only=True,
+                                                                              save_weights_only=False,
+                                                                              mode='auto')
+
+                        lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                                          factor=0.5,
+                                                                          patience=10,
+                                                                          verbose=0,
+                                                                          mode='auto',
+                                                                          min_delta=0.0001,
+                                                                          cooldown=0,
+                                                                          min_lr=0)
+
+                        model.summary()
+                        model.fit([x_train_seq], y_train,
+                                  validation_data=([x_val_seq, x_val_stat], y_val),
+                                  verbose=1,
+                                  callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                                  batch_size=batch_size,
+                                  epochs=100)
+
+                        preds_proba = model.predict([x_val_seq, x_val_stat])
+                        preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+
+                        auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                        aucs.append(auc)
+
+                        if auc >= max(aucs):
+                            best_model = model
+                            best_hpos = {"size": size, "learning_rate": learning_rate, "batch_size": batch_size}
+
+                    f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+                    f.write(str(best_hpos))
+                    f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+                    f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+                    f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+                    f.close()
+
+                    return best_model, best_hpos
+
+        else:
+
+            # Input layer
+            input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
+
+            # Hidden layer
+            hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
+                units=n_hidden,
+                return_sequences=False))(input_layer_seq)
+
+            # Output layer
+            output_layer = tf.keras.layers.Dense(1,
+                                                 activation='sigmoid',
+                                                 name='output_layer')(hidden_layer)
+
+            model = tf.keras.models.Model(inputs=[input_layer_seq],
+                                          outputs=[output_layer])
+
+            model.compile(loss='binary_crossentropy',
+                          optimizer='adam',
+                          metrics=['accuracy'])
+            early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+            model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                                  monitor='val_loss',
+                                                                  verbose=0,
+                                                                  save_best_only=True,
+                                                                  save_weights_only=False,
+                                                                  mode='auto')
+
+            lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                              factor=0.5,
+                                                              patience=10,
                                                               verbose=0,
-                                                              save_best_only=True,
-                                                              save_weights_only=False,
-                                                              mode='auto')
+                                                              mode='auto',
+                                                              min_delta=0.0001,
+                                                              cooldown=0,
+                                                              min_lr=0)
 
-        lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
-                                                          factor=0.5,
-                                                          patience=10,
-                                                          verbose=0,
-                                                          mode='auto',
-                                                          min_delta=0.0001,
-                                                          cooldown=0,
-                                                          min_lr=0)
+            model.summary()
+            model.fit([x_train_seq], y_train,
+                      validation_split=0.1,
+                      verbose=1,
+                      callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                      batch_size=32,
+                      epochs=100)
 
-        model.summary()
-        model.fit([x_train_seq], y_train,
-                  validation_split=0.1,
-                  verbose=1,
-                  callbacks=[early_stopping, model_checkpoint, lr_reducer],
-                  batch_size=16,
-                  epochs=100)
-
-    return model
+            return model
 
 
 def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_time_vals=None):
@@ -486,19 +716,19 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                                                                 ts_info=True)
 
         if mode == "complete":
-            model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
+            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo, mode)
             preds_proba = model.predict([X_test_seq, X_test_stat])
             results['preds'] = [int(round(pred[0])) for pred in preds_proba]
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "static":
-            model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
+            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo, mode)
             preds_proba = model.predict([X_test_stat])
             results['preds'] = [int(round(pred[0])) for pred in preds_proba]
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "sequential":
-            model = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), mode)
+            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo, mode)
             preds_proba = model.predict([X_test_seq])
             results['preds'] = [int(round(pred[0])) for pred in preds_proba]
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
@@ -665,9 +895,9 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 hpos = {
-        "complete": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
-        "sequential": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
-        "static": {"size": [8, 32, 64], "learning rate": [0.001, 0.005, 0.01, 0.05], "batch size": [32, 64, 256]},
+        "complete": {"size": [8, 32, 64], "learning_rate": [0.001, 0.005, 0.01, 0.05], "batch_size": [32, 64, 256]},
+        "sequential": {"size": [8, 32, 64], "learning_rate": [0.001, 0.005, 0.01, 0.05], "batch_size": [32, 64, 256]},
+        "static": {"learning_rate": [0.001, 0.005, 0.01, 0.05], "batch_size": [32, 64, 256]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs", "sag", "newton-cg"]},
         "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
         # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
@@ -678,7 +908,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['ada']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+    for mode in ['complete']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
         for target_activity in ['Release A']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few
