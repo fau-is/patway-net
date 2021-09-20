@@ -429,13 +429,13 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
                     model.summary()
                     model.fit([x_train_stat], y_train,
-                              validation_data=([x_val_seq, x_val_stat], y_val),
+                              validation_data=([x_val_stat], y_val),
                               verbose=1,
                               callbacks=[early_stopping, model_checkpoint, lr_reducer],
                               batch_size=batch_size,
                               epochs=100)
 
-                    preds_proba = model.predict([x_val_seq, x_val_stat])
+                    preds_proba = model.predict([x_val_stat])
                     preds_proba = [pred_proba[0] for pred_proba in preds_proba]
 
                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
