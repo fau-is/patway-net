@@ -82,13 +82,42 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_lr(x_train_seq, x_train_stat, y_train):
-    x_concat = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+def train_lasso(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+    x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+    x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
 
-    model = LogisticRegression()
-    model.fit(x_concat, np.ravel(y_train))
+    if hpo:
+        best_model = ""
+        best_hpos = ""
+        aucs = []
 
-    return model
+        for alpha in hpos["lasso"]["reg_strength"]:
+
+            model = Lasso(alpha=alpha)
+            model.fit(x_concat_train, np.ravel(y_train))
+            preds_proba = model.predict_proba(x_concat_val)
+            preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+            auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+            aucs.append(auc)
+
+            if auc >= max(aucs):
+                best_model = model
+                best_hpos = {"alpha": alpha}
+
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f.write(str(best_hpos))
+        f.close()
+
+        return best_model, best_hpos
+
+    else:
+        x_concat = np.concatenate((x_concat_train, x_concat_val), axis=0)
+        y = np.concatenate((y_train, y_val), axis=0)
+
+        model = Lasso()
+        model.fit(x_concat, np.ravel(y))
+
+        return model
 
 
 def train_lstm(x_train_seq, x_train_stat, y_train, mode="complete"):
@@ -348,8 +377,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
-        elif mode == "lr":
-            model = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1))
+        elif mode == "lasso":
+            model = train_lasso(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -498,7 +527,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['rf']:  # static, complete, sequential, 'lasso', 'ridge', 'rf', 'svm',
+    for mode in ['lasso']:  # static, complete, sequential, 'lasso', 'ridge', 'rf', 'svm',
         for target_activity in ['Release A']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few
