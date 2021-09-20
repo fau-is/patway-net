@@ -326,63 +326,63 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             best_model = model
                             best_hpos = {"size": size, "learning_rate": learning_rate, "batch_size": batch_size}
 
-                f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-                f.write(str(best_hpos))
-                f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
-                f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
-                f.write(f'Std,{np.std(aucs, ddof=1)}\n')
-                f.close()
+            f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+            f.write(str(best_hpos))
+            f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+            f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+            f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+            f.close()
 
-                return best_model, best_hpos
+            return best_model, best_hpos
 
-            else:
-                # Input layer
-                input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
-                input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
+        else:
+            # Input layer
+            input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
+            input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
-                hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
-                    units=n_hidden,
-                    return_sequences=False))(input_layer_seq)
+            hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
+                units=n_hidden,
+                return_sequences=False))(input_layer_seq)
 
-                concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
+            concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
 
-                # Output layer
-                output_layer = tf.keras.layers.Dense(1,
-                                                     activation='sigmoid',
-                                                     name='output_layer')(concatenate_layer)
+            # Output layer
+            output_layer = tf.keras.layers.Dense(1,
+                                                 activation='sigmoid',
+                                                 name='output_layer')(concatenate_layer)
 
-                model = tf.keras.models.Model(inputs=[input_layer_seq, input_layer_static],
-                                              outputs=[output_layer])
+            model = tf.keras.models.Model(inputs=[input_layer_seq, input_layer_static],
+                                          outputs=[output_layer])
 
-                model.compile(loss='binary_crossentropy',
-                              optimizer='adam',
-                              metrics=['accuracy'])
-                early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-                model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
-                                                                      monitor='val_loss',
-                                                                      verbose=0,
-                                                                      save_best_only=True,
-                                                                      save_weights_only=False,
-                                                                      mode='auto')
-
-                lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
-                                                                  factor=0.5,
-                                                                  patience=10,
+            model.compile(loss='binary_crossentropy',
+                          optimizer='adam',
+                          metrics=['accuracy'])
+            early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+            model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                                                                  monitor='val_loss',
                                                                   verbose=0,
-                                                                  mode='auto',
-                                                                  min_delta=0.0001,
-                                                                  cooldown=0,
-                                                                  min_lr=0)
+                                                                  save_best_only=True,
+                                                                  save_weights_only=False,
+                                                                  mode='auto')
 
-                model.summary()
-                model.fit([x_train_seq, x_train_stat], y_train,
-                          validation_split=0.1,
-                          verbose=1,
-                          callbacks=[early_stopping, model_checkpoint, lr_reducer],
-                          batch_size=32,
-                          epochs=100)
+            lr_reducer = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                              factor=0.5,
+                                                              patience=10,
+                                                              verbose=0,
+                                                              mode='auto',
+                                                              min_delta=0.0001,
+                                                              cooldown=0,
+                                                              min_lr=0)
 
-                return model
+            model.summary()
+            model.fit([x_train_seq, x_train_stat], y_train,
+                      validation_split=0.1,
+                      verbose=1,
+                      callbacks=[early_stopping, model_checkpoint, lr_reducer],
+                      batch_size=32,
+                      epochs=100)
+
+            return model
 
     if mode == "static":
 
@@ -445,14 +445,14 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                         best_model = model
                         best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size}
 
-                f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-                f.write(str(best_hpos))
-                f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
-                f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
-                f.write(f'Std,{np.std(aucs, ddof=1)}\n')
-                f.close()
+            f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+            f.write(str(best_hpos))
+            f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+            f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+            f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+            f.close()
 
-                return best_model, best_hpos
+            return best_model, best_hpos
 
         else:
             # Input layer
@@ -503,7 +503,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             best_hpos = ""
             aucs = []
 
-            for size in hpos["compete"]["size"]:
+            for size in hpos["complete"]["size"]:
                 for learning_rate in hpos["complete"]["learning_rate"]:
                     for batch_size in hpos["complete"]["batch_size"]:
 
@@ -564,14 +564,14 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             best_model = model
                             best_hpos = {"size": size, "learning_rate": learning_rate, "batch_size": batch_size}
 
-                    f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-                    f.write(str(best_hpos))
-                    f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
-                    f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
-                    f.write(f'Std,{np.std(aucs, ddof=1)}\n')
-                    f.close()
+            f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+            f.write(str(best_hpos))
+            f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+            f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+            f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+            f.close()
 
-                    return best_model, best_hpos
+            return best_model, best_hpos
 
         else:
 
@@ -908,7 +908,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['complete']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+    for mode in ['static']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
         for target_activity in ['Release A']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few

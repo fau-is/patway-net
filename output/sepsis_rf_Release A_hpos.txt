@@ -1,1 +1,0 @@
-{'num_trees': 500, 'max_depth_trees': 10, 'num_rand_vars': 10}
