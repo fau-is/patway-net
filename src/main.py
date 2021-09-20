@@ -32,7 +32,7 @@ val_size = 0.1
 train_size = 0.8
 
 
-hpo = False
+hpo = True
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
@@ -54,7 +54,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
             for max_depth_trees in hpos["rf"]["max_depth_trees"]:
                 for num_rand_vars in hpos["rf"]["num_rand_vars"]:
 
-                    model = RandomForestClassifier(num_trees=num_trees, max_depth_trees=max_depth_trees, num_rand_vars=num_rand_vars)
+                    model = RandomForestClassifier(n_estimators=num_trees, max_depth=max_depth_trees, max_features=num_rand_vars)
                     model.fit(x_concat_train, y_train)
                     preds_proba = model.predict([x_concat_val])
 
