@@ -25,7 +25,7 @@ n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "complete"  # complete; static; sequential; dt, lr
 val_size = 0.1
 train_size = 0.8
@@ -879,9 +879,9 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                 except:
                     pass
 
-    X_seq = np.concatenate((X_train_seq, X_test_seq), axis=0)
-    X_stat = np.concatenate((X_train_stat, X_test_stat), axis=0)
-    y = np.concatenate((y_train, y_test), axis=0)
+    X_seq = np.concatenate((X_train_seq, X_val_seq, X_test_seq), axis=0)
+    X_stat = np.concatenate((X_train_stat, X_val_stat, X_test_stat), axis=0)
+    y = np.concatenate((y_train, y_val, y_test), axis=0)
 
     return X_seq, X_stat, y, best_hpos_repetitions
 
@@ -904,9 +904,9 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 hpos = {
-        "complete": {"size": [8, 32, 64], "learning_rate": [0.001, 0.005, 0.01, 0.05], "batch_size": [32, 64, 256]},
-        "sequential": {"size": [8, 32, 64], "learning_rate": [0.001, 0.005, 0.01, 0.05], "batch_size": [32, 64, 256]},
-        "static": {"learning_rate": [0.001, 0.005, 0.01, 0.05], "batch_size": [32, 64, 256]},
+        "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
+        "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
+        "static": {"learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs", "sag", "newton-cg"]},
         "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
         # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
@@ -917,8 +917,8 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['complete']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
-        for target_activity in ['Release A']:  # 'Release A', 'Admission NC'
+    for mode in ['complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+        for target_activity in ['Release A', 'Admission NC']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few
             # Release A: dt better
