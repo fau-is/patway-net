@@ -25,7 +25,7 @@ n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 10
+num_repetitions = 1
 mode = "complete"  # complete; static; sequential; dt, lr
 val_size = 0.1
 train_size = 0.8
@@ -377,7 +377,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
             model.summary()
             model.fit([x_train_seq, x_train_stat], y_train,
-                      validation_split=0.1,
+                      validation_data=([x_val_seq, x_val_stat], y_val),
                       verbose=1,
                       callbacks=[early_stopping, model_checkpoint, lr_reducer],
                       batch_size=hpos['batch_size'],
@@ -490,7 +490,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
             model.summary()
             model.fit([x_train_stat], y_train,
-                      validation_split=0.1,
+                      validation_data=([x_val_seq, x_val_stat], y_val),
                       verbose=1,
                       callbacks=[early_stopping, model_checkpoint, lr_reducer],
                       batch_size=hpos['batch_size'],
@@ -616,7 +616,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
             model.summary()
             model.fit([x_train_seq], y_train,
-                      validation_split=0.1,
+                      validation_data=([x_val_seq, x_val_stat], y_val),
                       verbose=1,
                       callbacks=[early_stopping, model_checkpoint, lr_reducer],
                       batch_size=hpos['batch_size'],
@@ -879,15 +879,11 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                 except:
                     pass
 
-    X_seq = np.concatenate((X_train_seq, X_val_seq, X_test_seq), axis=0)
-    X_stat = np.concatenate((X_train_stat, X_val_stat, X_test_stat), axis=0)
-    y = np.concatenate((y_train, y_val, y_test), axis=0)
-
-    return X_seq, X_stat, y, best_hpos_repetitions
+    return X_train_seq, X_stat, y_train, X_val_seq, X_val_stat, y_val, best_hpos_repetitions
 
 
-def run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features, best_hpos_repetitions):
-    model = train_lstm(x_seqs_final, x_statics_final, y_final, False, False, False, best_hpos_repetitions, False, mode="complete")
+def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions):
+    model = train_lstm(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions, False, mode="complete")
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
     output_names = static_features
 
@@ -917,7 +913,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+    for mode in ['complete']:  # 'static', 'sequential', 'lr', 'rf', 'gb', 'ada']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
         for target_activity in ['Release A', 'Admission NC']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few
@@ -932,18 +928,18 @@ if data_set == "sepsis":
 
 
             # Run eval on cuts to plot results --> Figure 1
-            x_seqs_final, x_statics_final, y_final, best_hpos_repetitions = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
+            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
                                                                      data_set, hpos, hpo, x_time_vals_final)
 
             if mode == "complete":
                 # Train model and plot linear coeff --> Figure 2
-                model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features, best_hpos_repetitions)
+                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions)
 
                 # Get Explanations for LSTM inputs --> Figure 3
-                explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
-                shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+                explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
+                shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
 
-                seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
+                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
                                        columns=seq_features)
                 seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
                                          columns=[f'SHAP {x}' for x in seq_features])

@@ -5,7 +5,7 @@ import numpy as np
 
 
 def get_sepsis_data(target_activity, max_len, min_len):
-    ds_path = '../data/Sepsis Cases - Event Log.csv'
+    ds_path = '../data/Sepsis Cases - Event Log_sub.csv'
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
