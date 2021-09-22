@@ -25,7 +25,7 @@ n_hidden = 8
 max_len = 20  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "complete"  # complete; static; sequential; dt, lr
 val_size = 0.1
 train_size = 0.8
@@ -879,7 +879,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                 except:
                     pass
 
-    return X_train_seq, X_stat, y_train, X_val_seq, X_val_stat, y_val, best_hpos_repetitions
+    return X_train_seq, X_train_stat, y_train, X_val_seq, X_val_stat, y_val, best_hpos_repetitions
 
 
 def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions):
@@ -913,7 +913,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['complete']:  # 'static', 'sequential', 'lr', 'rf', 'gb', 'ada']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+    for mode in ['complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
         for target_activity in ['Release A', 'Admission NC']:  # 'Release A', 'Admission NC'
 
             # Admission IC: Very good; few
