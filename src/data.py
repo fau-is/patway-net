@@ -103,7 +103,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
 
 def get_mimic_data(target, max_len, min_len):
 
-    ds_path = '../data/mimic_admission_activities_cleaned_final.csv'
+    ds_path = '../data/mimic_admission_activities_cleaned_short_final.csv'
 
 
     static_bin_features = ['diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
@@ -140,21 +140,21 @@ def get_mimic_data(target, max_len, min_len):
     # ids_dic = dict(zip(df['id'].unique(), [0] * len(df['id'].unique())))
 
     # sort case id by timestamp of first event
-    df = df.sort_values(['id', 'time'])
-    df = df.reset_index()
+    # df = df.sort_values(['id', 'time'])
+    # df = df.reset_index()
 
     # remove irrelevant data
-    df = df.drop(columns=['dob', 'dod', 'dod_hosp', 'index'])
+    df = df.drop(columns=['dob', 'dod', 'dod_hosp'])
 
     # time feature
-    df['time'] = pd.to_datetime(df['time'])
+    df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
     cat_features = ['admission_type', 'insurance', 'language', 'marital_status', 'religion', 'ethnicity', 'gender']
 
     # cat features
-    # for cat_feature in cat_features:
-        # mapping = dict(zip(df[cat_feature].unique(), np.arange(len(df[cat_feature].unique()))))  # ordinal encoding
-        # df[cat_feature] = df[cat_feature].apply(lambda x: mapping[x])
-        # df[cat_feature] = df[cat_feature].apply(lambda x: x / max(df[cat_feature]))  # normalise ordinal encoding
+    for cat_feature in cat_features:
+        mapping = dict(zip(df[cat_feature].unique(), np.arange(len(df[cat_feature].unique()))))  # ordinal encoding
+        df[cat_feature] = df[cat_feature].apply(lambda x: mapping[x])
+        df[cat_feature] = df[cat_feature].apply(lambda x: x / max(df[cat_feature]))  # normalise ordinal encoding
 
     # num features
     df['age'] = df['age'].fillna(-1)
