@@ -20,7 +20,7 @@ from sklearn.svm import SVC
 import shap
 import src.data as data
 
-data_set = "sepsis"  # sepsis; mimic
+data_set = "mimic"  # sepsis; mimic
 n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
@@ -944,37 +944,33 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     # MIMIC
-    target_activity = 'Emergency Department Observation'
-    # Emergency Department Observation:
-    # Hematology/Oncology:
-    # Medicine/Cardiology
-    # Transplant
-    # Med/Surg
+    for mode in ['complete']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+        for target_activity in ['LONG TERM CARE HOSPITAL']:
 
-    x_seqs_final, x_statics_final, y_final, seq_features, static_features = data.get_data_mimic(target_activity,
-                                                                                                max_len, min_len)
+            x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_mimic_data(
+                target_activity, max_len, min_len)
 
-    # Run CV on cuts to plot results --> Figure 1
-    evaluate_on_cut(x_seqs_final, x_statics_final, y_final, mode, target_activity, data_set)
 
-    if mode == "complete":
-        # Train model and plot linear coeff --> Figure 2
-        model = run_coefficient(x_seqs_final, x_statics_final, y_final, target_activity, static_features)
+            # Run eval on cuts to plot results --> Figure 1
+            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
+                                                                     data_set, hpos, hpo, x_time_vals_final)
 
-        # Get Explanations for LSTM inputs --> Figure 3
-        explainer = shap.DeepExplainer(model, [x_seqs_final, x_statics_final])
-        shap_values = explainer.shap_values([x_seqs_final, x_statics_final])
+            if mode == "complete":
+                # Train model and plot linear coeff --> Figure 2
+                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions)
 
-        seqs_df = pd.DataFrame(data=x_seqs_final.reshape(-1, len(seq_features)),
-                               columns=seq_features)
-        seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                                 columns=[f'SHAP {x}' for x in seq_features])
-        seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+                # Get Explanations for LSTM inputs --> Figure 3
+                explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
+                shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
 
-        with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
-            pickle.dump(seq_value_shape, f)
+                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
+                                       columns=seq_features)
+                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                         columns=[f'SHAP {x}' for x in seq_features])
+                seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
 
-        # compute_shap_summary_plot(seq_value_shape, data_set)
+                with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
+                    pickle.dump(seq_value_shape, f)
 
 else:
     print("Data set not available!")

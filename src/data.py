@@ -101,98 +101,73 @@ def get_sepsis_data(target_activity, max_len, min_len):
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
 
 
-def get_data_mimic(target, max_len, min_len):
-    def cut_at_target(l):
-        try:
-            target_index = l.index(target) + 1
-        except:
-            target_index = None
-        return l[:target_index]
+def get_mimic_data(target, max_len, min_len):
 
-    static_features = ['gender', 'anchor_age']
+    ds_path = '../data/mimic_admission_activities_cleaned_final.csv'
 
-    seq_features = ['Neurology', 'Vascular', 'Medicine', 'PACU', 'Cardiac Surgery', 'Thoracic Surgery',
-                    'Labor & Delivery',
-                    'Surgery/Trauma', 'Trauma SICU TSICU', 'Med/Surg', 'Hematology/Oncology', 'Transplant',
-                    'Nursery , Well Babies',
-                    'Surgery', 'Med/Surg/Trauma', 'Psychiatry', 'Med/Surg/GYN', 'Observation',
-                    'Surgical ensive Care Unit SICU',
-                    'Medical/Surgical Gynecology', 'Medical ensive Care Unit MICU', 'Medicine/Cardiology',
-                    'Coronary Care Unit CCU',
-                    'Surgery/Pancreatic/Biliary/Bariatric', 'Medical/Surgical ensive Care Unit MICU/SICU',
-                    'Neonatal ensive Care Unit NICU',
-                    'Emergency Department Observation', 'Cardiac Vascular ensive Care Unit CVICU',
-                    'Obstetrics Postpartum & Antepartum',
-                    'Unknown', 'Special Care Nursery SCN', 'Neuro Surgical ensive Care Unit Neuro SICU',
-                    'Neuro Stepdown',
-                    'Obstetrics Antepartum', 'Cardiology', 'Obstetrics Postpartum', 'Medicine/Cardiology ermediate',
-                    'Neuro ermediate', 'Hematology/Oncology ermediate', 'Surgery/Vascular/ermediate',
-                    'Cardiology Surgery ermediate']
 
-    df = pd.read_csv('../data/transfers.csv.gz')
+    static_bin_features = ['diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
+                       'diagnosis_CORONARY ARTERY DISEASE', 'diagnosis_CONGESTIVE HEART FAILURE',
+                       'diagnosis_CHEST PAIN', 'diagnosis_GASTROINTESTINAL BLEED',
+                       'diagnosis_INTRACRANIAL HEMORRHAGE', 'diagnosis_ALTERED MENTAL STATUS',
+                       'diagnosis_FEVER', 'diagnosis_ABDOMINAL PAIN',
+                       'diagnosis_UPPER GI BLEED',
+                       'diagnosis_CORONARY ARTERY DISEASE\CORONARY ARTERY BYPASS GRAFT /SDA',
+                       'diagnosis_STROKE', 'diagnosis_HYPOTENSION']
 
-    df = df[~pd.isnull(df.careunit)]
-    df = df[df.eventtype == 'admit']
+    static_features = ['ethnicity', 'gender', 'language']
 
-    carunit2ind = dict(zip(df.careunit.unique(), range(len(df.careunit.unique()))))
-    ind2carunit = dict(zip(range(len(df.careunit.unique())), df.careunit.unique()))
-    max_index = len(df.careunit.unique()) + 1
+    seq_act_features = ['PHYS REFERRAL/NORMAL DELI', 'HOME', 'EMERGENCY ROOM ADMIT', 'SNF',
+                        'HOME WITH HOME IV PROVIDR', 'HOME HEALTH CARE', 'DEAD/EXPIRED',
+                        'SHORT TERM HOSPITAL', 'TRANSFER FROM HOSP/EXTRAM', 'REHAB/DISTINCT PART HOSP',
+                        'DISC-TRAN CANCER/CHLDRN H', 'CLINIC REFERRAL/PREMATURE', 'LONG TERM CARE HOSPITAL',
+                        'DISC-TRAN TO FEDERAL HC', 'HOSPICE-MEDICAL FACILITY', 'LEFT AGAINST MEDICAL ADVI',
+                        'HOSPICE-HOME', 'TRANSFER FROM OTHER HEALT', 'DISCH-TRAN TO PSYCH HOSP',
+                        'TRANSFER FROM SKILLED NUR', 'HMO REFERRAL/SICK', '** INFO NOT AVAILABLE **',
+                        'OTHER FACILITY', 'ICF', 'SNF-MEDICAID ONLY CERTIF', 'TRSF WITHIN THIS FACILITY']
 
-    subj_id_to_seq = df.groupby(by='subject_id').agg({'careunit': list})
+    seq_features = ['admission_type', 'insurance', 'marital_status', 'religion', 'age', 'age_dead']
 
-    subj_id_to_seq['careunit'] = subj_id_to_seq.careunit.apply(cut_at_target)
-    subj_id_to_seq['len'] = subj_id_to_seq.careunit.apply(lambda x: len(x))
-    subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len >= min_len]
-    subj_id_to_seq = subj_id_to_seq[subj_id_to_seq.len <= max_len]
+    int2act = dict(zip(range(len(seq_act_features)), seq_act_features))
 
-    subj_id_to_seq['y'] = subj_id_to_seq.careunit.apply(lambda x: 1 if x[-1] == target else 0)
-    subj_id_to_seq['careunit'] = subj_id_to_seq.careunit.apply(lambda x: x[:-1])
+    static_features = static_features + static_bin_features
+    seq_features = seq_features + seq_act_features
 
-    df = pd.read_csv('../data/patients.csv.gz')
+    # pre-processing
+    df = pd.read_csv(ds_path)
 
-    subj_id_to_stat = df.groupby(by='subject_id').agg({'gender': 'first', 'anchor_age': 'mean'})
+    # ids = df['id'].unique()
+    # ids_dic = dict(zip(df['id'].unique(), [0] * len(df['id'].unique())))
 
-    Xy = subj_id_to_seq.join(subj_id_to_stat)
+    # sort case id by timestamp of first event
+    df = df.sort_values(['id', 'time'])
+    df = df.reset_index()
 
-    x_seqs = pd.DataFrame(Xy.careunit.tolist())
-    x_seqs = x_seqs.fillna(max_index - 1)
-    for c in x_seqs.columns:
-        x_seqs[c] = x_seqs[c].replace(carunit2ind)
+    # remove irrelevant data
+    df = df.drop(columns=['dob', 'dod', 'dod_hosp', 'index'])
 
-    x_seqs_ext = np.zeros((len(x_seqs), max_len, max_index), dtype=np.float32)
+    # time feature
+    df['time'] = pd.to_datetime(df['time'])
+    cat_features = ['admission_type', 'insurance', 'language', 'religion', 'marital_status', 'religion', 'ethnicity', 'gender']
 
-    for c in x_seqs.columns:
-        x_seqs_ext[:, c, :] = np.eye(max_index)[x_seqs[c]]
+    # cat features
+    for cat_feature in cat_features:
+        mapping = dict(zip(df[cat_feature].unique(), np.arange(len(df[cat_feature].unique()))))  # ordinal encoding
+        df[cat_feature] = df[cat_feature].apply(lambda x: mapping[x])
+        # df[cat_feature] = df[cat_feature].apply(lambda x: x / max(df[cat_feature]))  # normalise ordinal encoding
 
-    x_seqs_ext = x_seqs_ext[:, :, :-1]
+    # num features
+    df['age'] = df['age'].fillna(-1)
+    df['age_dead'] = df['age_dead'].fillna(-1)
+    df['age'] = df['age'].apply(lambda x: x / max(df['age']))
+    df['age_dead'] = df['age_dead'].apply(lambda x: x / max(df['age_dead']))
 
-    Xy['gender'] = Xy['gender'].apply(lambda x: 1 if x == 'F' else 0)
-    Xy['anchor_age'] = RobustScaler().fit_transform(Xy['anchor_age'].values.reshape(-1, 1))
-    x_static = Xy[['gender', 'anchor_age']].values
+    # bin features
+    bin_features = static_bin_features
 
-    y = Xy['y'].values.reshape(-1, 1)
+    print(0)
 
-    # create lists
-    x_seqs_, x_stats_, y_ = [], [], []
 
-    for idx in range(0, x_seqs_ext.shape[0]):
-        x_seqs_temp = []
-        for idx_ts in range(0, x_seqs_ext.shape[1]):
-            x_seqs_temp.append(x_seqs_ext[idx, idx_ts, :])
-        x_seqs_.append(x_seqs_temp)
+    # return x_seqs_, x_stats_, y_, seq_features, static_features
 
-    for idx in range(0, x_static.shape[0]):
-        x_stats_.append(x_static[idx, :])
-    y_ = [i[0] for i in y.tolist()]
-
-    """
-    # create event log
-    f = open(f'../output/mimic_patients_transfers.txt', "w+")
-    f.write('Case ID, Activity, gender, anchor_age\n')
-    for idx in range(0, len(x_seqs_)):
-        for idx_ts in range(0, len(x_seqs_[1])):
-            f.write(f'{idx},{ind2carunit[np.argmax(x_seqs_[idx][idx_ts])]},{x_stats_[idx][0]},{x_stats_[idx][1]}\n')
-    f.close()
-    """
-
-    return x_seqs_, x_stats_, y_, seq_features, static_features
+    return 0
