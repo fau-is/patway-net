@@ -22,7 +22,7 @@ import src.data as data
 
 data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
-max_len = 20  # we cut the extreme cases for runtime
+max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
 num_repetitions = 10
@@ -914,14 +914,7 @@ hpos = {
 if data_set == "sepsis":
 
     for mode in ['complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
-        for target_activity in ['Release A', 'Admission NC']:  # 'Release A', 'Admission NC'
-
-            # Admission IC: Very good; few
-            # Release A: dt better
-            # Release B: good; few
-            # Admission NC: dt better
-
-            # Release C-E: Few samples
+        for target_activity in ['Admission IC']:
 
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
                 target_activity, max_len, min_len)
