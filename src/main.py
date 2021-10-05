@@ -27,7 +27,7 @@ min_len = 3
 seed = False
 num_repetitions = 10
 mode = "complete"  # complete; static; sequential; dt, lr
-val_size = 0.1
+val_size = 0.2
 train_size = 0.8
 
 
