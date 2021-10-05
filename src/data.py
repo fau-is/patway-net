@@ -154,7 +154,8 @@ def get_mimic_data(target, max_len, min_len):
     for cat_feature in cat_features:
         mapping = dict(zip(df[cat_feature].unique(), np.arange(len(df[cat_feature].unique()))))  # ordinal encoding
         df[cat_feature] = df[cat_feature].apply(lambda x: mapping[x])
-        df[cat_feature] = df[cat_feature].apply(lambda x: x / max(df[cat_feature]))  # normalise ordinal encoding
+        max_ = max(df[cat_feature])
+        df[cat_feature] = df[cat_feature].apply(lambda x: x / max_)  # normalise ordinal encoding
 
     # num features
     df['age'] = df['age'].fillna(-1)
