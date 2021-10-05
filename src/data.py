@@ -148,12 +148,12 @@ def get_mimic_data(target, max_len, min_len):
 
     # time feature
     df['time'] = pd.to_datetime(df['time'])
-    cat_features = ['admission_type', 'insurance', 'language', 'religion', 'marital_status', 'religion', 'ethnicity', 'gender']
+    cat_features = ['admission_type', 'insurance', 'language', 'marital_status', 'religion', 'ethnicity', 'gender']
 
     # cat features
-    for cat_feature in cat_features:
-        mapping = dict(zip(df[cat_feature].unique(), np.arange(len(df[cat_feature].unique()))))  # ordinal encoding
-        df[cat_feature] = df[cat_feature].apply(lambda x: mapping[x])
+    # for cat_feature in cat_features:
+        # mapping = dict(zip(df[cat_feature].unique(), np.arange(len(df[cat_feature].unique()))))  # ordinal encoding
+        # df[cat_feature] = df[cat_feature].apply(lambda x: mapping[x])
         # df[cat_feature] = df[cat_feature].apply(lambda x: x / max(df[cat_feature]))  # normalise ordinal encoding
 
     # num features
@@ -164,6 +164,8 @@ def get_mimic_data(target, max_len, min_len):
 
     # bin features
     bin_features = static_bin_features
+    for bin_feature in bin_features:
+        df[bin_feature] = df[bin_feature].fillna(0)
 
     print(0)
 
