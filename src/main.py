@@ -17,6 +17,10 @@ from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+
 import shap
 import src.data as data
 
@@ -29,7 +33,6 @@ num_repetitions = 1
 mode = "complete"  # complete; static; sequential; dt, lr
 val_size = 0.2
 train_size = 0.8
-
 
 hpo = True
 
@@ -252,6 +255,47 @@ def train_ada(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         return model
 
 
+def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+    x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
+    x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
+
+    if hpo:
+        best_model = ""
+        best_hpos = ""
+        aucs = []
+
+        for var_smoothing in hpos["nb"]["var_smoothing"]:
+
+            model = GaussianNB(var_smoothing=var_smoothing)
+            model.fit(x_concat_train, np.ravel(y_train))
+            preds_proba = model.predict_proba(x_concat_val)
+            preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+            auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+            aucs.append(auc)
+
+            if auc >= max(aucs):
+                best_model = model
+                best_hpos = {"var_smoothing": var_smoothing}
+
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f.write(str(best_hpos)+'\n')
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+        f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+        f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+        f.close()
+
+        return best_model, best_hpos
+
+    else:
+        x_concat = np.concatenate((x_concat_train, x_concat_val), axis=0)
+        y = np.concatenate((y_train, y_val), axis=0)
+
+        model = GaussianNB()
+        model.fit(x_concat, np.ravel(y))
+
+        return model
+
+
 def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False, hpo=False, mode="complete"):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
@@ -314,7 +358,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                   verbose=1,
                                   callbacks=[early_stopping, model_checkpoint, lr_reducer],
                                   batch_size=batch_size,
-                                  epochs=100)
+                                  epochs=1)
 
                         preds_proba = model.predict([x_val_seq, x_val_stat])
                         preds_proba = [pred_proba[0] for pred_proba in preds_proba]
@@ -381,7 +425,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                       verbose=1,
                       callbacks=[early_stopping, model_checkpoint, lr_reducer],
                       batch_size=hpos['batch_size'],
-                      epochs=100)
+                      epochs=1)
 
             return model
 
@@ -767,6 +811,25 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
+        elif mode == "nb":
+            model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
+            results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
+
+        elif mode == "dt":
+            model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
+            results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
+
+        elif mode == "knn":
+            model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
+            results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
+
+
         results['gts'] = [int(y) for y in y_test]
         results['ts'] = ts
 
@@ -900,7 +963,8 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 hpos = {
-        "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
+        # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
+        "complete": {"size": [4], "learning_rate": [0.001], "batch_size": [64]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
         "static": {"learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs", "sag", "newton-cg"]},
@@ -908,12 +972,15 @@ hpos = {
         # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
         "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
         "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
-    }
+        "nb": {"var_smoothing": [pow(1, -9)]},
+        "dt": {"max_depth": [5, 10, 15], "min_samples_split": [1, 3, 5, 10]},
+        "knn": {"n_neighbors": [3, 5, 10, 15]}
+}
 
 
 if data_set == "sepsis":
 
-    for mode in ['complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+    for mode in ['complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
         for target_activity in ['Admission IC']:
 
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
@@ -944,8 +1011,14 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     # MIMIC
-    for mode in ['complete']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
+    for mode in ['lr', 'rf']:  # static, complete, sequential, 'lr', 'rf', 'gb', 'ada',
         for target_activity in ['LONG TERM CARE HOSPITAL']:
+            # DEAD/EXPIRED
+            # LONG TERM CARE HOSPITAL
+            # SHORT TERM HOSPITAL
+            # LEFT AGAINST MEDICAL ADVI
+            # HOSPICE-HOME
+            # DISCH-TRAN TO PSYCH HOSP
 
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_mimic_data(
                 target_activity, max_len, min_len)
@@ -959,13 +1032,15 @@ elif data_set == "mimic":
                 # Train model and plot linear coeff --> Figure 2
                 model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions)
 
-                # Get Explanations for LSTM inputs --> Figure 3
-                explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
-                shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
+                num_seq = 100
 
-                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
+                # Get Explanations for LSTM inputs --> Figure 3
+                explainer = shap.DeepExplainer(model, [x_seqs_train[0:num_seq], x_statics_train[0:num_seq]])
+                shap_values = explainer.shap_values([x_seqs_train[0:num_seq], x_statics_train[0:num_seq]])
+
+                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, num_seq),  # len(seq_features)
                                        columns=seq_features)
-                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, num_seq),
                                          columns=[f'SHAP {x}' for x in seq_features])
                 seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
 

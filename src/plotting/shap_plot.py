@@ -49,11 +49,11 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     shap_values = [
-        'SHAP Emergency Department Observation',
-        'SHAP Hematology/Oncology',
-        'SHAP Medicine/Cardiology',
-        'SHAP Transplant',
-        'SHAP Med/Surg'
+        'SHAP admission_type',
+        'SHAP insurance',
+        'SHAP marital_status',
+        'SHAP age',
+        'SHAP age_dead'
     ]
 
 else:
