@@ -24,7 +24,7 @@ from sklearn.tree import DecisionTreeClassifier
 import shap
 import src.data as data
 
-data_set = "mimic"  # sepsis; mimic
+data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
@@ -1031,7 +1031,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
 def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions):
     model = train_lstm(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions, False, mode="complete")
-    output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * n_hidden:]
+    output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * best_hpos_repetitions['size']:]
     output_names = static_features
 
     f = open(f'../output/{data_set}_{mode}_{target_activity}_coef.txt', 'w')
@@ -1116,8 +1116,8 @@ elif data_set == "mimic":
                 # Train model and plot linear coeff --> Figure 2
                 model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions)
 
-                x_seqs_train = x_seqs_train[0:100]
-                x_statics_train = x_statics_train[0:100]
+                x_seqs_train = x_seqs_train[0:300]
+                x_statics_train = x_statics_train[0:300]
 
                 # Get Explanations for LSTM inputs --> Figure 3
                 explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
