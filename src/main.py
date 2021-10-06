@@ -1095,7 +1095,7 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     # MIMIC
-    for mode in ['lr', 'rf']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['LONG TERM CARE HOSPITAL']:
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
@@ -1116,15 +1116,16 @@ elif data_set == "mimic":
                 # Train model and plot linear coeff --> Figure 2
                 model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions)
 
-                num_seq = 100
+                x_seqs_train = x_seqs_train[0:100]
+                x_statics_train = x_statics_train[0:100]
 
                 # Get Explanations for LSTM inputs --> Figure 3
-                explainer = shap.DeepExplainer(model, [x_seqs_train[0:num_seq], x_statics_train[0:num_seq]])
-                shap_values = explainer.shap_values([x_seqs_train[0:num_seq], x_statics_train[0:num_seq]])
+                explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
+                shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
 
-                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, num_seq),  # len(seq_features)
+                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
                                        columns=seq_features)
-                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, num_seq),
+                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
                                          columns=[f'SHAP {x}' for x in seq_features])
                 seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
 

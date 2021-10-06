@@ -1,0 +1,4 @@
+{'var_smoothing': 1.0}
+Validation aucs,0.7600725914461306
+Avg,0.7600725914461306
+Std,nan

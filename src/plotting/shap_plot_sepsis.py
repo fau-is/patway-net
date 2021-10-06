@@ -5,9 +5,9 @@ import seaborn as sns
 import numpy as np
 import pickle
 
-data_set = "sepsis"
+data_set = "mimic"
 mode = "complete"
-target_activity = "Release A"
+target_activity = "LONG TERM CARE HOSPITAL"
 
 
 with open(f'../../output/{data_set}_{mode}_{target_activity}_shap.npy', 'rb') as f: X_all = pickle.load(f)

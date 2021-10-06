@@ -136,13 +136,6 @@ def get_mimic_data(target_activity, max_len, min_len):
     # pre-processing
     df = pd.read_csv(ds_path)
 
-    # ids = df['id'].unique()
-    # ids_dic = dict(zip(df['id'].unique(), [0] * len(df['id'].unique())))
-
-    # sort case id by timestamp of first event
-    # df = df.sort_values(['id', 'time'])
-    # df = df.reset_index()
-
     # remove irrelevant data
     remove_cols = ['dob', 'dod', 'dod_hosp']
     remove_cols = remove_cols + static_bin_features
@@ -167,10 +160,12 @@ def get_mimic_data(target_activity, max_len, min_len):
     _max = max(df['age_dead'])
     df['age_dead'] = df['age_dead'].apply(lambda x: x / _max)
 
+    """
     # bin features
-    # bin_features = static_bin_features
-    # for bin_feature in bin_features:
-    #    df[bin_feature] = df[bin_feature].fillna(0)
+    bin_features = static_bin_features
+    for bin_feature in bin_features:
+        df[bin_feature] = df[bin_feature].fillna(0)
+    """
 
     x_seqs = []
     x_statics = []
@@ -198,7 +193,11 @@ def get_mimic_data(target_activity, max_len, min_len):
                 found_target_flag = True
 
             if after_registration_flag:
-                x_seqs[-1].append(util.get_one_hot_of_activity(x))
+                seq_features_vals = []
+                for seq_feature_ in ['admission_type', 'insurance', 'marital_status', 'age', 'age_dead']:
+                    seq_features_vals.append(x[seq_feature_])
+
+                x_seqs[-1].append(np.array(list(util.get_one_hot_of_activity(x)) + seq_features_vals))
                 x_time_vals[-1].append(x['Complete Timestamp'])
 
         if after_registration_flag:
