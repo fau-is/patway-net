@@ -24,13 +24,13 @@ from sklearn.tree import DecisionTreeClassifier
 import shap
 import src.data as data
 
-data_set = "sepsis"  # sepsis; mimic
+data_set = "mimic"  # sepsis; mimic
 n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
 num_repetitions = 1
-mode = "complete"  # complete; static; sequential; dt, lr
+mode = "complete"
 val_size = 0.2
 train_size = 0.8
 
