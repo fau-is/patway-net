@@ -1047,10 +1047,9 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 hpos = {
-        # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
-        "complete": {"size": [4], "learning_rate": [0.001], "batch_size": [64]},
-        "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
-        "static": {"learning_rate": [0.001, 0.005, 0.01], "batch_size": [16, 32, 64]},
+        "complete": {"size": [8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 64, 128]},
+        "sequential": {"size": [8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 64, 128]},
+        "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 64, 128]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs", "sag", "newton-cg"]},
         "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
         # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
