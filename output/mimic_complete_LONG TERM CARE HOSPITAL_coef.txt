@@ -1,2 +1,0 @@
-ethnicity,gender,language,religion
--0.34613788,-0.26816502,-0.32573804,0.2927035

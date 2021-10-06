@@ -1,5 +1,4 @@
 import pandas as pd
-from sklearn.preprocessing import RobustScaler
 import src.util as util
 import numpy as np
 
@@ -89,6 +88,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
             y_.append(y[i])
             x_time_vals_.append(x_time_vals[i])
 
+    """
     # create event log
     f = open(f'../output/sepsis.txt', "w+")
     f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])} \n')
@@ -97,6 +97,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
             f.write(f'{idx},{int2act[np.argmax(x_seqs_[idx][idx_ts])]},'
                     f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])}\n')
     f.close()
+    """
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
 

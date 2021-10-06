@@ -29,7 +29,7 @@ n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "complete"
 val_size = 0.2
 train_size = 0.8
@@ -442,7 +442,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                   verbose=1,
                                   callbacks=[early_stopping, model_checkpoint, lr_reducer],
                                   batch_size=batch_size,
-                                  epochs=1)
+                                  epochs=100)
 
                         preds_proba = model.predict([x_val_seq, x_val_stat])
                         preds_proba = [pred_proba[0] for pred_proba in preds_proba]
@@ -509,7 +509,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                       verbose=1,
                       callbacks=[early_stopping, model_checkpoint, lr_reducer],
                       batch_size=hpos['batch_size'],
-                      epochs=1)
+                      epochs=100)
 
             return model
 
@@ -1095,8 +1095,8 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     # MIMIC
-    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
-        for target_activity in ['LONG TERM CARE HOSPITAL']:
+    for mode in ['lr', 'nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for target_activity in ['LONG TERM CARE HOSPITAL']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
             # SHORT TERM HOSPITAL
@@ -1116,8 +1116,8 @@ elif data_set == "mimic":
                 # Train model and plot linear coeff --> Figure 2
                 model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions)
 
-                x_seqs_train = x_seqs_train[0:300]
-                x_statics_train = x_statics_train[0:300]
+                # x_seqs_train = x_seqs_train[0:300]
+                # x_statics_train = x_statics_train[0:300]
 
                 # Get Explanations for LSTM inputs --> Figure 3
                 explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
