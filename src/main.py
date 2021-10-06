@@ -24,12 +24,12 @@ from sklearn.tree import DecisionTreeClassifier
 import shap
 import src.data as data
 
-data_set = "mimic"  # sepsis; mimic
+data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 10
+num_repetitions = 1
 mode = "complete"
 val_size = 0.2
 train_size = 0.8
@@ -924,7 +924,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                      results['gts'])),
             columns=['ts', 'preds', 'preds_proba', 'gts'])
 
-        cut_lengths = range(min_len, max_len + 1)  # range(1, X_train_seq.shape[1] + 1)
+        cut_lengths = range(0, max_len -1)  # range(1, X_train_seq.shape[1] + 1)
 
         # init
         if cut_lengths[0] not in results:
@@ -1064,7 +1064,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['Admission IC']:
 
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
