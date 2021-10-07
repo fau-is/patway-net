@@ -29,7 +29,7 @@ n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "complete"
 val_size = 0.2
 train_size = 0.8
@@ -1063,7 +1063,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['Admission IC']:
 
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
