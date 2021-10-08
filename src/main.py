@@ -24,7 +24,7 @@ from sklearn.tree import DecisionTreeClassifier
 import shap
 import src.data as data
 
-data_set = "sepsis"  # sepsis; mimic
+data_set = "mimic"  # sepsis; mimic
 n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
@@ -1047,9 +1047,9 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 hpos = {
-        "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 64, 128]},
-        "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 64, 128]},
-        "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 64, 128]},
+        "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+        "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+        "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs", "sag", "newton-cg"]},
         "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
         # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
@@ -1094,7 +1094,7 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     # MIMIC
-    for mode in ['lr', 'nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['LONG TERM CARE HOSPITAL']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
