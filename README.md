@@ -1,7 +1,7 @@
 # Explainable Predictions for Medical Pathways (XPreM)
 
 
-#Creation of MIMIC event log from MIMIC III database
+# Creation of MIMIC event log from MIMIC III database
 - join tables "admission" and "patients" via subject id
 - create activities and time stamps by admission location and discharge location and the according timestamps
 - remove unneccassry and redundant features
