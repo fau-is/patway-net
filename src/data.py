@@ -233,3 +233,8 @@ def get_mimic_data(target_activity, max_len, min_len):
     """
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
+
+
+def get_bpi11_data(target_activity, max_len, min_len):
+
+    return 0
