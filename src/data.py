@@ -103,20 +103,18 @@ def get_sepsis_data(target_activity, max_len, min_len):
 
 
 def get_mimic_data(target_activity, max_len, min_len):
-
     ds_path = '../data/mimic_admission_activities_cleaned_short_final.csv'
 
-
-    static_bin_features = ['diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
-                       'diagnosis_CORONARY ARTERY DISEASE', 'diagnosis_CONGESTIVE HEART FAILURE',
-                       'diagnosis_CHEST PAIN', 'diagnosis_GASTROINTESTINAL BLEED',
-                       'diagnosis_INTRACRANIAL HEMORRHAGE', 'diagnosis_ALTERED MENTAL STATUS',
-                       'diagnosis_FEVER', 'diagnosis_ABDOMINAL PAIN',
-                       'diagnosis_UPPER GI BLEED',
-                       'diagnosis_CORONARY ARTERY DISEASECORONARY ARTERY BYPASS GRAFT /SDA',
-                       'diagnosis_STROKE', 'diagnosis_HYPOTENSION']
-
     static_features = ['ethnicity', 'gender', 'language', 'religion']
+
+    seq_bin_features = ['diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
+                        'diagnosis_CORONARY ARTERY DISEASE', 'diagnosis_CONGESTIVE HEART FAILURE',
+                        'diagnosis_CHEST PAIN', 'diagnosis_GASTROINTESTINAL BLEED',
+                        'diagnosis_INTRACRANIAL HEMORRHAGE', 'diagnosis_ALTERED MENTAL STATUS',
+                        'diagnosis_FEVER', 'diagnosis_ABDOMINAL PAIN',
+                        'diagnosis_UPPER GI BLEED',
+                        'diagnosis_CORONARY ARTERY DISEASECORONARY ARTERY BYPASS GRAFT /SDA',
+                        'diagnosis_STROKE', 'diagnosis_HYPOTENSION']
 
     seq_act_features = ['PHYS REFERRAL/NORMAL DELI', 'HOME', 'EMERGENCY ROOM ADMIT', 'SNF',
                         'HOME WITH HOME IV PROVIDR', 'HOME HEALTH CARE', 'DEAD/EXPIRED',
@@ -139,7 +137,7 @@ def get_mimic_data(target_activity, max_len, min_len):
 
     # remove irrelevant data
     remove_cols = ['dob', 'dod', 'dod_hosp']
-    remove_cols = remove_cols + static_bin_features
+    remove_cols = remove_cols + seq_bin_features
     df = df.drop(columns=remove_cols)
 
     # time feature
@@ -161,12 +159,10 @@ def get_mimic_data(target_activity, max_len, min_len):
     _max = max(df['age_dead'])
     df['age_dead'] = df['age_dead'].apply(lambda x: x / _max)
 
-    """
     # bin features
-    bin_features = static_bin_features
+    bin_features = seq_bin_features
     for bin_feature in bin_features:
         df[bin_feature] = df[bin_feature].fillna(0)
-    """
 
     x_seqs = []
     x_statics = []
@@ -182,6 +178,7 @@ def get_mimic_data(target_activity, max_len, min_len):
         df_tmp = df_tmp.sort_values(by='Complete Timestamp')
 
         idx = -1
+        x_past = 0
         for _, x in df_tmp.iterrows():
             idx = idx + 1
             if idx == 0:
@@ -196,6 +193,13 @@ def get_mimic_data(target_activity, max_len, min_len):
             if after_registration_flag:
                 seq_features_vals = []
                 for seq_feature_ in ['admission_type', 'insurance', 'marital_status', 'age', 'age_dead']:
+
+                    # correct values
+                    if idx > 0:
+                        if seq_feature_ in seq_bin_features:
+                            if x_past[seq_feature_] == 1:
+                                x[seq_feature_] = 1
+
                     seq_features_vals.append(x[seq_feature_])
 
                 x_seqs[-1].append(np.array(list(util.get_one_hot_of_activity(x)) + seq_features_vals))
@@ -229,5 +233,3 @@ def get_mimic_data(target_activity, max_len, min_len):
     """
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
-
-
