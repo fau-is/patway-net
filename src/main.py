@@ -1093,7 +1093,6 @@ if data_set == "sepsis":
 
 elif data_set == "mimic":
 
-    # MIMIC
     for mode in ['lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['LONG TERM CARE HOSPITAL']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
