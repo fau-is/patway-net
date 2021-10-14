@@ -69,7 +69,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                 found_target_flag = True
 
             if after_registration_flag:
-                x_seqs[-1].append(util.get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid))
+                x_seqs[-1].append(util.get_one_hot_of_activity_sepsis(x, max_leucocytes, max_lacticacid))
                 x_time_vals[-1].append(x['Complete Timestamp'])
 
         if after_registration_flag:
@@ -202,7 +202,7 @@ def get_mimic_data(target_activity, max_len, min_len):
 
                     seq_features_vals.append(x[seq_feature_])
 
-                x_seqs[-1].append(np.array(list(util.get_one_hot_of_activity(x)) + seq_features_vals))
+                x_seqs[-1].append(np.array(list(util.get_one_hot_of_activity_mimic(x)) + seq_features_vals))
                 x_time_vals[-1].append(x['Complete Timestamp'])
 
         if after_registration_flag:
@@ -242,7 +242,7 @@ def get_bpi11_data(target_activity, max_len, min_len):
 
     int2act = dict(zip(range(len(seq_act_features)), seq_act_features))
 
-    seq_features = seq_act_features + seq_features
+    # seq_features = seq_act_features + seq_features
 
     df = pd.read_csv(ds_path)
 
@@ -313,7 +313,7 @@ def get_bpi11_data(target_activity, max_len, min_len):
                 for seq_feature_ in seq_features:
                     seq_features_vals.append(x[seq_feature_])
 
-                x_seqs[-1].append(np.array(list(util.get_one_hot_of_activity(x)) + seq_features_vals))
+                x_seqs[-1].append(np.array(list(util.get_one_hot_of_activity_bpi2011(x, int2act)) + seq_features_vals))
                 x_time_vals[-1].append(x['Complete Timestamp'])
 
         if after_registration_flag:
@@ -332,6 +332,4 @@ def get_bpi11_data(target_activity, max_len, min_len):
             y_.append(y[i])
             x_time_vals_.append(x_time_vals[i])
 
-    print(0)
-
-    return 0
+    return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features

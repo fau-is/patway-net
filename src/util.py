@@ -1,9 +1,7 @@
 import numpy as np
 
 
-
-
-def get_one_hot_of_activity(x):
+def get_one_hot_of_activity_mimic(x):
     if x['Activity'] == 'PHYS REFERRAL/NORMAL DELI':
         ret = [0, 1]  # No additional information, so normal one hot
     elif x['Activity'] == 'HOME':
@@ -64,7 +62,7 @@ def get_one_hot_of_activity(x):
     return one_hot
 
 
-def get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid):
+def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_lacticacid):
     if x['Activity'] == 'Leucocytes':
         ret = [0, min(x['Leucocytes'], max_leucocytes) / max_leucocytes]
         if np.isnan(ret[1]):
@@ -106,5 +104,15 @@ def get_custom_one_hot_of_activity(x, max_leucocytes, max_lacticacid):
 
     one_hot = np.zeros(16, dtype=np.float32)
     one_hot[ret[0]] = ret[1]
+
+    return one_hot
+
+
+def get_one_hot_of_activity_bpi2011(x, acts):
+    one_hot = np.zeros(len(acts.keys()), dtype=np.float32)
+
+    for i, (k, v) in enumerate(acts.items()):
+        if x['Activity'] == acts[i]:
+            one_hot[i] = 1
 
     return one_hot

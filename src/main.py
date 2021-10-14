@@ -1136,7 +1136,7 @@ elif data_set == "bpi2011":
     # bpi2011
     for mode in ['lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
 
-        for target_activity in ['X']:
+        for target_activity in ['190021 klinische opname a002']:
 
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_bpi11_data(
                 target_activity, max_len, min_len)
