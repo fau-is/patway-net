@@ -24,7 +24,7 @@ from sklearn.tree import DecisionTreeClassifier
 import shap
 import src.data as data
 
-data_set = "mimic"  # sepsis; mimic
+data_set = "bpi2011"  # sepsis; mimic
 n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
@@ -1117,6 +1117,40 @@ elif data_set == "mimic":
 
                 # x_seqs_train = x_seqs_train[0:300]
                 # x_statics_train = x_statics_train[0:300]
+
+                # Get Explanations for LSTM inputs --> Figure 3
+                explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
+                shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
+
+                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
+                                       columns=seq_features)
+                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                         columns=[f'SHAP {x}' for x in seq_features])
+                seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+
+                with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
+                    pickle.dump(seq_value_shape, f)
+
+
+elif data_set == "bpi2011":
+
+    # bpi2011
+    for mode in ['lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+
+        for target_activity in ['X']:
+
+            x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_bpi11_data(
+                target_activity, max_len, min_len)
+
+            # Run eval on cuts to plot results --> Figure 1
+            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
+                x_seqs, x_statics, y, mode, target_activity,
+                data_set, hpos, hpo, x_time_vals_final)
+
+            if mode == "complete":
+                # Train model and plot linear coeff --> Figure 2
+                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
+                                        target_activity, static_features, best_hpos_repetitions)
 
                 # Get Explanations for LSTM inputs --> Figure 3
                 explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])

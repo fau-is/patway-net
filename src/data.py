@@ -221,7 +221,6 @@ def get_mimic_data(target_activity, max_len, min_len):
             y_.append(y[i])
             x_time_vals_.append(x_time_vals[i])
 
-
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
 
 
@@ -229,7 +228,18 @@ def get_bpi11_data(target_activity, max_len, min_len):
 
     ds_path = '../data/Hospital log_select_cols_seq_len.csv'
 
+    static_features = []
 
+    seq_act_features = []
 
+    seq_features = []
+
+    # int2act = dict(zip(range(len(seq_act_features)), seq_act_features))
+
+    seq_features = seq_act_features + seq_features
+
+    df = pd.read_csv(ds_path)
+
+    print(0)
 
     return 0
