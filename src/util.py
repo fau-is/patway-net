@@ -20,7 +20,7 @@ def get_one_hot_of_activity_mimic(x):
         ret = [7, 1]  # No additional information, so normal one hot
     elif x['Activity'] == 'TRANSFER FROM HOSP/EXTRAM':
         ret = [8, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'REHAB/DISTINCT PART HOSP':
+    elif x['Activity'] == 'REHABDISTINCT PART HOSP':
         ret = [9, 1]  # No additional information, so normal one hot
     elif x['Activity'] == 'DISC-TRAN CANCER/CHLDRN H':
         ret = [10, 1]  # No additional information, so normal one hot

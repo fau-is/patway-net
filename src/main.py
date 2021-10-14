@@ -24,7 +24,7 @@ from sklearn.tree import DecisionTreeClassifier
 import shap
 import src.data as data
 
-data_set = "bpi2011"  # sepsis; mimic
+data_set = "mimic"  # sepsis; mimic
 n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
@@ -1048,7 +1048,7 @@ for gpu in gpus:
 
 hpos = {
 
-        "complete": {"size": [8], "learning_rate": [0.001], "batch_size": [128]},
+        "complete": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
         # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
@@ -1065,7 +1065,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['Admission IC']:
 
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
@@ -1095,8 +1095,8 @@ if data_set == "sepsis":
 
 elif data_set == "mimic":
 
-    for mode in ['lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
-        for target_activity in ['LONG TERM CARE HOSPITAL']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
+    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for target_activity in ['HOSPICE-HOME']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
             # SHORT TERM HOSPITAL
@@ -1136,7 +1136,7 @@ elif data_set == "mimic":
 elif data_set == "bpi2011":
 
     # bpi2011
-    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
 
         for target_activity in ['190021 klinische opname a002']:
 
