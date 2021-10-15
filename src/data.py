@@ -125,7 +125,7 @@ def get_mimic_data(target_activity, max_len, min_len):
                         'TRANSFER FROM SKILLED NUR', 'HMO REFERRAL/SICK', '** INFO NOT AVAILABLE **',
                         'OTHER FACILITY', 'ICF', 'SNF-MEDICAID ONLY CERTIF', 'TRSF WITHIN THIS FACILITY']
 
-    seq_features = ['admission_type', 'insurance', 'marital_status', 'age', 'age_dead']
+    seq_features = ['admission_type', 'insurance', 'marital_status', 'age']
 
     int2act = dict(zip(range(len(seq_act_features)), seq_act_features))
 
@@ -136,7 +136,7 @@ def get_mimic_data(target_activity, max_len, min_len):
     df = pd.read_csv(ds_path)
 
     # remove irrelevant data
-    remove_cols = ['dob', 'dod', 'dod_hosp']
+    remove_cols = ['dob', 'dod', 'dod_hosp', 'age_dead']
     remove_cols = remove_cols
     df = df.drop(columns=remove_cols)
 
@@ -153,11 +153,11 @@ def get_mimic_data(target_activity, max_len, min_len):
 
     # num features
     df['age'] = df['age'].fillna(-1)
-    df['age_dead'] = df['age_dead'].fillna(-1)
+    # df['age_dead'] = df['age_dead'].fillna(-1)
     _max = max(df['age'])
     df['age'] = df['age'].apply(lambda x: x / _max)
-    _max = max(df['age_dead'])
-    df['age_dead'] = df['age_dead'].apply(lambda x: x / _max)
+    # _max = max(df['age_dead'])
+    # df['age_dead'] = df['age_dead'].apply(lambda x: x / _max)
 
     # bin features
     bin_features = seq_bin_features
@@ -192,7 +192,7 @@ def get_mimic_data(target_activity, max_len, min_len):
 
             if after_registration_flag:
                 seq_features_vals = []
-                for seq_feature_ in ['admission_type', 'insurance', 'marital_status', 'age', 'age_dead']:
+                for seq_feature_ in ['admission_type', 'insurance', 'marital_status', 'age']:
 
                     # correct values
                     if idx > 0:

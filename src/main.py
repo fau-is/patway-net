@@ -29,7 +29,7 @@ n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 10
+num_repetitions = 1
 mode = "complete"
 val_size = 0.2
 train_size = 0.8
@@ -1098,7 +1098,7 @@ if data_set == "sepsis":
 
 elif data_set == "mimic":
 
-    for mode in ['lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['sequential']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['LEFT AGAINST MEDICAL ADVI']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
