@@ -29,7 +29,7 @@ n_hidden = 8
 max_len = 100  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "complete"
 val_size = 0.2
 train_size = 0.8
@@ -765,18 +765,19 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
                 x_time_vals_prefix.append(x_time_vals[idx_seq][0:idx_ts])
             ts.append(idx_ts)
 
-    # remove prefixes with future event from training set
-    if x_time is not None:
-        X_seq_prefix_temp, X_stat_prefix_temp, y_prefix_temp, ts_temp = [], [], [], []
+    if data_set is not "mimic":
+        # remove prefixes with future event from training set
+        if x_time is not None:
+            X_seq_prefix_temp, X_stat_prefix_temp, y_prefix_temp, ts_temp = [], [], [], []
 
-        for idx_prefix in range(0, len(X_seq_prefix)):
-            if x_time_vals_prefix[idx_prefix][-1].value <= x_time.value:
-                X_seq_prefix_temp.append(X_seq_prefix[idx_prefix])
-                X_stat_prefix_temp.append(X_stat_prefix[idx_prefix])
-                y_prefix_temp.append(y_prefix[idx_prefix])
-                ts_temp.append(ts[idx_prefix])
+            for idx_prefix in range(0, len(X_seq_prefix)):
+                if x_time_vals_prefix[idx_prefix][-1].value <= x_time.value:
+                    X_seq_prefix_temp.append(X_seq_prefix[idx_prefix])
+                    X_stat_prefix_temp.append(X_stat_prefix[idx_prefix])
+                    y_prefix_temp.append(y_prefix[idx_prefix])
+                    ts_temp.append(ts[idx_prefix])
 
-        X_seq_prefix, X_stat_prefix, y_prefix, ts = X_seq_prefix_temp, X_stat_prefix_temp, y_prefix_temp, ts_temp
+            X_seq_prefix, X_stat_prefix, y_prefix, ts = X_seq_prefix_temp, X_stat_prefix_temp, y_prefix_temp, ts_temp
 
     # vectorization
     X_seq_final = np.zeros((len(X_seq_prefix), max_len, len(X_seq_prefix[0][0])), dtype=np.float32)
@@ -1050,8 +1051,10 @@ hpos = {
 
         "complete": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
         # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-        "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-        "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+        "sequential": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
+        # "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+        "static": {"learning_rate": [0.01], "batch_size": [1024]},
+        # "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs"]},
         "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
         # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
@@ -1095,8 +1098,8 @@ if data_set == "sepsis":
 
 elif data_set == "mimic":
 
-    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
-        for target_activity in ['HOSPICE-HOME']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
+    for mode in ['lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for target_activity in ['LEFT AGAINST MEDICAL ADVI']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
             # SHORT TERM HOSPITAL
