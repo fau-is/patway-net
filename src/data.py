@@ -105,7 +105,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
 def get_mimic_data(target_activity, max_len, min_len):
     ds_path = '../data/mimic_admission_activities_cleaned_short_final.csv'
 
-    # static_features = ['ethnicity', 'gender', 'language', 'religion']
+    static_features = ['ethnicity', 'gender', 'language', 'religion']
 
     static_bin_features = ['diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
                         'diagnosis_CORONARY ARTERY DISEASE', 'diagnosis_CONGESTIVE HEART FAILURE',
@@ -130,20 +130,20 @@ def get_mimic_data(target_activity, max_len, min_len):
 
     int2act = dict(zip(range(len(seq_act_features)), seq_act_features))
 
-    static_features = static_bin_features
+    static_features = static_bin_features + static_features
     seq_features = seq_features + seq_act_features
 
     # pre-processing
     df = pd.read_csv(ds_path)
 
     # remove irrelevant data
-    remove_cols = ['dob', 'dod', 'dod_hosp', 'age_dead', 'ethnicity', 'gender', 'language', 'religion']
+    remove_cols = ['dob', 'dod', 'dod_hosp', 'age_dead'] #  'ethnicity', 'gender', 'language', 'religion']
     remove_cols = remove_cols
     df = df.drop(columns=remove_cols)
 
     # time feature
     df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
-    cat_features = ['admission_type', 'insurance', 'marital_status']
+    cat_features = ['admission_type', 'insurance', 'marital_status', 'ethnicity', 'gender', 'language', 'religion']
 
     # cat features
     for cat_feature in cat_features:
