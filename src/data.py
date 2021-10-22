@@ -105,9 +105,9 @@ def get_sepsis_data(target_activity, max_len, min_len):
 def get_mimic_data(target_activity, max_len, min_len):
     ds_path = '../data/mimic_admission_activities_cleaned_short_final.csv'
 
-    static_features = ['ethnicity', 'gender', 'language', 'religion']
+    # static_features = ['ethnicity', 'gender', 'language', 'religion']
 
-    seq_bin_features = ['diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
+    static_bin_features = ['diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
                         'diagnosis_CORONARY ARTERY DISEASE', 'diagnosis_CONGESTIVE HEART FAILURE',
                         'diagnosis_CHEST PAIN', 'diagnosis_GASTROINTESTINAL BLEED',
                         'diagnosis_INTRACRANIAL HEMORRHAGE', 'diagnosis_ALTERED MENTAL STATUS',
@@ -125,24 +125,25 @@ def get_mimic_data(target_activity, max_len, min_len):
                         'TRANSFER FROM SKILLED NUR', 'HMO REFERRAL/SICK', '** INFO NOT AVAILABLE **',
                         'OTHER FACILITY', 'ICF', 'SNF-MEDICAID ONLY CERTIF', 'TRSF WITHIN THIS FACILITY']
 
+
     seq_features = ['admission_type', 'insurance', 'marital_status', 'age']
 
     int2act = dict(zip(range(len(seq_act_features)), seq_act_features))
 
-    # static_features = static_features + static_bin_features
+    static_features = static_bin_features
     seq_features = seq_features + seq_act_features
 
     # pre-processing
     df = pd.read_csv(ds_path)
 
     # remove irrelevant data
-    remove_cols = ['dob', 'dod', 'dod_hosp', 'age_dead']
+    remove_cols = ['dob', 'dod', 'dod_hosp', 'age_dead', 'ethnicity', 'gender', 'language', 'religion']
     remove_cols = remove_cols
     df = df.drop(columns=remove_cols)
 
     # time feature
     df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
-    cat_features = ['admission_type', 'insurance', 'language', 'marital_status', 'religion', 'ethnicity', 'gender']
+    cat_features = ['admission_type', 'insurance', 'marital_status']
 
     # cat features
     for cat_feature in cat_features:
@@ -160,9 +161,25 @@ def get_mimic_data(target_activity, max_len, min_len):
     # df['age_dead'] = df['age_dead'].apply(lambda x: x / _max)
 
     # bin features
-    bin_features = seq_bin_features
-    for bin_feature in bin_features:
+    for bin_feature in static_bin_features:
         df[bin_feature] = df[bin_feature].fillna(0)
+
+    # create static features
+    idx = 0
+    for case in df['Case ID'].unique():
+        df_tmp = df[df['Case ID'] == case]
+        df_tmp = df_tmp.sort_values(by='Complete Timestamp')
+
+        for static_bin_feature in static_bin_features:
+            if sum(df_tmp[static_bin_feature][0:3]) > 0.0:
+                df_tmp.loc[:, static_bin_feature] = 1.0
+
+        if idx == 0:
+            df_tmp_complete = df_tmp
+        else:
+            df_tmp_complete = pd.concat([df_tmp_complete, df_tmp])
+        idx = idx + 1
+    df = df_tmp_complete
 
     x_seqs = []
     x_statics = []
@@ -178,7 +195,7 @@ def get_mimic_data(target_activity, max_len, min_len):
         df_tmp = df_tmp.sort_values(by='Complete Timestamp')
 
         idx = -1
-        x_past = 0
+        # x_past = 0
         for _, x in df_tmp.iterrows():
             idx = idx + 1
             if idx == 0:
@@ -194,11 +211,13 @@ def get_mimic_data(target_activity, max_len, min_len):
                 seq_features_vals = []
                 for seq_feature_ in ['admission_type', 'insurance', 'marital_status', 'age']:
 
+                    """
                     # correct values
                     if idx > 0:
                         if seq_feature_ in seq_bin_features:
                             if x_past[seq_feature_] == 1:
                                 x[seq_feature_] = 1
+                    """
 
                     seq_features_vals.append(x[seq_feature_])
 

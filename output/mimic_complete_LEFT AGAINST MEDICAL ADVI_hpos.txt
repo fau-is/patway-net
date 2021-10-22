@@ -1,16 +1,4 @@
 {'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9485308250444475
-Avg,0.9485308250444475
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9454929017239815
-Avg,0.9454929017239815
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9388257545422025
-Avg,0.9388257545422025
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9470786015942423
-Avg,0.9470786015942423
+Validation aucs,0.9740818741728596
+Avg,0.9740818741728596
 Std,nan

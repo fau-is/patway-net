@@ -26,7 +26,7 @@ import src.data as data
 
 data_set = "mimic"  # sepsis; mimic
 n_hidden = 8
-max_len = 100  # we cut the extreme cases for runtime
+max_len = 84  # we cut the extreme cases for runtime
 min_len = 3
 seed = False
 num_repetitions = 1
@@ -57,7 +57,8 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
             for max_depth_trees in hpos["rf"]["max_depth_trees"]:
                 for num_rand_vars in hpos["rf"]["num_rand_vars"]:
 
-                    model = RandomForestClassifier(n_estimators=num_trees, max_depth=max_depth_trees, max_features=num_rand_vars)
+                    model = RandomForestClassifier(n_estimators=num_trees, max_depth=max_depth_trees,
+                                                   max_features=num_rand_vars)
                     model.fit(x_concat_train, np.ravel(y_train))
                     preds_proba = model.predict_proba(x_concat_val)
                     preds_proba = [pred_proba[1] for pred_proba in preds_proba]
@@ -66,7 +67,8 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
                     if auc >= max(aucs):
                         best_model = model
-                        best_hpos = {"num_trees": num_trees, "max_depth_trees": max_depth_trees, "num_rand_vars": num_rand_vars}
+                        best_hpos = {"num_trees": num_trees, "max_depth_trees": max_depth_trees,
+                                     "num_rand_vars": num_rand_vars}
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
         f.write(str(best_hpos))
@@ -237,7 +239,7 @@ def train_ada(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
                     best_hpos = {"n_estimators": n_estimators, "learning_rate": learning_rate}
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-        f.write(str(best_hpos)+'\n')
+        f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
@@ -278,7 +280,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 best_hpos = {"var_smoothing": var_smoothing}
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-        f.write(str(best_hpos)+'\n')
+        f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
@@ -320,7 +322,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                     best_hpos = {"max_depth": max_depth, "min_samples_split": min_samples_split}
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-        f.write(str(best_hpos)+'\n')
+        f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
@@ -361,7 +363,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
                 best_hpos = {"n_eighbors": n_neighbors}
 
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
-        f.write(str(best_hpos)+'\n')
+        f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
@@ -379,8 +381,8 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         return model
 
 
-
-def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False, hpo=False, mode="complete"):
+def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
+               hpo=False, mode="complete"):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
@@ -397,7 +399,8 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                     for batch_size in hpos["complete"]["batch_size"]:
 
                         # Input layer
-                        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
+                        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq),
+                                                                name='seq_input_layer')
                         input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
                         hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
@@ -638,7 +641,8 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                     for batch_size in hpos["complete"]["batch_size"]:
 
                         # Input layer
-                        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
+                        input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq),
+                                                                name='seq_input_layer')
 
                         # Hidden layer
                         hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
@@ -757,7 +761,12 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
     # blow up
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
     for idx_seq in range(0, len(X_seq)):
-        for idx_ts in range(1, len(X_seq[idx_seq]) + 1):
+
+        start = 1
+        if data_set == "mimic":
+            start = 3
+
+        for idx_ts in range(start, len(X_seq[idx_seq]) + 1):
             X_seq_prefix.append(X_seq[idx_seq][0:idx_ts])
             X_stat_prefix.append(X_stat[idx_seq])
             y_prefix.append(y[idx_seq])
@@ -794,7 +803,6 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
 
 
 def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, x_time=None):
-
     data_index = list(range(0, len(y)))
     val_index = data_index[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))]
     test_index = data_index[int(train_size * len(y)):]
@@ -814,20 +822,22 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         # timestamp exists
         if x_time is not None:
             X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
-                                                                   x_statics[0: int(train_size * (1 - val_size) * len(y))],
+                                                                   x_statics[
+                                                                   0: int(train_size * (1 - val_size) * len(y))],
                                                                    y[0: int(train_size * (1 - val_size) * len(y))],
                                                                    max_len,
                                                                    ts_info=False,
                                                                    x_time=time_start_val,
                                                                    x_time_vals=x_time_train)
 
-            X_val_seq, X_val_stat, y_val = time_step_blow_up(x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                                                                   x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                                                                   y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                                                                   max_len,
-                                                                   ts_info=False,
-                                                                   x_time=time_start_test,
-                                                                   x_time_vals=x_time_val)
+            X_val_seq, X_val_stat, y_val = time_step_blow_up(
+                x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                max_len,
+                ts_info=False,
+                x_time=time_start_test,
+                x_time_vals=x_time_val)
 
         # no timestamp exists
         else:
@@ -837,10 +847,11 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                                                                    y[0: int(train_size * (1 - val_size) * len(y))],
                                                                    max_len)
 
-            X_val_seq, X_val_stat, y_val = time_step_blow_up(x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                                                                   x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                                                                   y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                                                                   max_len)
+            X_val_seq, X_val_stat, y_val = time_step_blow_up(
+                x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                max_len)
 
         X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
                                                                 x_statics[int(train_size * len(y)):],
@@ -849,71 +860,81 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                                                                 ts_info=True)
 
         if mode == "complete":
-            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo, mode)
+            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                          y_val.reshape(-1, 1), hpos, hpo, mode)
             preds_proba = model.predict([X_test_seq, X_test_stat])
             results['preds'] = [int(round(pred[0])) for pred in preds_proba]
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "static":
-            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo, mode)
+            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                          y_val.reshape(-1, 1), hpos, hpo, mode)
             preds_proba = model.predict([X_test_stat])
             results['preds'] = [int(round(pred[0])) for pred in preds_proba]
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "sequential":
-            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo, mode)
+            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                          y_val.reshape(-1, 1), hpos, hpo, mode)
             preds_proba = model.predict([X_test_seq])
             results['preds'] = [int(round(pred[0])) for pred in preds_proba]
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         elif mode == "rf":
-            model, best_hpos = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "lr":
-            model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "svm":
-            model, best_hpos = train_svm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_svm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                         y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "gb":
-            model, best_hpos = train_gb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_gb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "ada":
-            model, best_hpos = train_ada(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_ada(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                         y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "nb":
-            model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "dt":
-            model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "knn":
-            model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos, hpo)
+            model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                         y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
-
 
         results['gts'] = [int(y) for y in y_test]
         results['ts'] = ts
@@ -925,7 +946,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                      results['gts'])),
             columns=['ts', 'preds', 'preds_proba', 'gts'])
 
-        cut_lengths = range(0, max_len -1)  # range(1, X_train_seq.shape[1] + 1)
+        cut_lengths = range(0, max_len - 1)  # range(1, X_train_seq.shape[1] + 1)
 
         # init
         if cut_lengths[0] not in results:
@@ -1030,8 +1051,10 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
     return X_train_seq, X_train_stat, y_train, X_val_seq, X_val_stat, y_val, best_hpos_repetitions
 
 
-def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions):
-    model = train_lstm(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions, False, mode="complete")
+def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity,
+                    static_features, best_hpos_repetitions):
+    model = train_lstm(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions,
+                       False, mode="complete")
     output_weights = model.get_layer(name='output_layer').get_weights()[0].flatten()[2 * best_hpos_repetitions['size']:]
     output_names = static_features
 
@@ -1049,22 +1072,22 @@ for gpu in gpus:
 
 hpos = {
 
-        "complete": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
-        # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-        "sequential": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
-        # "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-        "static": {"learning_rate": [0.01], "batch_size": [1024]},
-        # "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-        "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs"]},
-        "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
-        # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
-        "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
-        "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
-        "nb": {"var_smoothing": [pow(1, -9)]},
-        "dt": {"max_depth": [5, 10, 15], "min_samples_split": [1, 3, 5, 10]},
-        "knn": {"n_neighbors": [3, 5, 10, 15]}
+    "complete": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
+    # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+    "sequential": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
+    # "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+    "static": {"learning_rate": [0.01], "batch_size": [1024]},
+    # "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+    "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
+           "solver": ["lbfgs"]},
+    "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
+    # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
+    "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
+    "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
+    "nb": {"var_smoothing": [pow(1, -9)]},
+    "dt": {"max_depth": [5, 10, 15], "min_samples_split": [1, 3, 5, 10]},
+    "knn": {"n_neighbors": [3, 5, 10, 15]}
 }
-
 
 if data_set == "sepsis":
 
@@ -1074,14 +1097,15 @@ if data_set == "sepsis":
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
                 target_activity, max_len, min_len)
 
-
             # Run eval on cuts to plot results --> Figure 1
-            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
-                                                                     data_set, hpos, hpo, x_time_vals_final)
+            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
+                x_seqs, x_statics, y, mode, target_activity,
+                data_set, hpos, hpo, x_time_vals_final)
 
             if mode == "complete":
                 # Train model and plot linear coeff --> Figure 2
-                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions)
+                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
+                                        target_activity, static_features, best_hpos_repetitions)
 
                 # Get Explanations for LSTM inputs --> Figure 3
                 explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
@@ -1098,8 +1122,8 @@ if data_set == "sepsis":
 
 elif data_set == "mimic":
 
-    for mode in ['sequential']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
-        for target_activity in ['LEFT AGAINST MEDICAL ADVI']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
+    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for target_activity in ['LONG TERM CARE HOSPITAL']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
             # SHORT TERM HOSPITAL
@@ -1110,14 +1134,15 @@ elif data_set == "mimic":
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_mimic_data(
                 target_activity, max_len, min_len)
 
-
             # Run eval on cuts to plot results --> Figure 1
-            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity,
-                                                                     data_set, hpos, hpo, x_time_vals_final)
+            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
+                x_seqs, x_statics, y, mode, target_activity,
+                data_set, hpos, hpo, x_time_vals_final)
 
             if mode == "complete":
                 # Train model and plot linear coeff --> Figure 2
-                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, target_activity, static_features, best_hpos_repetitions)
+                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
+                                        target_activity, static_features, best_hpos_repetitions)
 
                 # x_seqs_train = x_seqs_train[0:300]
                 # x_statics_train = x_statics_train[0:300]
