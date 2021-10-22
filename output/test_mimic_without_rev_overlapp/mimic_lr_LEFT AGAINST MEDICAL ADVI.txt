@@ -1,0 +1,40 @@
+auc
+0,0.7965322310239322
+Avg,0.7965322310239322
+Std,nan
+precision (0)
+0,0.988920804267542
+Avg,0.988920804267542
+Std,nan
+precision (1)
+0,1.0
+Avg,1.0
+Std,nan
+recall (0)
+0,1.0
+Avg,1.0
+Std,nan
+recall (1)
+0,0.38636363636363635
+Avg,0.38636363636363635
+Std,nan
+f1-score (0)
+0,0.9944295440478645
+Avg,0.9944295440478645
+Std,nan
+f1-score (1)
+0,0.5573770491803279
+Avg,0.5573770491803279
+Std,nan
+support (0)
+0,7230
+Avg,7230.0
+Std,nan
+support (1)
+0,132
+Avg,132.0
+Std,nan
+accuracy
+0,0.988997555012225
+Avg,0.988997555012225
+Std,nan
