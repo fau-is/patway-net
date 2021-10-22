@@ -1134,7 +1134,7 @@ elif data_set == "mimic":
 elif data_set == "bpi2011":
 
     # bpi2011
-    for mode in ['lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['dt']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
 
         for target_activity in ['190021 klinische opname a002']:
 
