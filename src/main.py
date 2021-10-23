@@ -26,8 +26,9 @@ import src.data as data
 
 data_set = "mimic"  # sepsis; mimic
 n_hidden = 8
-max_len = 84  # we cut the extreme cases for runtime
+max_len = 84  # we cut the extreme cases for runtime; sepsis=100; mimic = 84 (longest seq.)
 min_len = 3
+min_size_prefix = 1
 seed = False
 num_repetitions = 1
 mode = "complete"
@@ -757,18 +758,34 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             return model
 
 
-def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_time_vals=None):
+def correct_static(seq, seqs_time, idx_sample, idx_time):
+
+    features = seqs_time[0][0].index._values
+
+    for idx, feature in enumerate(features):
+        # age attributes
+        if feature == "age":
+            seq[idx] = seqs_time[idx_sample][idx_time][feature]
+        elif feature == "gender" or feature == "ethnicity":
+            pass
+        # bin attributes
+        else:
+            seq[idx] = seqs_time[idx_sample][idx_time][feature]
+    return seq
+
+
+def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_time_vals=None, x_statics_vals_corr=None):
     # blow up
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
+
     for idx_seq in range(0, len(X_seq)):
-
-        start = 1
-        if data_set == "mimic":
-            start = 3
-
-        for idx_ts in range(start, len(X_seq[idx_seq]) + 1):
+        for idx_ts in range(min_size_prefix, len(X_seq[idx_seq]) + 1):
             X_seq_prefix.append(X_seq[idx_seq][0:idx_ts])
-            X_stat_prefix.append(X_stat[idx_seq])
+            # todo correct static features -> x_statics_vals_corr
+            if data_set == "mimic":
+                X_stat_prefix.append(correct_static(X_stat[idx_seq], x_statics_vals_corr, idx_seq, idx_ts-1))
+            else:
+                X_stat_prefix.append(X_stat[idx_seq])
             y_prefix.append(y[idx_seq])
             if x_time is not None:
                 x_time_vals_prefix.append(x_time_vals[idx_seq][0:idx_ts])
@@ -802,7 +819,7 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
         return X_seq_final, X_stat_final, y_final
 
 
-def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, x_time=None):
+def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, x_time=None, x_statics_vals_corr=None):
     data_index = list(range(0, len(y)))
     val_index = data_index[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))]
     test_index = data_index[int(train_size * len(y)):]
@@ -822,13 +839,13 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         # timestamp exists
         if x_time is not None:
             X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
-                                                                   x_statics[
-                                                                   0: int(train_size * (1 - val_size) * len(y))],
+                                                                   x_statics[0: int(train_size * (1 - val_size) * len(y))],
                                                                    y[0: int(train_size * (1 - val_size) * len(y))],
                                                                    max_len,
                                                                    ts_info=False,
                                                                    x_time=time_start_val,
-                                                                   x_time_vals=x_time_train)
+                                                                   x_time_vals=x_time_train,
+                                                                   x_statics_vals_corr=x_statics_vals_corr[0: int(train_size * (1 - val_size) * len(y))])
 
             X_val_seq, X_val_stat, y_val = time_step_blow_up(
                 x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
@@ -837,7 +854,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                 max_len,
                 ts_info=False,
                 x_time=time_start_test,
-                x_time_vals=x_time_val)
+                x_time_vals=x_time_val,
+                x_statics_vals_corr=x_statics_vals_corr[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))])
 
         # no timestamp exists
         else:
@@ -857,7 +875,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                                                                 x_statics[int(train_size * len(y)):],
                                                                 y[int(train_size * len(y)):],
                                                                 max_len,
-                                                                ts_info=True)
+                                                                ts_info=True,
+                                                                x_statics_vals_corr=x_statics_vals_corr[int(train_size * len(y)):])
 
         if mode == "complete":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -1122,7 +1141,7 @@ if data_set == "sepsis":
 
 elif data_set == "mimic":
 
-    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['LEFT AGAINST MEDICAL ADVI']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
@@ -1131,13 +1150,13 @@ elif data_set == "mimic":
             # HOSPICE-HOME
             # DISCH-TRAN TO PSYCH HOSP
 
-            x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_mimic_data(
+            x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features, static_vals_corr = data.get_mimic_data(
                 target_activity, max_len, min_len)
 
             # Run eval on cuts to plot results --> Figure 1
             x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
                 x_seqs, x_statics, y, mode, target_activity,
-                data_set, hpos, hpo, x_time_vals_final)
+                data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=static_vals_corr)
 
             if mode == "complete":
                 # Train model and plot linear coeff --> Figure 2

@@ -1,0 +1,80 @@
+auc
+0,0.8621259860114857
+Avg,0.8621259860114857
+Std,nan
+precision (0)
+0,0.9925477410340009
+Avg,0.9925477410340009
+Std,nan
+precision (1)
+0,1.0
+Avg,1.0
+Std,nan
+recall (0)
+0,1.0
+Avg,1.0
+Std,nan
+recall (1)
+0,0.6190476190476191
+Avg,0.6190476190476191
+Std,nan
+f1-score (0)
+0,0.9962599345488546
+Avg,0.9962599345488546
+Std,nan
+f1-score (1)
+0,0.7647058823529412
+Avg,0.7647058823529412
+Std,nan
+support (0)
+0,4262
+Avg,4262.0
+Std,nan
+support (1)
+0,84
+Avg,84.0
+Std,nan
+accuracy
+0,0.9926369075011505
+Avg,0.9926369075011505
+Std,nan
+auc
+0,0.8479098232441733
+Avg,0.8479098232441733
+Std,nan
+precision (0)
+0,0.9925477410340009
+Avg,0.9925477410340009
+Std,nan
+precision (1)
+0,1.0
+Avg,1.0
+Std,nan
+recall (0)
+0,1.0
+Avg,1.0
+Std,nan
+recall (1)
+0,0.6190476190476191
+Avg,0.6190476190476191
+Std,nan
+f1-score (0)
+0,0.9962599345488546
+Avg,0.9962599345488546
+Std,nan
+f1-score (1)
+0,0.7647058823529412
+Avg,0.7647058823529412
+Std,nan
+support (0)
+0,4262
+Avg,4262.0
+Std,nan
+support (1)
+0,84
+Avg,84.0
+Std,nan
+accuracy
+0,0.9926369075011505
+Avg,0.9926369075011505
+Std,nan
