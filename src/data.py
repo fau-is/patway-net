@@ -105,7 +105,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
 def get_mimic_data(target_activity, max_len, min_len):
     ds_path = '../data/mimic_admission_activities_cleaned_short_final.csv'
 
-    static_features = ['age', 'gender', 'ethnicity']  # 'gender', 'ethnicity']
+    static_features = ['gender', 'ethnicity', 'age', 'marital_status', 'language', 'religion']  # 'gender', 'ethnicity']
 
     static_bin_features = ['diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
                         'diagnosis_CORONARY ARTERY DISEASE', 'diagnosis_CONGESTIVE HEART FAILURE',
@@ -125,7 +125,7 @@ def get_mimic_data(target_activity, max_len, min_len):
                         'TRANSFER FROM SKILLED NUR', 'HMO REFERRAL/SICK', '** INFO NOT AVAILABLE **',
                         'OTHER FACILITY', 'ICF', 'SNF-MEDICAID ONLY CERTIF', 'TRSF WITHIN THIS FACILITY']
 
-    seq_features = ['insurance'] # 'language', 'religion', 'marital_status', 'religion']
+    seq_features = ['insurance']  # 'language', 'religion', 'marital_status', 'religion']
 
     int2act = dict(zip(range(len(seq_act_features)), seq_act_features))
 
@@ -190,7 +190,7 @@ def get_mimic_data(target_activity, max_len, min_len):
     df = df_tmp_complete
 
     # remove irrelevant data
-    remove_cols = ['dob', 'dod', 'dod_hosp', 'age_dead', 'admission_type', 'marital_status', 'language', 'religion']  #  'ethnicity', 'gender', 'language', 'religion']
+    remove_cols = ['dob', 'dod', 'dod_hosp', 'age_dead', 'admission_type']  #  'ethnicity', 'gender', 'language', 'religion']
     remove_cols = remove_cols
     df = df.drop(columns=remove_cols)
 
@@ -198,7 +198,7 @@ def get_mimic_data(target_activity, max_len, min_len):
     df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
 
 
-    cat_features = ['ethnicity', 'gender', 'insurance']  # 'admission_type', 'insurance', 'marital_status', 'language', 'religion',
+    cat_features = ['ethnicity', 'gender', 'insurance', 'marital_status', 'language', 'religion']  # ,
 
     # cat features
     for cat_feature in cat_features:

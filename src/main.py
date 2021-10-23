@@ -768,6 +768,8 @@ def correct_static(seq, seqs_time, idx_sample, idx_time):
             seq[idx] = seqs_time[idx_sample][idx_time][feature]
         elif feature == "gender" or feature == "ethnicity":
             pass
+        elif feature in ['admission_type', 'marital_status', 'language', 'religion', 'insurance']:
+            seq[idx] = seqs_time[idx_sample][idx_time][feature]
         # bin attributes
         else:
             seq[idx] = seqs_time[idx_sample][idx_time][feature]
@@ -1141,7 +1143,7 @@ if data_set == "sepsis":
 
 elif data_set == "mimic":
 
-    for mode in ['lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['sequential', 'static', 'dt']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['LEFT AGAINST MEDICAL ADVI']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
