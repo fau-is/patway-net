@@ -105,6 +105,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
 def get_mimic_data(target_activity, max_len, min_len):
     ds_path = '../data/mimic_admission_activities_cleaned_short_final.csv'
 
+    """
     static_features = ['gender', 'ethnicity', 'age', 'marital_status', 'language', 'religion', 'insurance']  # 'gender', 'ethnicity']
 
     static_bin_features = ['diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
@@ -115,6 +116,12 @@ def get_mimic_data(target_activity, max_len, min_len):
                            'diagnosis_UPPER GI BLEED',
                            'diagnosis_CORONARY ARTERY DISEASECORONARY ARTERY BYPASS GRAFT /SDA',
                            'diagnosis_STROKE', 'diagnosis_HYPOTENSION']
+    """
+
+    static_features = ['gender', 'insurance']
+
+    static_bin_features = ['diagnosis_GASTROINTESTINAL BLEED', 'diagnosis_FEVER', 'diagnosis_ABDOMINAL PAIN']
+
 
     seq_act_features = ['PHYS REFERRAL/NORMAL DELI', 'HOME', 'EMERGENCY ROOM ADMIT', 'SNF',
                         'HOME WITH HOME IV PROVIDR', 'HOME HEALTH CARE', 'DEAD/EXPIRED',
@@ -125,7 +132,7 @@ def get_mimic_data(target_activity, max_len, min_len):
                         'TRANSFER FROM SKILLED NUR', 'HMO REFERRAL/SICK', '** INFO NOT AVAILABLE **',
                         'OTHER FACILITY', 'ICF', 'SNF-MEDICAID ONLY CERTIF', 'TRSF WITHIN THIS FACILITY']
 
-    seq_features = []  # 'language', 'religion', 'marital_status', 'religion']
+    seq_features = []
 
     int2act = dict(zip(range(len(seq_act_features)), seq_act_features))
 
@@ -159,6 +166,7 @@ def get_mimic_data(target_activity, max_len, min_len):
         df_tmp = df[df['Case ID'] == case]
         df_tmp = df_tmp.sort_values(by='Complete Timestamp')
 
+        """
         # ethnicity
         if len(df_tmp['ethnicity'].unique()) > 1:
             values = df_tmp['ethnicity'].unique().tolist()
@@ -169,6 +177,7 @@ def get_mimic_data(target_activity, max_len, min_len):
                     df_tmp.loc[:, 'ethnicity'] = values[0]
             except:
                 pass
+        """
 
         # gender
         if len(df_tmp['gender'].unique()) > 1:
@@ -188,14 +197,22 @@ def get_mimic_data(target_activity, max_len, min_len):
     df = df_tmp_complete
 
     # remove irrelevant data
-    remove_cols = ['dob', 'dod', 'dod_hosp', 'age_dead', 'admission_type']
+    remove_cols = ['dob', 'dod', 'dod_hosp', 'age_dead', 'admission_type', 'ethnicity',
+                   'marital_status', 'language', 'religion', 'age',
+                   'diagnosis_NEWBORN', 'diagnosis_PNEUMONIA', 'diagnosis_SEPSIS',
+                           'diagnosis_CORONARY ARTERY DISEASE', 'diagnosis_CONGESTIVE HEART FAILURE',
+                           'diagnosis_CHEST PAIN',
+                           'diagnosis_INTRACRANIAL HEMORRHAGE', 'diagnosis_ALTERED MENTAL STATUS',
+                           'diagnosis_UPPER GI BLEED',
+                           'diagnosis_CORONARY ARTERY DISEASECORONARY ARTERY BYPASS GRAFT /SDA',
+                           'diagnosis_STROKE', 'diagnosis_HYPOTENSION']
     remove_cols = remove_cols
     df = df.drop(columns=remove_cols)
 
     # time feature
     df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
 
-    cat_features = ['ethnicity', 'gender', 'insurance', 'marital_status', 'language', 'religion']
+    cat_features = ['gender', 'insurance']
 
     # cat features
     for cat_feature in cat_features:
@@ -204,10 +221,12 @@ def get_mimic_data(target_activity, max_len, min_len):
         max_ = max(df[cat_feature])
         df[cat_feature] = df[cat_feature].apply(lambda x: x / max_)  # normalise ordinal encoding
 
+    """
     # num features
     df['age'] = df['age'].fillna(-1)
     _max = max(df['age'])
     df['age'] = df['age'].apply(lambda x: x / _max)
+    """
 
     # bin features
     for bin_feature in static_bin_features:
