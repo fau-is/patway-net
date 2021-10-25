@@ -1,36 +1,4 @@
 {'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.931134843218597
-Avg,0.931134843218597
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.94215465645839
-Avg,0.94215465645839
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9358252046193518
-Avg,0.9358252046193518
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9366847927645102
-Avg,0.9366847927645102
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9477553270439245
-Avg,0.9477553270439245
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9402753084640068
-Avg,0.9402753084640068
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9262255804889508
-Avg,0.9262255804889508
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9416240876886689
-Avg,0.9416240876886689
-Std,nan
-{'size': 8, 'learning_rate': 0.01, 'batch_size': 1024}
-Validation aucs,0.9250903635363776
-Avg,0.9250903635363776
+Validation aucs,0.9373475031900864
+Avg,0.9373475031900864
 Std,nan
