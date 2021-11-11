@@ -1093,7 +1093,7 @@ for gpu in gpus:
 
 hpos = {
 
-    "complete": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
+    "complete": {"size": [64], "learning_rate": [0.05], "batch_size": [128]},
     # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
     # "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
@@ -1106,7 +1106,7 @@ hpos = {
     "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
     "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
     "nb": {"var_smoothing": [pow(1, -9)]},
-    "dt": {"max_depth": [5, 10, 15], "min_samples_split": [1, 3, 5, 10]},
+    "dt": {"max_depth": [2, 5], "min_samples_split": [1, 3, 5]},
     "knn": {"n_neighbors": [3, 5, 10, 15]}
 }
 
@@ -1143,7 +1143,7 @@ if data_set == "sepsis":
 
 elif data_set == "mimic":
 
-    for mode in ['static', 'sequential']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['LEFT AGAINST MEDICAL ADVI']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
