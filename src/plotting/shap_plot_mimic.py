@@ -7,7 +7,7 @@ import pickle
 
 data_set = "mimic"
 mode = "complete"
-target_activity = "LONG TERM CARE HOSPITAL"
+target_activity = "LEFT AGAINST MEDICAL ADVI"
 
 
 with open(f'../../output/{data_set}_{mode}_{target_activity}_shap.npy', 'rb') as f: X_all = pickle.load(f)

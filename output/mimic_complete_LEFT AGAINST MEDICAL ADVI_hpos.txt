@@ -1,0 +1,4 @@
+{'size': 64, 'learning_rate': 0.05, 'batch_size': 128}
+Validation aucs,0.26150900431929697
+Avg,0.26150900431929697
+Std,nan
