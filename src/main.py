@@ -20,13 +20,13 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
-
+import os
 import shap
 import src.data as data
 
-data_set = "mimic"  # sepsis; mimic
+data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
-max_len = 84  # we cut the extreme cases for runtime; sepsis=100; mimic = 84 (longest seq.)
+max_len = 100  # we cut the extreme cases for runtime; sepsis=100; mimic = 84 (longest seq.)
 min_len = 3
 min_size_prefix = 1
 seed = False
@@ -840,24 +840,46 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
         # timestamp exists
         if x_time is not None:
-            X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
-                                                                   x_statics[0: int(train_size * (1 - val_size) * len(y))],
-                                                                   y[0: int(train_size * (1 - val_size) * len(y))],
-                                                                   max_len,
-                                                                   ts_info=False,
-                                                                   x_time=time_start_val,
-                                                                   x_time_vals=x_time_train,
-                                                                   x_statics_vals_corr=x_statics_vals_corr[0: int(train_size * (1 - val_size) * len(y))])
+            if x_statics_vals_corr is not None:
+                X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
+                                                                       x_statics[0: int(train_size * (1 - val_size) * len(y))],
+                                                                       y[0: int(train_size * (1 - val_size) * len(y))],
+                                                                       max_len,
+                                                                       ts_info=False,
+                                                                       x_time=time_start_val,
+                                                                       x_time_vals=x_time_train,
+                                                                       x_statics_vals_corr=x_statics_vals_corr[0: int(train_size * (1 - val_size) * len(y))])
 
-            X_val_seq, X_val_stat, y_val = time_step_blow_up(
-                x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                max_len,
-                ts_info=False,
-                x_time=time_start_test,
-                x_time_vals=x_time_val,
-                x_statics_vals_corr=x_statics_vals_corr[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))])
+                X_val_seq, X_val_stat, y_val = time_step_blow_up(
+                    x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                    x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                    y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                    max_len,
+                    ts_info=False,
+                    x_time=time_start_test,
+                    x_time_vals=x_time_val,
+                    x_statics_vals_corr=x_statics_vals_corr[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))])
+
+            else:
+                X_train_seq, X_train_stat, y_train = time_step_blow_up(
+                    x_seqs[0: int(train_size * (1 - val_size) * len(y))],
+                    x_statics[0: int(train_size * (1 - val_size) * len(y))],
+                    y[0: int(train_size * (1 - val_size) * len(y))],
+                    max_len,
+                    ts_info=False,
+                    x_time=time_start_val,
+                    x_time_vals=x_time_train,
+                    x_statics_vals_corr=None)
+
+                X_val_seq, X_val_stat, y_val = time_step_blow_up(
+                    x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                    x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                    y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
+                    max_len,
+                    ts_info=False,
+                    x_time=time_start_test,
+                    x_time_vals=x_time_val,
+                    x_statics_vals_corr=None)
 
         # no timestamp exists
         else:
@@ -873,12 +895,20 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                 y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
                 max_len)
 
-        X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
-                                                                x_statics[int(train_size * len(y)):],
-                                                                y[int(train_size * len(y)):],
-                                                                max_len,
-                                                                ts_info=True,
-                                                                x_statics_vals_corr=x_statics_vals_corr[int(train_size * len(y)):])
+        if x_statics_vals_corr is not None:
+            X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
+                                                                    x_statics[int(train_size * len(y)):],
+                                                                    y[int(train_size * len(y)):],
+                                                                    max_len,
+                                                                    ts_info=True,
+                                                                    x_statics_vals_corr=x_statics_vals_corr[int(train_size * len(y)):])
+        else:
+            X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
+                                                                    x_statics[int(train_size * len(y)):],
+                                                                    y[int(train_size * len(y)):],
+                                                                    max_len,
+                                                                    ts_info=True,
+                                                                    x_statics_vals_corr=None)
 
         if mode == "complete":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -1087,18 +1117,21 @@ def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_static
     return model
 
 
-gpus = tf.config.experimental.list_physical_devices('GPU')
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
+#gpus = tf.config.experimental.list_physical_devices('GPU')
+#for gpu in gpus:
+#    tf.config.experimental.set_memory_growth(gpu, True)
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 
 hpos = {
 
-    "complete": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
+    "complete": {"size": [4], "learning_rate": [0.05], "batch_size": [32]},
     # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-    "sequential": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
-    # "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-    "static": {"learning_rate": [0.01], "batch_size": [1024]},
-    # "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+    # "sequential": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
+    "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+    # "static": {"learning_rate": [0.01], "batch_size": [1024]},
+    "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
            "solver": ["lbfgs"]},
     "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
@@ -1121,12 +1154,15 @@ if data_set == "sepsis":
             # Run eval on cuts to plot results --> Figure 1
             x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
                 x_seqs, x_statics, y, mode, target_activity,
-                data_set, hpos, hpo, x_time_vals_final)
+                data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=None)
 
             if mode == "complete":
                 # Train model and plot linear coeff --> Figure 2
                 model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
                                         target_activity, static_features, best_hpos_repetitions)
+
+                x_seqs_train = x_seqs_train[0:300]
+                x_statics_train = x_statics_train[0:300]
 
                 # Get Explanations for LSTM inputs --> Figure 3
                 explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
@@ -1143,7 +1179,7 @@ if data_set == "sepsis":
 
 elif data_set == "mimic":
 
-    for mode in ['static', 'sequential']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['LEFT AGAINST MEDICAL ADVI']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
             # DEAD/EXPIRED
             # LONG TERM CARE HOSPITAL
@@ -1185,7 +1221,7 @@ elif data_set == "mimic":
 elif data_set == "bpi2011":
 
     # bpi2011
-    for mode in ['dt']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
 
         for target_activity in ['190021 klinische opname a002']:
 
