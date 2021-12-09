@@ -49,22 +49,28 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     shap_values = [
-        'SHAP admission_type',
-        'SHAP insurance',
-        'SHAP marital_status',
-        'SHAP age'
-        #'SHAP age_dead'
+        'SHAP PHYS REFERRAL/NORMAL DELI', 'SHAP HOME', 'SHAP EMERGENCY ROOM ADMIT', 'SHAP SNF',
+                  #  'SHAP HOME WITH HOME IV PROVIDR',
+                  'SHAP HOME HEALTH CARE', 'SHAP DEAD/EXPIRED',
+                  #  'SHAP SHORT TERM HOSPITAL',
+                  'SHAP TRANSFER FROM HOSP/EXTRAM', 'SHAP REHAB/DISTINCT PART HOSP',
+                  #  'SHAP DISC-TRAN CANCER/CHLDRN H',
+                  'SHAP CLINIC REFERRAL/PREMATURE'#, 'SHAP LONG TERM CARE HOSPITAL',
+                  #  'SHAP DISC-TRAN TO FEDERAL HC', 'SHAP HOSPICE-MEDICAL FACILITY', 'SHAP LEFT AGAINST MEDICAL ADVI',
+                  #  'SHAP HOSPICE-HOME', 'SHAP TRANSFER FROM OTHER HEALT', 'SHAP DISCH-TRAN TO PSYCH HOSP',
+                  #  'SHAP TRANSFER FROM SKILLED NUR', 'SHAP HMO REFERRAL/SICK', 'SHAP ** INFO NOT AVAILABLE **',
+                  #  'SHAP OTHER FACILITY', 'SHAP ICF', 'SHAP SNF-MEDICAID ONLY CERTIF', 'SHAP TRSF WITHIN THIS FACILITY'
     ]
 
 else:
     print("Data set not available!")
 
 fig11 = plt.figure(figsize=(16, 14), constrained_layout=False)  # 16, 8
-grid = fig11.add_gridspec(6, 3, width_ratios=[2, 20, 0.2], wspace=0.2, hspace=0.0)  # 3,3
+grid = fig11.add_gridspec(9, 3, width_ratios=[8, 20, 0.2], wspace=0.2, hspace=0.0)  # 3,3
 
 for i, c in enumerate(shap_values):
     ax = fig11.add_subplot(grid[i, 1])
-    ax.set_xlim([-0.025, 0.025])  # -0.1, 0.1
+    ax.set_xlim([-0.1, 0.1])  # -0.1, 0.1
     col = c.replace('SHAP ', '')
     X_tmp = X_all[X_all[col] > 0.]
     bins = np.linspace(X_tmp[col].min(), X_tmp[col].max(), 5)
@@ -75,7 +81,7 @@ for i, c in enumerate(shap_values):
         # if seed:
         #    X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=seed_val)
         # else:
-        X_dat = X_tmp[digitized == b].sample(frac=0.8, replace=False, random_state=None)
+        X_dat = X_tmp[digitized == b].sample(frac=1.0, replace=False, random_state=None)
         sns.swarmplot(data=X_dat, x=c, color=next(palette), alpha=1., size=4, ax=ax)
     [s.set_visible(False) for s in ax.spines.values()]
     if i != (len(shap_values) - 1):
@@ -110,4 +116,4 @@ ax.set_xticklabels([])
 ax.set_yticklabels([])
 
 fig11.tight_layout()
-plt.savefig(f'../../plots/{target_activity}_shap.svg', bbox_inches="tight")
+plt.savefig(f'../../plots/{target_activity}_shap.pdf', bbox_inches="tight")

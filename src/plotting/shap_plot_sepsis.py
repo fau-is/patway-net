@@ -5,12 +5,13 @@ import seaborn as sns
 import numpy as np
 import pickle
 
-data_set = "mimic"
+data_set = "sepsis"
 mode = "complete"
-target_activity = "LONG TERM CARE HOSPITAL"
+target_activity = "Admission IC"
 
 
 with open(f'../../output/{data_set}_{mode}_{target_activity}_shap.npy', 'rb') as f: X_all = pickle.load(f)
+
 
 
 matplotlib.style.use('default')
@@ -75,7 +76,7 @@ for i, c in enumerate(shap_values):
         # if seed:
         #    X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=seed_val)
         # else:
-        X_dat = X_tmp[digitized == b].sample(frac=0.2, replace=False, random_state=None)
+        X_dat = X_tmp[digitized == b].sample(frac=1.0, replace=False, random_state=None)
         sns.swarmplot(data=X_dat, x=c, color=next(palette), alpha=1., size=4, ax=ax)
     [s.set_visible(False) for s in ax.spines.values()]
     if i != (len(shap_values) - 1):
@@ -110,4 +111,4 @@ ax.set_xticklabels([])
 ax.set_yticklabels([])
 
 fig11.tight_layout()
-plt.savefig(f'../../plots/{target_activity}_shap.svg', bbox_inches="tight")
+plt.savefig(f'../../plots/{target_activity}_shap.pdf', bbox_inches="tight")

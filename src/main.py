@@ -24,9 +24,9 @@ import os
 import shap
 import src.data as data
 
-data_set = "sepsis"  # sepsis; mimic
+data_set = "mimic"  # sepsis; mimic
 n_hidden = 8
-max_len = 100  # we cut the extreme cases for runtime; sepsis=100; mimic = 84 (longest seq.)
+max_len = 84  # we cut the extreme cases for runtime; sepsis=100; mimic = 84 (longest seq.)
 min_len = 3
 min_size_prefix = 1
 seed = False
@@ -910,6 +910,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                                                                     ts_info=True,
                                                                     x_statics_vals_corr=None)
 
+        print(0)
+
         if mode == "complete":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                           y_val.reshape(-1, 1), hpos, hpo, mode)
@@ -1126,7 +1128,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 hpos = {
 
-    "complete": {"size": [4], "learning_rate": [0.05], "batch_size": [32]},
+    "complete": {"size": [64], "learning_rate": [0.05], "batch_size": [128]},
     # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     # "sequential": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
@@ -1161,8 +1163,8 @@ if data_set == "sepsis":
                 model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
                                         target_activity, static_features, best_hpos_repetitions)
 
-                x_seqs_train = x_seqs_train[0:300]
-                x_statics_train = x_statics_train[0:300]
+                x_seqs_train = x_seqs_train[0:1000]
+                x_statics_train = x_statics_train[0:1000]
 
                 # Get Explanations for LSTM inputs --> Figure 3
                 explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
@@ -1201,8 +1203,8 @@ elif data_set == "mimic":
                 model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
                                         target_activity, static_features, best_hpos_repetitions)
 
-                # x_seqs_train = x_seqs_train[0:300]
-                # x_statics_train = x_statics_train[0:300]
+                x_seqs_train = x_seqs_train[0:1000]
+                x_statics_train = x_statics_train[0:1000]
 
                 # Get Explanations for LSTM inputs --> Figure 3
                 explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
