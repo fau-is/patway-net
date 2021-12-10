@@ -1,7 +1,8 @@
-#ToDo
+# ToDo
 - Den Umfragebogen löschen
 - unten unsere Versuche löschen
 - Bpi2011 aus dem code nehmen
+- Beim MIMIC unten noch erklären, wie wir die 3 Diagnose features konstruiert haben.
 
 
 # Explainable Predictions for Medical Pathways (XPreM)
