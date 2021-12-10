@@ -1,3 +1,9 @@
+#ToDo
+- Den Umfragebogen löschen
+- unten unsere Versuche löschen
+- Bpi2011 aus dem code nehmen
+
+
 # Explainable Predictions for Medical Pathways (XPreM)
 
 
