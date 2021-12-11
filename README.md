@@ -1,5 +1,4 @@
 # ToDo
-- Den Umfragebogen löschen
 - Bpi2011 aus dem code nehmen
 - Beim MIMIC unten noch erklären, wie wir die 3 Diagnose features konstruiert haben.
 
