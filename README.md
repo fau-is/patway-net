@@ -2,6 +2,7 @@
 - Bpi2011 aus dem code nehmen
 - Beim MIMIC unten noch erklären, wie wir die 3 Diagnose features konstruiert haben.
 - clean code (nicht verwendete features)
+- min sequence length 3
 
 
 # Explainable Predictions for Medical Pathways (XPreM)
