@@ -22,10 +22,10 @@ def get_sepsis_data(target_activity, max_len, min_len):
 
     int2act = dict(zip(range(len(seq_features)), seq_features))
 
-    # pre-processing
     df = pd.read_csv(ds_path)
+    df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
 
-    # sort case id by timestamp of first event
+    # Sort case id by timestamp of first event
     df_ = df.groupby('Case ID').first()
     df_ = df_.sort_values(by='Complete Timestamp')
     x = pd.CategoricalDtype(df_.index.values, ordered=True)
@@ -33,7 +33,6 @@ def get_sepsis_data(target_activity, max_len, min_len):
     df = df.sort_values(['Case ID', 'Complete Timestamp'])
     df = df.reset_index()
 
-    df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
     diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))  # ordinal encoding
     df['Diagnose'] = df['Diagnose'].apply(lambda x: diagnose_mapping[x])
     df['Diagnose'] = df['Diagnose'].apply(lambda x: x / max(df['Diagnose']))  # normalise ordinal encoding
@@ -89,7 +88,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
             x_time_vals_.append(x_time_vals[i])
 
     """
-    # create event log
+    # Create event log
     f = open(f'../output/sepsis.txt', "w+")
     f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])} \n')
     for idx in range(0, len(x_seqs_)):
@@ -106,7 +105,9 @@ def get_mimic_data(target_activity, max_len, min_len):
     ds_path = '../data/mimic_admission_activities_cleaned_short_final.csv'
 
     static_features = ['gender', 'insurance']
+
     static_bin_features = ['diagnosis_GASTROINTESTINAL BLEED', 'diagnosis_FEVER', 'diagnosis_ABDOMINAL PAIN']
+
     seq_act_features = ['PHYS REFERRAL/NORMAL DELI', 'HOME', 'EMERGENCY ROOM ADMIT', 'SNF',
                         'HOME WITH HOME IV PROVIDR', 'HOME HEALTH CARE', 'DEAD/EXPIRED',
                         'SHORT TERM HOSPITAL', 'TRANSFER FROM HOSP/EXTRAM', 'REHAB/DISTINCT PART HOSP',
@@ -123,29 +124,14 @@ def get_mimic_data(target_activity, max_len, min_len):
     static_features = static_bin_features + static_features
     seq_features = seq_act_features + seq_features
 
-    # pre-processing
     df = pd.read_csv(ds_path)
 
-    # todo: clean features
     idx = 0
     for case in df['Case ID'].unique():
         df_tmp = df[df['Case ID'] == case]
         df_tmp = df_tmp.sort_values(by='Complete Timestamp')
 
-        """
-        # ethnicity
-        if len(df_tmp['ethnicity'].unique()) > 1:
-            values = df_tmp['ethnicity'].unique().tolist()
-            if "UNKNOWN/NOT SPECIFIED" in values:
-                values = df_tmp['ethnicity'].unique().tolist().remove("UNKNOWN/NOT SPECIFIED")
-            try:
-                if len(values) > 0:
-                    df_tmp.loc[:, 'ethnicity'] = values[0]
-            except:
-                pass
-        """
-
-        # gender
+        # Gender
         if len(df_tmp['gender'].unique()) > 1:
             values = df_tmp['gender'].unique().tolist()
             values = [x for x in values if str(x) != 'nan']
@@ -222,13 +208,7 @@ def get_mimic_data(target_activity, max_len, min_len):
 
             if after_registration_flag:
 
-                """
-                seq_features_vals = []
-                for seq_feature_ in ['insurance']:
-                    seq_features_vals.append(x[seq_feature_])
-                """
-
-                x_seqs[-1].append(np.array(list(util.get_one_hot_of_activity_mimic(x))))  # + seq_features_vals))
+                x_seqs[-1].append(np.array(list(util.get_one_hot_of_activity_mimic(x))))
                 x_time_vals[-1].append(x['Complete Timestamp'])
 
                 for static_feature_ in static_features:
