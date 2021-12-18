@@ -15,7 +15,7 @@ setup(
     long_description=readme,
     author=['Sandra Zilker'],
     author_email=['sandra.zilker@fau.de'],
-    url='https://github.com/fau-is/xprem',
+    url='https://github.com/fau-is/patway-net',
     license=license,
     packages=find_packages(exclude=('tests', 'docs'))
 )
