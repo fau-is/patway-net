@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Example values for coefs of two tasks
-task_1 = "Release Type A (REA)"
+task_1 = "Admission to IC (AIC)"
 
-coef_values_task_1 = [-0.2888972, -0.001997236, -0.23954397, -0.2559873, -0.45435518, 0.07244425, 0.03626472, -0.16619293, -0.038904637, 0.037489716, 0.1976995, 0.07379714, 0.11746674, 0.3859931, 0.2782478, 0.4835849, -0.3130332, -0.43463305, -0.294928, -0.062663764, 0.09346965, -0.12880808, 0.28425518, 0.4040266]
+coef_values_task_1 = [0.2791559,-0.17074959,0.5298397,0.4373156,0.67313445,-0.026086565,0.1580356,0.5436955,-0.09161803,-0.24635044,-0.48332882,0.26735,-0.869039,0.40292484,0.28721142,-0.036975455,0.16741066,0.26040357,1.0643052,-0.37237328,0.22614,-0.31233218,0.2686185,-0.2347448]
 
 static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
@@ -41,7 +41,7 @@ def plot_box_plots(coefs_1):
     max_v = max(list(coefs_1.values()))
     min_v = min(list(coefs_1.values()))
     
-    fig = plt.figure(figsize=(30, 15), constrained_layout=False)
+    fig = plt.figure(figsize=(18, 12), constrained_layout=False)
     grid = fig.add_gridspec(1, 2, width_ratios=[10, 0.2], wspace=0.2, hspace=0.0)
     
     ax1 = fig.add_subplot(grid[0, 0])
@@ -69,7 +69,7 @@ def plot_box_plots(coefs_1):
     ax2.set_yticklabels([])
 
     plt.tight_layout()
-    plt.savefig('tmp.png', bbox_inches="tight")
+    plt.savefig('tmp.pdf', bbox_inches="tight")
 
 
 plot_box_plots(coefs_task_1)

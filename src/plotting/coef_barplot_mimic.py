@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Example values for coefs of two tasks
-task_1 = "Test"
+task_1 = "Left against medical advice (AMA)"
 
-coef_values_task_1 = [-0.34613788, -0.26816502, -0.32573804, 0.2927035]
+coef_values_task_1 = [1.1053009,0.73046404,1.1686265,-1.2705917,1.4283239]
 
-static_features = ['ethnicity', 'gender', 'language', 'religion']
+static_features = ['Diagnosis GASTROINTESTINAL BLEED','Diagnosis FEVER','Diagnosis ABDOMINAL PAIN','gender','insurance']
 
 coefs_task_1 = dict(zip([x for x in static_features], np.array(coef_values_task_1)))
 
@@ -35,7 +35,7 @@ def plot_box_plots(coefs_1):
     max_v = max(list(coefs_1.values()))
     min_v = min(list(coefs_1.values()))
     
-    fig = plt.figure(figsize=(30, 15), constrained_layout=False)
+    fig = plt.figure(figsize=(18,5), constrained_layout=False)
     grid = fig.add_gridspec(1, 2, width_ratios=[10, 0.2], wspace=0.2, hspace=0.0)
     
     ax1 = fig.add_subplot(grid[0, 0])
@@ -52,10 +52,10 @@ def plot_box_plots(coefs_1):
     
     plot_on_ax(ax1, coefs_1, title=task_1)
     
-    fig.text(0.5, 0.03, 'Value of corresponding coefficient', ha='center')
+    fig.text(0.5, -0.03, 'Value of corresponding coefficient', ha='center')
 
     my_palplot(sns.color_palette("viridis"), ax=ax2)
-    ax2.text(-5.2, 5.0, 'Strong negative\nimpact on model\noutput')
+    ax2.text(-5.2, 6.0, 'Strong negative\nimpact on model\noutput')
     ax2.text(-5.2, -0.6, 'Strong positive\nimpact on model\noutput')
     ax2.set_yticks([])
     ax2.set_xticks([])
@@ -63,6 +63,6 @@ def plot_box_plots(coefs_1):
     ax2.set_yticklabels([])
 
     plt.tight_layout()
-    plt.savefig('tmp.png', bbox_inches="tight")
+    plt.savefig('tmp.pdf', bbox_inches="tight")
 
 plot_box_plots(coefs_task_1)

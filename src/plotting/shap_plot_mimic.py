@@ -10,7 +10,7 @@ mode = "complete"
 target_activity = "LEFT AGAINST MEDICAL ADVI"
 
 
-with open(f'../../output/{data_set}_{mode}_{target_activity}_shap.npy', 'rb') as f: X_all = pickle.load(f)
+with open(f'../../output/{data_set}_{mode}_{target_activity}_shap_1000.npy', 'rb') as f: X_all = pickle.load(f)
 
 
 matplotlib.style.use('default')
@@ -49,11 +49,13 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     shap_values = [
-        'SHAP PHYS REFERRAL/NORMAL DELI', 'SHAP HOME', 'SHAP EMERGENCY ROOM ADMIT', 'SHAP SNF',
+        #'SHAP PHYS REFERRAL/NORMAL DELI',
+        'SHAP HOME',
+        'SHAP EMERGENCY ROOM ADMIT', 'SHAP SNF',
                   #  'SHAP HOME WITH HOME IV PROVIDR',
-                  'SHAP HOME HEALTH CARE', 'SHAP DEAD/EXPIRED',
-                  #  'SHAP SHORT TERM HOSPITAL',
-                  'SHAP TRANSFER FROM HOSP/EXTRAM', 'SHAP REHAB/DISTINCT PART HOSP',
+                  'SHAP HOME HEALTH CARE',# 'SHAP DEAD/EXPIRED','SHAP SHORT TERM HOSPITAL',
+                 # 'SHAP TRANSFER FROM HOSP/EXTRAM',
+                 'SHAP REHAB/DISTINCT PART HOSP',
                   #  'SHAP DISC-TRAN CANCER/CHLDRN H',
                   'SHAP CLINIC REFERRAL/PREMATURE'#, 'SHAP LONG TERM CARE HOSPITAL',
                   #  'SHAP DISC-TRAN TO FEDERAL HC', 'SHAP HOSPICE-MEDICAL FACILITY', 'SHAP LEFT AGAINST MEDICAL ADVI',
@@ -66,7 +68,7 @@ else:
     print("Data set not available!")
 
 fig11 = plt.figure(figsize=(16, 14), constrained_layout=False)  # 16, 8
-grid = fig11.add_gridspec(9, 3, width_ratios=[8, 20, 0.2], wspace=0.2, hspace=0.0)  # 3,3
+grid = fig11.add_gridspec(6, 3, width_ratios=[8, 20, 0.2], wspace=0.2, hspace=0.0)  # 3,3
 
 for i, c in enumerate(shap_values):
     ax = fig11.add_subplot(grid[i, 1])

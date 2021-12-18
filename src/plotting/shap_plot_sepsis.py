@@ -10,7 +10,7 @@ mode = "complete"
 target_activity = "Admission IC"
 
 
-with open(f'../../output/{data_set}_{mode}_{target_activity}_shap.npy', 'rb') as f: X_all = pickle.load(f)
+with open(f'../../output/{data_set}_{mode}_{target_activity}_shap_1000.npy', 'rb') as f: X_all = pickle.load(f)
 
 
 
