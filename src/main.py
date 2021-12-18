@@ -1,18 +1,9 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Mar  9 13:49:26 2021
-
-@author: makraus, svwe
-"""
 
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-import pickle
-
 tf.compat.v1.disable_v2_behavior()
-import matplotlib
+import pickle
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
@@ -24,9 +15,9 @@ import os
 import shap
 import src.data as data
 
-data_set = "mimic"  # sepsis; mimic
+data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
-max_len = 84  # we cut the extreme cases for runtime; sepsis=100; mimic = 84 (longest seq.)
+max_len = 100  # mimic=84; sepsis=100
 min_len = 3
 min_size_prefix = 1
 seed = False
@@ -399,7 +390,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                 for learning_rate in hpos["complete"]["learning_rate"]:
                     for batch_size in hpos["complete"]["batch_size"]:
 
-                        # Input layer
                         input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq),
                                                                 name='seq_input_layer')
                         input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
@@ -410,7 +400,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
                         concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
 
-                        # Output layer
                         output_layer = tf.keras.layers.Dense(1,
                                                              activation='sigmoid',
                                                              name='output_layer')(concatenate_layer)
@@ -468,7 +457,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             return best_model, best_hpos
 
         else:
-            # Input layer
             input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
             input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
@@ -478,7 +466,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
             concatenate_layer = tf.keras.layers.Concatenate(axis=1)([hidden_layer, input_layer_static])
 
-            # Output layer
             output_layer = tf.keras.layers.Dense(1,
                                                  activation='sigmoid',
                                                  name='output_layer')(concatenate_layer)
@@ -527,10 +514,8 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             for learning_rate in hpos["complete"]["learning_rate"]:
                 for batch_size in hpos["complete"]["batch_size"]:
 
-                    # Input layer
                     input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
-                    # Output layer
                     output_layer = tf.keras.layers.Dense(1,
                                                          activation='sigmoid',
                                                          name='output_layer')(input_layer_static)
@@ -588,10 +573,8 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             return best_model, best_hpos
 
         else:
-            # Input layer
             input_layer_static = tf.keras.layers.Input(shape=(num_features_stat), name='static_input_layer')
 
-            # Output layer
             output_layer = tf.keras.layers.Dense(1,
                                                  activation='sigmoid',
                                                  name='output_layer')(input_layer_static)
@@ -641,16 +624,13 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                 for learning_rate in hpos["complete"]["learning_rate"]:
                     for batch_size in hpos["complete"]["batch_size"]:
 
-                        # Input layer
                         input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq),
                                                                 name='seq_input_layer')
 
-                        # Hidden layer
                         hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
                             units=size,
                             return_sequences=False))(input_layer_seq)
 
-                        # Output layer
                         output_layer = tf.keras.layers.Dense(1,
                                                              activation='sigmoid',
                                                              name='output_layer')(hidden_layer)
@@ -710,15 +690,12 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
         else:
 
-            # Input layer
             input_layer_seq = tf.keras.layers.Input(shape=(max_case_len, num_features_seq), name='seq_input_layer')
 
-            # Hidden layer
             hidden_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
                 units=hpos['size'],
                 return_sequences=False))(input_layer_seq)
 
-            # Output layer
             output_layer = tf.keras.layers.Dense(1,
                                                  activation='sigmoid',
                                                  name='output_layer')(hidden_layer)
@@ -763,27 +740,25 @@ def correct_static(seq, seqs_time, idx_sample, idx_time):
     features = seqs_time[0][0].index._values
 
     for idx, feature in enumerate(features):
-        # age attributes
         if feature == "age":
             seq[idx] = seqs_time[idx_sample][idx_time][feature]
+
         elif feature == "gender" or feature == "ethnicity":
             pass
         elif feature in ['admission_type', 'marital_status', 'language', 'religion', 'insurance']:
             seq[idx] = seqs_time[idx_sample][idx_time][feature]
-        # bin attributes
         else:
             seq[idx] = seqs_time[idx_sample][idx_time][feature]
     return seq
 
 
 def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_time_vals=None, x_statics_vals_corr=None):
-    # blow up
+
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
 
     for idx_seq in range(0, len(X_seq)):
         for idx_ts in range(min_size_prefix, len(X_seq[idx_seq]) + 1):
             X_seq_prefix.append(X_seq[idx_seq][0:idx_ts])
-            # todo correct static features -> x_statics_vals_corr
             if data_set == "mimic":
                 X_stat_prefix.append(correct_static(X_stat[idx_seq], x_statics_vals_corr, idx_seq, idx_ts-1))
             else:
@@ -794,7 +769,7 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
             ts.append(idx_ts)
 
     if data_set is not "mimic":
-        # remove prefixes with future event from training set
+        # Remove prefixes with future event from training set
         if x_time is not None:
             X_seq_prefix_temp, X_stat_prefix_temp, y_prefix_temp, ts_temp = [], [], [], []
 
@@ -807,7 +782,7 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
 
             X_seq_prefix, X_stat_prefix, y_prefix, ts = X_seq_prefix_temp, X_stat_prefix_temp, y_prefix_temp, ts_temp
 
-    # vectorization
+    # Vectorization
     X_seq_final = np.zeros((len(X_seq_prefix), max_len, len(X_seq_prefix[0][0])), dtype=np.float32)
     X_stat_final = np.zeros((len(X_seq_prefix), len(X_stat_prefix[0])))
     for i, x in enumerate(X_seq_prefix):
@@ -832,13 +807,12 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         x_time_train = x_time[0: int(train_size * (1 - val_size) * len(y))]
         x_time_val = x_time[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))]
 
-    # model training
     results = {}
     best_hpos_repetitions = ""
 
     for repetition in range(0, num_repetitions):
 
-        # timestamp exists
+        # Timestamp exists
         if x_time is not None:
             if x_statics_vals_corr is not None:
                 X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
@@ -881,7 +855,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                     x_time_vals=x_time_val,
                     x_statics_vals_corr=None)
 
-        # no timestamp exists
+        # No timestamp exists
         else:
             X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
                                                                    x_statics[
@@ -999,9 +973,9 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                      results['gts'])),
             columns=['ts', 'preds', 'preds_proba', 'gts'])
 
-        cut_lengths = range(0, max_len - 1)  # range(1, X_train_seq.shape[1] + 1)
+        cut_lengths = range(0, max_len - 1)
 
-        # init
+        # Init
         if cut_lengths[0] not in results:
             for cut_len in cut_lengths:
                 results[cut_len] = {}
@@ -1011,7 +985,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                 results['all']['rep'] = list()
                 results['all']['auc'] = list()
 
-        # metrics per cut
+        # Metrics per cut
         for cut_len in cut_lengths:
             results_temp_cut = results_temp[results_temp.ts == cut_len]
 
@@ -1024,7 +998,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                 except:
                     pass
 
-        # metrics across cuts
+        # Metrics across cuts
         results['all']['rep'].append(
             metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds'], output_dict=True))
 
@@ -1038,7 +1012,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         except:
             pass
 
-    # save all results
+    # Save all results
     f = open(f'../output/{data_set}_{mode}_{target_activity}_summary.txt', 'w')
     results_ = results
     del results_['preds'], results_['preds_proba'], results_['gts'], results_['ts']
@@ -1128,14 +1102,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 hpos = {
 
-    "complete": {"size": [64], "learning_rate": [0.05], "batch_size": [128]},
-    # "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-    # "sequential": {"size": [8], "learning_rate": [0.01], "batch_size": [1024]},
+    "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-    # "static": {"learning_rate": [0.01], "batch_size": [1024]},
     "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-    "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
-           "solver": ["lbfgs"]},
+    "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs"]},
     "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
     # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
     "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
@@ -1182,65 +1152,25 @@ if data_set == "sepsis":
 elif data_set == "mimic":
 
     for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
-        for target_activity in ['LEFT AGAINST MEDICAL ADVI']:  # LONG TERM CARE HOSPITAL DEAD/EXPIRED
-            # DEAD/EXPIRED
-            # LONG TERM CARE HOSPITAL
-            # SHORT TERM HOSPITAL
-            # LEFT AGAINST MEDICAL ADVI
-            # HOSPICE-HOME
-            # DISCH-TRAN TO PSYCH HOSP
+        for target_activity in ['LEFT AGAINST MEDICAL ADVI']:
 
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features, static_vals_corr = data.get_mimic_data(
                 target_activity, max_len, min_len)
 
-            # Run eval on cuts to plot results --> Figure 1
+            # Run eval on cuts to plot results
             x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
                 x_seqs, x_statics, y, mode, target_activity,
                 data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=static_vals_corr)
 
             if mode == "complete":
-                # Train model and plot linear coeff --> Figure 2
+                # Train model and plot linear coeff
                 model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
                                         target_activity, static_features, best_hpos_repetitions)
 
                 x_seqs_train = x_seqs_train[0:1000]
                 x_statics_train = x_statics_train[0:1000]
 
-                # Get Explanations for LSTM inputs --> Figure 3
-                explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
-                shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
-
-                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
-                                       columns=seq_features)
-                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                                         columns=[f'SHAP {x}' for x in seq_features])
-                seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
-
-                with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
-                    pickle.dump(seq_value_shape, f)
-
-
-elif data_set == "bpi2011":
-
-    # bpi2011
-    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
-
-        for target_activity in ['190021 klinische opname a002']:
-
-            x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_bpi11_data(
-                target_activity, max_len, min_len)
-
-            # Run eval on cuts to plot results --> Figure 1
-            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
-                x_seqs, x_statics, y, mode, target_activity,
-                data_set, hpos, hpo, x_time_vals_final)
-
-            if mode == "complete":
-                # Train model and plot linear coeff --> Figure 2
-                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
-                                        target_activity, static_features, best_hpos_repetitions)
-
-                # Get Explanations for LSTM inputs --> Figure 3
+                # Get Explanations for LSTM inputs
                 explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
                 shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
 

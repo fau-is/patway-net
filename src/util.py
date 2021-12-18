@@ -106,13 +106,3 @@ def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_lacticacid):
     one_hot[ret[0]] = ret[1]
 
     return one_hot
-
-
-def get_one_hot_of_activity_bpi2011(x, acts):
-    one_hot = np.zeros(len(acts.keys()), dtype=np.float32)
-
-    for i, (k, v) in enumerate(acts.items()):
-        if x['Activity'] == acts[i]:
-            one_hot[i] = 1
-
-    return one_hot
