@@ -14,6 +14,8 @@ from sklearn.tree import DecisionTreeClassifier
 import os
 import shap
 import src.data as data
+import torch
+from src.interp_lstm_v2 import Net, NaiveCustomLSTM
 
 data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
@@ -22,7 +24,7 @@ min_len = 3
 min_size_prefix = 1
 seed = False
 num_repetitions = 1
-mode = "complete"
+mode = "test"
 val_size = 0.2
 train_size = 0.8
 
@@ -378,6 +380,89 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
+
+    if mode == "test":
+        import torch
+        import torch.nn as nn
+        import torch.optim as optim
+
+        if hpo:
+            best_model = ""
+            best_hpos = ""
+            aucs = []
+
+            x_train_seq = torch.from_numpy(x_train_seq)
+            x_train_stat = torch.from_numpy(x_train_stat)
+            y_train = torch.from_numpy(y_train)
+
+            for learning_rate in hpos["test"]["learning_rate"]:
+                for batch_size in hpos["test"]["batch_size"]:
+
+                    model = Net(input_sz_seq=num_features_seq,
+                            hidden_per_seq_feat_sz=20,
+                            interactions_seq=[],
+                            input_sz_stat=num_features_stat,
+                            output_sz=1)
+
+                    criterion = nn.BCELoss()
+                    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+                    idx = np.arange(len(x_train_seq))
+
+                    last_loss = 100
+                    patience = 10
+                    trigger_times = 0
+
+                    for epoch in range(10):  # epochs
+                        np.random.shuffle(idx)
+                        x_train_seq = x_train_seq[idx]
+                        x_train_stat = x_train_stat[idx]
+                        y_train = y_train[idx]
+
+                        loss_all = 0
+                        for i in range(x_train_seq.shape[0] // batch_size):
+                            out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
+                                    x_train_stat[i * batch_size:(i + 1) * batch_size])
+
+                            loss = criterion(torch.sigmoid(out), y_train[i * batch_size:(i + 1) * batch_size].double())
+                            optimizer.zero_grad()
+                            loss.backward()
+                            optimizer.step()
+                            loss_all += float(loss)
+                        print(f"Epoch: {epoch} -- Loss: {loss_all}")
+
+                        if loss_all > last_loss:
+                            trigger_times += 1
+                            if trigger_times >= patience:
+                                break
+                        else:
+                            last_loss = loss_all
+                            trigger_times = 0
+
+                    with torch.no_grad():
+                        x_val_stat = torch.from_numpy(x_val_stat)
+                        x_val_seq = torch.from_numpy(x_val_seq)
+
+                        preds_proba = torch.sigmoid(model(x_val_seq, x_val_stat))
+                        preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+
+                        auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                        aucs.append(auc)
+
+                        if auc >= max(aucs):
+                            best_model = model
+                            best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size}
+
+            f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+            f.write(str(best_hpos) + '\n')
+            f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+            f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+            f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+            f.close()
+
+            return best_model, best_hpos
+
+        else:
+            pass
 
     if mode == "complete":
 
@@ -884,7 +969,20 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                                                                     ts_info=True,
                                                                     x_statics_vals_corr=None)
 
-        print(0)
+        if mode == "test":
+            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                          y_val.reshape(-1, 1), hpos, hpo, mode)
+            X_test_seq = torch.from_numpy(X_test_seq)
+            X_test_stat = torch.from_numpy(X_test_stat)
+
+            preds_proba = torch.sigmoid(model(X_test_seq, X_test_stat))
+            def map_value(value):
+                if value >= 0.5:
+                    return 1
+                else:
+                    return 0
+            results['preds'] = [map_value(pred[0]) for pred in preds_proba]
+            results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
         if mode == "complete":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -1101,7 +1199,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 hpos = {
-
+    "test": {"learning_rate": [0.05], "batch_size": [64]},  # 3e-3
     "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
@@ -1117,7 +1215,7 @@ hpos = {
 
 if data_set == "sepsis":
 
-    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+    for mode in ['test']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
         for target_activity in ['Admission IC']:
 
             x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
