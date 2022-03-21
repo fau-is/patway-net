@@ -87,6 +87,9 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
 
+    # x_concat_train = x_train_stat
+    # x_concat_val = x_val_stat
+
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -404,7 +407,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             input_sz_stat=num_features_stat,
                             output_sz=1)
 
-                    criterion = nn.BCELoss()  # nn.BCEWithLogitsLoss
+                    criterion = nn.BCEWithLogitsLoss()  # nn.BCEWithLogitsLoss
                     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
                     idx = np.arange(len(x_train_seq))
 
@@ -412,7 +415,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                     patience = 10
                     trigger_times = 0
 
-                    for epoch in range(10):  # epochs
+                    for epoch in range(100):  # epochs
                         np.random.shuffle(idx)
                         x_train_seq = x_train_seq[idx]
                         x_train_stat = x_train_stat[idx]
@@ -423,11 +426,13 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
                                     x_train_stat[i * batch_size:(i + 1) * batch_size])
 
-                            loss = criterion(torch.sigmoid(out), y_train[i * batch_size:(i + 1) * batch_size].double())
-                            optimizer.zero_grad()
-                            loss.backward()
-                            optimizer.step()
-                            loss_all += float(loss)
+                            # torch.sigmoid()
+                            loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
+                            loss.backward()        # compute updates for each parameter
+                            optimizer.step()       # make the updates for each parameter
+                            optimizer.zero_grad()  # a clean up step for PyTorch
+
+                            loss_all += float(loss) / batch_size
                         print(f"Epoch: {epoch} -- Loss: {loss_all}")
 
                         if loss_all > last_loss:
@@ -1016,6 +1021,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
             preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
@@ -1199,7 +1205,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 hpos = {
-    "test": {"learning_rate": [0.05], "batch_size": [64]},  # 3e-3
+    "test": {"learning_rate": [0.001], "batch_size": [64]},  # 3e-3
     "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},

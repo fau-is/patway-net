@@ -167,13 +167,12 @@ class Net(nn.Module):
         self.interactions = interactions_seq
         self.input_sz_stat = input_sz_stat
 
-    def forward(self, x_seq, x_stat):  # x_stat
-
+    def forward(self, x_seq, x_stat):
 
         hidden_seq, (h_t, c_t) = self.lstm(x_seq)
         h_t = torch.cat((h_t, x_stat), dim=1)  # seq + stat features
         out = h_t @ self.output_coef.double() + self.output_bias
-
+        
         """
         output_sz = 1
         self.output_coef = nn.Parameter(torch.randn(self.input_sz_stat, output_sz))

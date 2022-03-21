@@ -1,8 +1,11 @@
+https://www.cs.toronto.edu/~lczhang/360/lec/w02/training.html
+
 1) single forward not forget gate?
 2) masking interaction / which feature?
 3) interactions also for stat features? -> only one weight value
 
-
+[x] check bceloss vs. bcelosswithlogit
+[x] check optimizer.zero_grad()
 
 
 
