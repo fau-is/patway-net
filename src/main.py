@@ -399,16 +399,16 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                 for batch_size in hpos["test"]["batch_size"]:
 
                     model = Net(input_sz_seq=num_features_seq,
-                            hidden_per_seq_feat_sz=20,
+                            hidden_per_seq_feat_sz=10,
                             interactions_seq=[],
                             input_sz_stat=num_features_stat,
                             output_sz=1)
 
-                    criterion = nn.BCELoss()
+                    criterion = nn.BCELoss()  # nn.BCEWithLogitsLoss
                     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
                     idx = np.arange(len(x_train_seq))
 
-                    last_loss = 100
+                    last_loss = 1000
                     patience = 10
                     trigger_times = 0
 
