@@ -411,11 +411,13 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
                     idx = np.arange(len(x_train_seq))
 
-                    last_loss = 1000
+                    import copy
+                    last_loss_all = np.inf
                     patience = 10
                     trigger_times = 0
+                    model_best_es = copy.deepcopy(model)
 
-                    for epoch in range(100):  # epochs
+                    for epoch in range(5):  # epochs
                         np.random.shuffle(idx)
                         x_train_seq = x_train_seq[idx]
                         x_train_stat = x_train_stat[idx]
@@ -435,26 +437,27 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             loss_all += float(loss) / batch_size
                         print(f"Epoch: {epoch} -- Loss: {loss_all}")
 
-                        if loss_all > last_loss:
+                        if loss_all > last_loss_all:
                             trigger_times += 1
                             if trigger_times >= patience:
                                 break
                         else:
-                            last_loss = loss_all
+                            last_loss_all = loss_all
                             trigger_times = 0
+                            model_best_es = copy.deepcopy(model)
 
                     with torch.no_grad():
                         x_val_stat = torch.from_numpy(x_val_stat)
                         x_val_seq = torch.from_numpy(x_val_seq)
 
-                        preds_proba = torch.sigmoid(model(x_val_seq, x_val_stat))
+                        preds_proba = torch.sigmoid(model_best_es(x_val_seq, x_val_stat))
                         preds_proba = [pred_proba[0] for pred_proba in preds_proba]
 
                         auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                         aucs.append(auc)
 
                         if auc >= max(aucs):
-                            best_model = model
+                            best_model = model_best_es
                             best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size}
 
             f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
@@ -1205,7 +1208,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 hpos = {
-    "test": {"learning_rate": [0.001], "batch_size": [64]},  # 3e-3
+    "test": {"learning_rate": [0.05], "batch_size": [64]},  # 3e-3
     "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
