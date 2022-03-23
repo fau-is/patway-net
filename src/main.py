@@ -1,7 +1,7 @@
-
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+
 tf.compat.v1.disable_v2_behavior()
 import pickle
 from sklearn import metrics
@@ -402,22 +402,27 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                 for batch_size in hpos["test"]["batch_size"]:
 
                     model = Net(input_sz_seq=num_features_seq,
-                            hidden_per_seq_feat_sz=10,
-                            interactions_seq=[],
-                            input_sz_stat=num_features_stat,
-                            output_sz=1)
+                                hidden_per_seq_feat_sz=4,
+                                interactions_seq=[],
+                                interactions_auto=True,
+                                input_sz_stat=num_features_stat,
+                                output_sz=1,
+                                x_seq=x_train_seq,
+                                x_stat=x_train_stat,
+                                y=y_train)
 
-                    criterion = nn.BCEWithLogitsLoss()  # nn.BCEWithLogitsLoss
+                    criterion = nn.BCEWithLogitsLoss()
                     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
                     idx = np.arange(len(x_train_seq))
 
                     import copy
                     last_loss_all = np.inf
                     patience = 10
+                    epochs = 100
                     trigger_times = 0
                     model_best_es = copy.deepcopy(model)
 
-                    for epoch in range(5):  # epochs
+                    for epoch in range(epochs):
                         np.random.shuffle(idx)
                         x_train_seq = x_train_seq[idx]
                         x_train_stat = x_train_stat[idx]
@@ -426,12 +431,12 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                         loss_all = 0
                         for i in range(x_train_seq.shape[0] // batch_size):
                             out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
-                                    x_train_stat[i * batch_size:(i + 1) * batch_size])
+                                        x_train_stat[i * batch_size:(i + 1) * batch_size])
 
                             # torch.sigmoid()
                             loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
-                            loss.backward()        # compute updates for each parameter
-                            optimizer.step()       # make the updates for each parameter
+                            loss.backward()  # compute updates for each parameter
+                            optimizer.step()  # make the updates for each parameter
                             optimizer.zero_grad()  # a clean up step for PyTorch
 
                             loss_all += float(loss) / batch_size
@@ -829,7 +834,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
 
 def correct_static(seq, seqs_time, idx_sample, idx_time):
-
     features = seqs_time[0][0].index._values
 
     for idx, feature in enumerate(features):
@@ -845,15 +849,15 @@ def correct_static(seq, seqs_time, idx_sample, idx_time):
     return seq
 
 
-def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_time_vals=None, x_statics_vals_corr=None):
-
+def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_time_vals=None,
+                      x_statics_vals_corr=None):
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
 
     for idx_seq in range(0, len(X_seq)):
         for idx_ts in range(min_size_prefix, len(X_seq[idx_seq]) + 1):
             X_seq_prefix.append(X_seq[idx_seq][0:idx_ts])
             if data_set == "mimic":
-                X_stat_prefix.append(correct_static(X_stat[idx_seq], x_statics_vals_corr, idx_seq, idx_ts-1))
+                X_stat_prefix.append(correct_static(X_stat[idx_seq], x_statics_vals_corr, idx_seq, idx_ts - 1))
             else:
                 X_stat_prefix.append(X_stat[idx_seq])
             y_prefix.append(y[idx_seq])
@@ -889,7 +893,8 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
         return X_seq_final, X_stat_final, y_final
 
 
-def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, x_time=None, x_statics_vals_corr=None):
+def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, x_time=None,
+                    x_statics_vals_corr=None):
     data_index = list(range(0, len(y)))
     val_index = data_index[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))]
     test_index = data_index[int(train_size * len(y)):]
@@ -908,14 +913,15 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         # Timestamp exists
         if x_time is not None:
             if x_statics_vals_corr is not None:
-                X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
-                                                                       x_statics[0: int(train_size * (1 - val_size) * len(y))],
-                                                                       y[0: int(train_size * (1 - val_size) * len(y))],
-                                                                       max_len,
-                                                                       ts_info=False,
-                                                                       x_time=time_start_val,
-                                                                       x_time_vals=x_time_train,
-                                                                       x_statics_vals_corr=x_statics_vals_corr[0: int(train_size * (1 - val_size) * len(y))])
+                X_train_seq, X_train_stat, y_train = time_step_blow_up(
+                    x_seqs[0: int(train_size * (1 - val_size) * len(y))],
+                    x_statics[0: int(train_size * (1 - val_size) * len(y))],
+                    y[0: int(train_size * (1 - val_size) * len(y))],
+                    max_len,
+                    ts_info=False,
+                    x_time=time_start_val,
+                    x_time_vals=x_time_train,
+                    x_statics_vals_corr=x_statics_vals_corr[0: int(train_size * (1 - val_size) * len(y))])
 
                 X_val_seq, X_val_stat, y_val = time_step_blow_up(
                     x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
@@ -925,7 +931,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                     ts_info=False,
                     x_time=time_start_test,
                     x_time_vals=x_time_val,
-                    x_statics_vals_corr=x_statics_vals_corr[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))])
+                    x_statics_vals_corr=x_statics_vals_corr[
+                                        int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))])
 
             else:
                 X_train_seq, X_train_stat, y_train = time_step_blow_up(
@@ -968,7 +975,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                                                                     y[int(train_size * len(y)):],
                                                                     max_len,
                                                                     ts_info=True,
-                                                                    x_statics_vals_corr=x_statics_vals_corr[int(train_size * len(y)):])
+                                                                    x_statics_vals_corr=x_statics_vals_corr[
+                                                                                        int(train_size * len(y)):])
         else:
             X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
                                                                     x_statics[int(train_size * len(y)):],
@@ -984,11 +992,13 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             X_test_stat = torch.from_numpy(X_test_stat)
 
             preds_proba = torch.sigmoid(model(X_test_seq, X_test_stat))
+
             def map_value(value):
                 if value >= 0.5:
                     return 1
                 else:
                     return 0
+
             results['preds'] = [map_value(pred[0]) for pred in preds_proba]
             results['preds_proba'] = [pred_proba[0] for pred_proba in preds_proba]
 
@@ -1200,19 +1210,19 @@ def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_static
     return model
 
 
-#gpus = tf.config.experimental.list_physical_devices('GPU')
-#for gpu in gpus:
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# for gpu in gpus:
 #    tf.config.experimental.set_memory_growth(gpu, True)
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
 
 hpos = {
     "test": {"learning_rate": [0.05], "batch_size": [64]},  # 3e-3
     "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-    "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs"]},
+    "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
+           "solver": ["lbfgs"]},
     "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
     # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
     "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},

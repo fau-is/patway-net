@@ -53,15 +53,12 @@ class NaiveCustomLSTM(nn.Module):
         for i in range(input_sz):
             self.U_mask[i, i * hidden_per_feat_sz:(i + 1) * hidden_per_feat_sz] = 1
 
-        # todo which feature??
         for i in range(0, len(interactions), 2):
             self.U_mask[i + input_sz, i * hidden_per_feat_sz:(i + 1) * hidden_per_feat_sz] = 1
             self.U_mask[i + input_sz + 1, i * hidden_per_feat_sz:(i + 1) * hidden_per_feat_sz] = 1
 
         v_mask_single = torch.ones((hidden_per_feat_sz, hidden_per_feat_sz))
-
         self.V_mask = torch.block_diag(*[v_mask_single for _ in range(input_sz + len(interactions))])
-
 
 
     def init_weights(self):
@@ -71,10 +68,10 @@ class NaiveCustomLSTM(nn.Module):
 
     def forward(self, x, init_states=None):
         # Assumes x.shape represents (batch_size, sequence_size, input_size)
-
         bs, seq_sz, feat = x.size()
         hidden_seq = []
         feat_seq = list(range(feat)) + list(sum(self.interactions, ()))  # concat
+
 
         if init_states is None:
             h_t, c_t = (
@@ -149,6 +146,7 @@ class NaiveCustomLSTM(nn.Module):
 
 class Net(nn.Module):
     def __init__(self, input_sz_seq: int, hidden_per_seq_feat_sz: int, input_sz_stat: int, output_sz: int,
+                 interactions_auto: bool, x_seq: torch.Tensor, x_stat: torch.Tensor, y: torch.Tensor,
                  interactions_seq: list = []):
         """
         :param input_sz_seq:
@@ -159,20 +157,86 @@ class Net(nn.Module):
         """
 
         super().__init__()
-        self.input_sz = input_sz_seq
+        self.input_sz_seq = input_sz_seq
         self.hidden_per_feat_sz = hidden_per_seq_feat_sz
+        self.interactions_seq = interactions_seq
+        self.interactions_auto = interactions_auto
+
+        if self.interactions_auto and self.interactions_seq == []:
+            self.interactions_seq = self.get_interactions_auto(x_seq, y)
+
         self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, interactions_seq)
-        self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))  # added input_sz_stat
+        self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
         self.output_bias = nn.Parameter(torch.randn(output_sz))
-        self.interactions = interactions_seq
         self.input_sz_stat = input_sz_stat
+
+    def get_interactions_auto(self, x_seq, y):
+        """
+        Determines interactions automatically from data
+        :param x_seq:
+        :return:
+        """
+
+        import random
+        import pandas as pd
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.model_selection import train_test_split
+        from sklearn.metrics import roc_auc_score
+
+        x_seq_features = list(range(x_seq.shape[2]))
+
+        num_iters = 100
+        num_best_inters = 3
+        results = pd.DataFrame({'Pair': [], 'AUC': []})
+
+        for _ in range(0, num_iters):
+
+            print(f"Iteration: {_}")
+
+            # Get feature pair
+            rnd_feat_source = random.choice(x_seq_features)
+            rnd_feat_target = random.choice(x_seq_features)
+            feat_pair = [rnd_feat_target, rnd_feat_source]
+            feat_pair.sort()
+
+            # Exists interaction already or is the interaction a loop?
+            if str(feat_pair) in results["Pair"].values or rnd_feat_source == rnd_feat_target:
+                continue
+
+            # Get data
+            x_seq_sample = x_seq[:,:, feat_pair[0]] * x_seq[:, :, feat_pair[1]]
+
+            # Learn and apply linear model
+            x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(x_seq_sample, y,
+                                                                                      train_size=0.8, shuffle=True)
+            model = LogisticRegression()
+            model.fit(x_seq_sample_train, np.ravel(y_train))
+            preds_proba = model.predict_proba(x_seq_sample_test)
+            preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+
+            try:
+                auc = roc_auc_score(y_true=y_test, y_score=preds_proba)
+            except:
+                auc = 0
+
+            # Save result
+            results = results.append({'Pair': str(feat_pair), 'AUC': auc}, ignore_index=True)
+
+        # Retrieve best interactions
+        results = results.nlargest(n=num_best_inters, columns=['AUC'])
+
+        if results.empty:
+            print("No interactions found!")
+            return []
+        else:
+            return [tuple(eval(x)) for x in results["Pair"].values]
 
     def forward(self, x_seq, x_stat):
 
         hidden_seq, (h_t, c_t) = self.lstm(x_seq)
         h_t = torch.cat((h_t, x_stat), dim=1)  # seq + stat features
         out = h_t @ self.output_coef.double() + self.output_bias
-        
+
         """
         output_sz = 1
         self.output_coef = nn.Parameter(torch.randn(self.input_sz_stat, output_sz))
@@ -198,8 +262,8 @@ class Net(nn.Module):
         x = torch.Tensor(x).unsqueeze(1)
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
-        out = h_t @ self.output_coef[(self.input_sz + inter_id) * self.hidden_per_feat_sz: (
-                                                            self.input_sz + inter_id + 1) * self.hidden_per_feat_sz]
+        out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
+                                                                                                       self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
         return x, out
 
     def plot_feat_stat_effect(self, feat_id, min_v, max_v):
