@@ -60,7 +60,6 @@ class NaiveCustomLSTM(nn.Module):
         v_mask_single = torch.ones((hidden_per_feat_sz, hidden_per_feat_sz))
         self.V_mask = torch.block_diag(*[v_mask_single for _ in range(input_sz + len(interactions))])
 
-
     def init_weights(self):
         stdv = 1.0 / math.sqrt(self.hidden_size)
         for weight in self.parameters():
@@ -71,7 +70,6 @@ class NaiveCustomLSTM(nn.Module):
         bs, seq_sz, feat = x.size()
         hidden_seq = []
         feat_seq = list(range(feat)) + list(sum(self.interactions, ()))  # concat
-
 
         if init_states is None:
             h_t, c_t = (
@@ -110,10 +108,13 @@ class NaiveCustomLSTM(nn.Module):
             U_c = (self.U_c * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
             U_o = (self.U_o * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
 
-            b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+            b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
             # b_f = self.b_f[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
-            b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
-            b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+            b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+            b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
 
         else:
             U_i = (self.U_i * self.U_mask)[feat_id, :].unsqueeze(0)
@@ -128,10 +129,13 @@ class NaiveCustomLSTM(nn.Module):
 
         for t in range(seq_sz):
             x_t = x[:, t]
-            i_t = torch.sigmoid((x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_i)
+            i_t = torch.sigmoid(
+                (x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_i)
             # f_t = torch.sigmoid((x_t @ U_f)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_f)
-            g_t = torch.tanh((x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_c)
-            o_t = torch.sigmoid((x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_o)
+            g_t = torch.tanh(
+                (x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_c)
+            o_t = torch.sigmoid(
+                (x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_o)
             # todo: f_t not used?
             c_t = i_t * g_t  # * f_t
             h_t = o_t * torch.tanh(c_t)
@@ -179,15 +183,16 @@ class Net(nn.Module):
 
         import random
         import pandas as pd
-        from sklearn.linear_model import LogisticRegression
+        from sklearn.linear_model import LogisticRegression, SGDClassifier
         from sklearn.model_selection import train_test_split
         from sklearn.metrics import roc_auc_score
 
         x_seq_features = list(range(x_seq.shape[2]))
+        # x_seq_features = list(range(x_seq.shape[1] * x_seq.shape[2]))
 
         num_iters = 100
-        num_best_inters = 3
-        results = pd.DataFrame({'Pair': [], 'AUC': []})
+        num_best_inters = 10
+        results = pd.DataFrame({'Pair': [], 'Measure': []})
 
         for _ in range(0, num_iters):
 
@@ -204,29 +209,54 @@ class Net(nn.Module):
                 continue
 
             # Get data
-            x_seq_sample = x_seq[:,:, feat_pair[0]] * x_seq[:, :, feat_pair[1]]
+            # x_seq_sample = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
+            # x_seq_sample = x_seq_sample[:, feat_pair[0]] * x_seq_sample[:, feat_pair[1]]
 
-            # Learn and apply linear model
-            x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(x_seq_sample, y,
-                                                                                      train_size=0.8, shuffle=True)
-            model = LogisticRegression()
-            model.fit(x_seq_sample_train, np.ravel(y_train))
-            preds_proba = model.predict_proba(x_seq_sample_test)
-            preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+            x_seq_sample = torch.cat([x_seq[:, :, feat_pair[0]].reshape(-1, x_seq.shape[1], 1),
+                                      x_seq[:, :, feat_pair[1]].reshape(-1, x_seq.shape[1], 1)], dim=2)
 
-            try:
-                auc = roc_auc_score(y_true=y_test, y_score=preds_proba)
-            except:
-                auc = 0
+            # x_seq_sample = x_seq[:, :, feat_pair[0]] * x_seq[:, :, feat_pair[1]]
+            # x_seq_sample = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
+
+            # iterate over time
+            measure = 0
+            max_measure = 0
+            for t in range(0, x_seq_sample.shape[1]):
+
+                # Learn and apply linear model
+                x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(x_seq_sample[:, t, :], y,
+                                                                                          train_size=0.7, shuffle=False)
+                # c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
+
+                # for param in c:
+                model = LogisticRegression(penalty='l2', solver='lbfgs', C=1.0)
+                # model = SGDClassifier()
+                # model.fit(x_seq_sample_train.reshape(-1, 1), np.ravel(y_train))
+                # preds = model.predict(x_seq_sample_test.reshape(-1, 1))
+                # preds_proba = model.predict_proba(x_seq_sample_test.reshape(-1, 1))
+
+                model.fit(x_seq_sample_train, np.ravel(y_train))
+                preds = model.predict(x_seq_sample_test)
+                preds_proba = model.predict_proba(x_seq_sample_test)
+
+                preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+
+                try:
+                    # measure = accuracy_score(y_true=y_test, y_score=preds)
+                    measure = roc_auc_score(y_true=y_test, y_score=preds_proba)
+                    if measure > max_measure:
+                        max_measure = measure
+                except:
+                    pass
 
             # Save result
-            results = results.append({'Pair': str(feat_pair), 'AUC': auc}, ignore_index=True)
+            results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
 
         # Retrieve best interactions
-        results = results.nlargest(n=num_best_inters, columns=['AUC'])
+        results = results.nlargest(n=num_best_inters, columns=['Measure'])
 
         if results.empty:
-            print("No interactions found!")
+            print("No interactions found!!!")
             return []
         else:
             return [tuple(eval(x)) for x in results["Pair"].values]

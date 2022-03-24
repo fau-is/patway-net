@@ -402,7 +402,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                 for batch_size in hpos["test"]["batch_size"]:
 
                     model = Net(input_sz_seq=num_features_seq,
-                                hidden_per_seq_feat_sz=4,
+                                hidden_per_seq_feat_sz=8,
                                 interactions_seq=[],
                                 interactions_auto=True,
                                 input_sz_stat=num_features_stat,
@@ -1217,7 +1217,7 @@ def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_static
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 hpos = {
-    "test": {"learning_rate": [0.05], "batch_size": [64]},  # 3e-3
+    "test": {"learning_rate": [0.01], "batch_size": [64]},  # 3e-3
     "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
