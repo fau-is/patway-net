@@ -42,6 +42,10 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
 
+    # Use only stat features
+    x_concat_train = x_train_stat
+    x_concat_val = x_val_stat
+
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -87,8 +91,9 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
 
-    # x_concat_train = x_train_stat
-    # x_concat_val = x_val_stat
+    # Use only stat features
+    x_concat_train = x_train_stat
+    x_concat_val = x_val_stat
 
     if hpo:
         best_model = ""
@@ -132,6 +137,10 @@ def train_svm(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
 
+    # Use only stat features
+    x_concat_train = x_train_stat
+    x_concat_val = x_val_stat
+
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -173,6 +182,10 @@ def train_svm(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 def train_gb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
+
+    # Use only stat features
+    x_concat_train = x_train_stat
+    x_concat_val = x_val_stat
 
     if hpo:
         best_model = ""
@@ -216,6 +229,10 @@ def train_ada(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
 
+    # Use only stat features
+    x_concat_train = x_train_stat
+    x_concat_val = x_val_stat
+
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -258,6 +275,10 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
 
+    # Use only stat features
+    x_concat_train = x_train_stat
+    x_concat_val = x_val_stat
+
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -298,6 +319,10 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
+
+    # Use only stat features
+    x_concat_train = x_train_stat
+    x_concat_val = x_val_stat
 
     if hpo:
         best_model = ""
@@ -340,6 +365,10 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
     x_concat_train = concatenate_tensor_matrix(x_train_seq, x_train_stat)
     x_concat_val = concatenate_tensor_matrix(x_val_seq, x_val_stat)
+
+    # Use only stat features
+    x_concat_train = x_train_stat
+    x_concat_val = x_val_stat
 
     if hpo:
         best_model = ""
@@ -1029,57 +1058,64 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "rf":
             model, best_hpos = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "lr":
             model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
-            # preds_proba = model.predict_proba(X_test_stat)
+            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "svm":
             model, best_hpos = train_svm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                          y_val.reshape(-1, 1), hpos, hpo)
-            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "gb":
             model, best_hpos = train_gb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "ada":
             model, best_hpos = train_ada(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                          y_val.reshape(-1, 1), hpos, hpo)
-            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "nb":
             model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "dt":
             model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 
         elif mode == "knn":
             model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                          y_val.reshape(-1, 1), hpos, hpo)
-            preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
 

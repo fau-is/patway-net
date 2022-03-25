@@ -1,3 +1,8 @@
+Keras vs. pytorch?
+- 
+
+
+
 https://www.cs.toronto.edu/~lczhang/360/lec/w02/training.html
 
 1) single forward not forget gate?
