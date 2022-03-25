@@ -12,7 +12,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score
 
 
 class NaiveCustomLSTM(nn.Module):
@@ -150,8 +149,8 @@ class NaiveCustomLSTM(nn.Module):
 
 class Net(nn.Module):
     def __init__(self, input_sz_seq: int, hidden_per_seq_feat_sz: int, input_sz_stat: int, output_sz: int,
-                 interactions_auto: bool, x_seq: torch.Tensor, x_stat: torch.Tensor, y: torch.Tensor,
-                 interactions_seq: list = []):
+                 epochs: int, interactions_seq_best: int, interactions_auto: bool, x_seq: torch.Tensor,
+                 x_stat: torch.Tensor, y: torch.Tensor, interactions_seq: list = []):
         """
         :param input_sz_seq:
         :param hidden_per_seq_feat_sz:
@@ -164,7 +163,9 @@ class Net(nn.Module):
         self.input_sz_seq = input_sz_seq
         self.hidden_per_feat_sz = hidden_per_seq_feat_sz
         self.interactions_seq = interactions_seq
+        self.interactions_seq_best = interactions_seq_best
         self.interactions_auto = interactions_auto
+        self.epochs = epochs
 
         if self.interactions_auto and self.interactions_seq == []:
             self.interactions_seq = self.get_interactions_auto(x_seq, y)
@@ -190,8 +191,8 @@ class Net(nn.Module):
         x_seq_features = list(range(x_seq.shape[2]))
         # x_seq_features = list(range(x_seq.shape[1] * x_seq.shape[2]))
 
-        num_iters = 100
-        num_best_inters = 10
+        num_iters = self.epochs
+        num_best_inters = self.interactions_seq_best
         results = pd.DataFrame({'Pair': [], 'Measure': []})
 
         for _ in range(0, num_iters):
@@ -211,46 +212,36 @@ class Net(nn.Module):
             # Get data
             # x_seq_sample = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
             # x_seq_sample = x_seq_sample[:, feat_pair[0]] * x_seq_sample[:, feat_pair[1]]
-
             x_seq_sample = torch.cat([x_seq[:, :, feat_pair[0]].reshape(-1, x_seq.shape[1], 1),
                                       x_seq[:, :, feat_pair[1]].reshape(-1, x_seq.shape[1], 1)], dim=2)
-
-            # x_seq_sample = x_seq[:, :, feat_pair[0]] * x_seq[:, :, feat_pair[1]]
-            # x_seq_sample = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
 
             # iterate over time
             measure = 0
             max_measure = 0
-            for t in range(0, x_seq_sample.shape[1]):
 
-                # Learn and apply linear model
-                x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(x_seq_sample[:, t, :], y,
-                                                                                          train_size=0.7, shuffle=False)
-                # c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
+            # Learn and apply linear model
+            x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(x_seq_sample[:, :, :].reshape(-1,
+                                                                    x_seq_sample.shape[1]*x_seq_sample.shape[2]), y,
+                                                                                      train_size=0.7, shuffle=False)
+            c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
 
-                # for param in c:
-                model = LogisticRegression(penalty='l2', solver='lbfgs', C=1.0)
-                # model = SGDClassifier()
-                # model.fit(x_seq_sample_train.reshape(-1, 1), np.ravel(y_train))
-                # preds = model.predict(x_seq_sample_test.reshape(-1, 1))
-                # preds_proba = model.predict_proba(x_seq_sample_test.reshape(-1, 1))
-
+            for param in c:
+                model = LogisticRegression(penalty='l2', solver='lbfgs', C=param)
                 model.fit(x_seq_sample_train, np.ravel(y_train))
-                preds = model.predict(x_seq_sample_test)
+                # preds = model.predict(x_seq_sample_test)
                 preds_proba = model.predict_proba(x_seq_sample_test)
 
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
 
                 try:
-                    # measure = accuracy_score(y_true=y_test, y_score=preds)
                     measure = roc_auc_score(y_true=y_test, y_score=preds_proba)
                     if measure > max_measure:
                         max_measure = measure
                 except:
                     pass
 
-            # Save result
-            results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
+                # Save result
+                results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
 
         # Retrieve best interactions
         results = results.nlargest(n=num_best_inters, columns=['Measure'])

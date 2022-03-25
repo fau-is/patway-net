@@ -400,70 +400,72 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
             for learning_rate in hpos["test"]["learning_rate"]:
                 for batch_size in hpos["test"]["batch_size"]:
+                    for feature_sz in hpos["test"]["feature_sz"]:
+                        model = Net(input_sz_seq=num_features_seq,
+                                    hidden_per_seq_feat_sz=feature_sz,
+                                    interactions_seq=[],
+                                    epochs=100,
+                                    interactions_seq_best=8,
+                                    interactions_auto=True,
+                                    input_sz_stat=num_features_stat,
+                                    output_sz=1,
+                                    x_seq=x_train_seq,
+                                    x_stat=x_train_stat,
+                                    y=y_train)
 
-                    model = Net(input_sz_seq=num_features_seq,
-                                hidden_per_seq_feat_sz=8,
-                                interactions_seq=[],
-                                interactions_auto=True,
-                                input_sz_stat=num_features_stat,
-                                output_sz=1,
-                                x_seq=x_train_seq,
-                                x_stat=x_train_stat,
-                                y=y_train)
+                        criterion = nn.BCEWithLogitsLoss()
+                        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+                        idx = np.arange(len(x_train_seq))
 
-                    criterion = nn.BCEWithLogitsLoss()
-                    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-                    idx = np.arange(len(x_train_seq))
+                        import copy
+                        last_loss_all = np.inf
+                        patience = 10
+                        epochs = 100
+                        trigger_times = 0
+                        model_best_es = copy.deepcopy(model)
 
-                    import copy
-                    last_loss_all = np.inf
-                    patience = 10
-                    epochs = 100
-                    trigger_times = 0
-                    model_best_es = copy.deepcopy(model)
+                        for epoch in range(epochs):
+                            np.random.shuffle(idx)
+                            x_train_seq = x_train_seq[idx]
+                            x_train_stat = x_train_stat[idx]
+                            y_train = y_train[idx]
 
-                    for epoch in range(epochs):
-                        np.random.shuffle(idx)
-                        x_train_seq = x_train_seq[idx]
-                        x_train_stat = x_train_stat[idx]
-                        y_train = y_train[idx]
+                            loss_all = 0
+                            for i in range(x_train_seq.shape[0] // batch_size):
+                                out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
+                                            x_train_stat[i * batch_size:(i + 1) * batch_size])
 
-                        loss_all = 0
-                        for i in range(x_train_seq.shape[0] // batch_size):
-                            out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
-                                        x_train_stat[i * batch_size:(i + 1) * batch_size])
+                                # torch.sigmoid()
+                                loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
+                                loss.backward()  # compute updates for each parameter
+                                optimizer.step()  # make the updates for each parameter
+                                optimizer.zero_grad()  # a clean up step for PyTorch
 
-                            # torch.sigmoid()
-                            loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
-                            loss.backward()  # compute updates for each parameter
-                            optimizer.step()  # make the updates for each parameter
-                            optimizer.zero_grad()  # a clean up step for PyTorch
+                                loss_all += float(loss) / batch_size
+                            print(f"Epoch: {epoch} -- Loss: {loss_all}")
 
-                            loss_all += float(loss) / batch_size
-                        print(f"Epoch: {epoch} -- Loss: {loss_all}")
+                            if loss_all > last_loss_all:
+                                trigger_times += 1
+                                if trigger_times >= patience:
+                                    break
+                            else:
+                                last_loss_all = loss_all
+                                trigger_times = 0
+                                model_best_es = copy.deepcopy(model)
 
-                        if loss_all > last_loss_all:
-                            trigger_times += 1
-                            if trigger_times >= patience:
-                                break
-                        else:
-                            last_loss_all = loss_all
-                            trigger_times = 0
-                            model_best_es = copy.deepcopy(model)
+                        with torch.no_grad():
+                            x_val_stat = torch.from_numpy(x_val_stat)
+                            x_val_seq = torch.from_numpy(x_val_seq)
 
-                    with torch.no_grad():
-                        x_val_stat = torch.from_numpy(x_val_stat)
-                        x_val_seq = torch.from_numpy(x_val_seq)
+                            preds_proba = torch.sigmoid(model_best_es(x_val_seq, x_val_stat))
+                            preds_proba = [pred_proba[0] for pred_proba in preds_proba]
 
-                        preds_proba = torch.sigmoid(model_best_es(x_val_seq, x_val_stat))
-                        preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+                            auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                            aucs.append(auc)
 
-                        auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
-                        aucs.append(auc)
-
-                        if auc >= max(aucs):
-                            best_model = model_best_es
-                            best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size}
+                            if auc >= max(aucs):
+                                best_model = model_best_es
+                                best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size}
 
             f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
             f.write(str(best_hpos) + '\n')
@@ -1217,7 +1219,7 @@ def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_static
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 hpos = {
-    "test": {"learning_rate": [0.02], "batch_size": [64]},  # 3e-3
+    "test": {"feature_sz": [8], "learning_rate": [0.02], "batch_size": [64]},  # 3e-3
     "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
