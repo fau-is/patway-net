@@ -150,7 +150,7 @@ class NaiveCustomLSTM(nn.Module):
 class Net(nn.Module):
     def __init__(self, input_sz_seq: int, hidden_per_seq_feat_sz: int, input_sz_stat: int, output_sz: int,
                  epochs: int, interactions_seq_best: int, interactions_auto: bool, x_seq: torch.Tensor,
-                 x_stat: torch.Tensor, y: torch.Tensor, interactions_seq: list = []):
+                 masking: bool, x_stat: torch.Tensor, y: torch.Tensor, interactions_seq: list = []):
         """
         :param input_sz_seq:
         :param hidden_per_seq_feat_sz:
@@ -166,6 +166,7 @@ class Net(nn.Module):
         self.interactions_seq_best = interactions_seq_best
         self.interactions_auto = interactions_auto
         self.epochs = epochs
+        self.masking = masking
 
         if self.interactions_auto and self.interactions_seq == []:
             self.interactions_seq = self.get_interactions_auto(x_seq, y)
@@ -184,12 +185,11 @@ class Net(nn.Module):
 
         import random
         import pandas as pd
-        from sklearn.linear_model import LogisticRegression, SGDClassifier
+        from sklearn.linear_model import LogisticRegression
         from sklearn.model_selection import train_test_split
         from sklearn.metrics import roc_auc_score
 
         x_seq_features = list(range(x_seq.shape[2]))
-        # x_seq_features = list(range(x_seq.shape[1] * x_seq.shape[2]))
 
         num_iters = self.epochs
         num_best_inters = self.interactions_seq_best
@@ -210,8 +210,6 @@ class Net(nn.Module):
                 continue
 
             # Get data
-            # x_seq_sample = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
-            # x_seq_sample = x_seq_sample[:, feat_pair[0]] * x_seq_sample[:, feat_pair[1]]
             x_seq_sample = torch.cat([x_seq[:, :, feat_pair[0]].reshape(-1, x_seq.shape[1], 1),
                                       x_seq[:, :, feat_pair[1]].reshape(-1, x_seq.shape[1], 1)], dim=2)
 
@@ -228,9 +226,7 @@ class Net(nn.Module):
             for param in c:
                 model = LogisticRegression(penalty='l2', solver='lbfgs', C=param)
                 model.fit(x_seq_sample_train, np.ravel(y_train))
-                # preds = model.predict(x_seq_sample_test)
                 preds_proba = model.predict_proba(x_seq_sample_test)
-
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
 
                 try:
