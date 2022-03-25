@@ -15,7 +15,7 @@ import os
 import shap
 import src.data as data
 import torch
-from src.interp_lstm_v2 import Net, NaiveCustomLSTM
+from src.interpret_LSTM import Net, NaiveCustomLSTM
 
 data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
