@@ -1,5 +1,19 @@
+Sequential Features
+- Activity
+- Leucocytes
+- CRP
+- LacticAcid
+- org:group
+
+Encoding
+- Activity + CRP + LacticAcid + Leucocytes -> one-hot encoding
+- org:group -> nicht betrachtet
+
+
 Keras vs. pytorch?
-- 
+- Early stopping -> val_loss; patience=10 (Keras)
+- Reduce LR on Plateau (Keras)
+- Bidirectionales LSTM (Keras)
 
 
 
