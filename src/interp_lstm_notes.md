@@ -1,3 +1,7 @@
+Should be checked
+- CRP values in one-hot encoding not used; also no outlier
+- Early stopping with val_loss
+
 Sequential Features
 - Activity
 - Leucocytes
@@ -11,9 +15,9 @@ Encoding
 
 
 Keras vs. pytorch?
-- Early stopping -> val_loss; patience=10 (Keras)
-- Reduce LR on Plateau (Keras)
-- Bidirectionales LSTM (Keras)
+- Early stopping -> val_loss; patience=10 (Keras) --> check
+- Reduce LR on Plateau (Keras) --> remove it
+- Bidirectionales LSTM (Keras) --> no simple LSTM
 
 
 
