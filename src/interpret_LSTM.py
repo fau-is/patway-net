@@ -14,6 +14,24 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 
 
+class MLP(nn.Module):
+    def __init__(self, input_size, hidden_size):
+        super(MLP, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.fc1 = torch.nn.Linear(self.input_size, self.hidden_size)
+        self.relu = torch.nn.ReLU()
+        self.fc2 = torch.nn.Linear(self.hidden_size, 1)
+        self.sigmoid = torch.nn.Sigmoid()
+
+    def forward(self, x):
+        hidden = self.fc1(x)
+        relu = self.relu(hidden)
+        output = self.fc2(relu)
+        output = self.sigmoid(output)
+        return output
+
+
 class NaiveCustomLSTM(nn.Module):
     def __init__(self, input_sz: int, hidden_per_feat_sz: int, masking: bool, interactions: list):
         super().__init__()
@@ -186,6 +204,7 @@ class Net(nn.Module):
             self.interactions_seq = self.get_interactions_seq_auto(x_seq, y)
 
         self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, interactions_seq)
+        self.mlps = nn.ModuleList([MLP(1, 10) for i in range(input_sz_stat)])
         self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
         self.output_bias = nn.Parameter(torch.randn(output_sz))
         self.input_sz_stat = input_sz_stat
@@ -265,8 +284,16 @@ class Net(nn.Module):
     def forward(self, x_seq, x_stat):
 
         hidden_seq, (h_t, c_t) = self.lstm(x_seq)
-        h_t = torch.cat((h_t, x_stat), dim=1)  # seq + stat features
-        out = h_t @ self.output_coef.double() + self.output_bias
+
+        out_mlp = []
+        for i, mlp in enumerate(self.mlps):
+            if i == 0:
+                out_mlp = mlp(x_stat[:, i].reshape(-1, 1).float())
+            else:
+                out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
+                out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
+
+        out = torch.cat((h_t, out_mlp), dim=1) @ self.output_coef.float() + self.output_bias
 
         """
         output_sz = 1

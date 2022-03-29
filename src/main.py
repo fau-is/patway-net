@@ -434,7 +434,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             model = Net(input_sz_seq=num_features_seq,
                                         hidden_per_seq_feat_sz=feature_sz,
                                         interactions_seq=[],
-                                        interactions_seq_itr=1000,
+                                        interactions_seq_itr=10,
                                         interactions_seq_best=inter_seq_best,
                                         interactions_seq_auto=True,
                                         input_sz_stat=num_features_stat,
@@ -473,7 +473,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                     optimizer.step()  # make the updates for each parameter
 
                                     # train loss per batch
-                                    print('[{}/{} {}/{}] train loss: {:.8}'.format(epoch, epochs, i+1, number_batches, loss.item()))
+                                    # print('[{}/{} {}/{}] train loss: {:.8}'.format(epoch, epochs, i+1, number_batches, loss.item()))
 
                                 # Early stopping
                                 def validation(model, x_val_seq, x_val_stat, y_val, loss_function):
@@ -514,8 +514,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 if flag_es:
                                     break
 
-
-
                             # Select model based on val auc
                             model.eval()
                             with torch.no_grad():
@@ -542,7 +540,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             f.close()
 
             return best_model, best_hpos
-
         else:
             pass
 
@@ -1295,7 +1292,7 @@ def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_static
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 hpos = {
-    "test": {"feature_sz": [8], "learning_rate": [0.02], "batch_size": [64], "inter_seq_best": [8]},
+    "test": {"feature_sz": [8], "learning_rate": [0.01], "batch_size": [64], "inter_seq_best": [8]},
     "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
