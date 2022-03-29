@@ -331,93 +331,9 @@ class Net(nn.Module):
     def plot_feat_stat_effect(self, feat_id, min_v, max_v):
         x = torch.linspace(min_v, max_v).reshape(-1, 1)
 
-        out = self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
+        mlp = self.mlps[feat_id]
+        mlp_out = mlp(x)
+
+        out = self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size] * mlp_out
 
         return x, out
-
-
-"""
-n = 1000
-
-X_seq = torch.randn(n, 10, 3)
-X_stat = torch.randn(n, 3)
-y = (X_seq[:, :, 0] ** 2).sum(dim=1) + X_seq[:, :, 1].sum(dim=1) + (X_seq[:, :, 2] ** 3).sum(dim=1)
-y = (y - y.mean()) / y.std()
-y = y.unsqueeze(1)
-
-def map_value(value):
-    if value >= 0:
-        return 1
-    else:
-        return 0
-
-y = torch.FloatTensor([map_value(i[0]) for i in y.tolist()])
-
-m = Net(input_sz_seq=3,
-        hidden_per_seq_feat_sz=10,
-        interactions_seq=[],
-        input_sz_stat=3,
-        output_sz=1)
-
-# criterion = nn.MSELoss()
-criterion = nn.BCEWithLogitsLoss()  # sigmoid ->
-optimizer = optim.Adam(m.parameters(), lr=3e-3)
-
-idx = np.arange(n)
-for epoch in range(100):  # epochs
-    np.random.shuffle(idx)
-    X_seq = X_seq[idx]
-    X_stat = X_stat[idx]
-    y = y[idx]
-
-    loss_all = 0
-
-    for i in range(X_seq.shape[0] // 64):  # 64 = batch size
-        out = m(X_seq[i * 64:(i + 1) * 64], X_stat[i * 64:(i + 1) * 64])
-        loss = criterion(out.squeeze(), y[i * 64:(i + 1) * 64])
-        optimizer.zero_grad()  # zero init
-        loss.backward()
-        optimizer.step()
-        loss_all += float(loss)
-
-    print(f"Epoch: {epoch} -- Loss: {loss_all}")
-
-x, out = m.plot_feat_seq_effect(0, -2, 2)
-x = x.detach().numpy().squeeze()
-out = out.detach().numpy()
-plt.plot(x, out)
-plt.show()
-
-x, out = m.plot_feat_seq_effect(1, -2, 2)
-x = x.detach().numpy().squeeze()
-out = out.detach().numpy()
-plt.plot(x, out)
-plt.show()
-
-x, out = m.plot_feat_seq_effect(2, -2, 2)
-x = x.detach().numpy().squeeze()
-out = out.detach().numpy()
-plt.plot(x, out)
-plt.show()
-
-if m.interactions:
-    X_seq, out = m.plot_feat_seq_effect_inter(0, -1, 1, -1, 1)
-    X_seq = X_seq.detach().numpy().squeeze()
-    out = out.detach().numpy()
-    plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
-    plt.show()
-
-x, out = m.plot_feat_stat_effect(0, -2, 2)
-x = x.detach().numpy().squeeze()
-out = out.detach().numpy()
-plt.plot(x, list(out[0]) * len(x))
-plt.show()
-
-from sklearn.metrics import accuracy_score
-
-with torch.no_grad():
-    preds = m(X_seq, X_stat).squeeze()
-    preds = torch.FloatTensor([map_value(i) for i in preds.tolist()])
-
-    print(f"Accuracy: {accuracy_score(y, preds)}")
-"""

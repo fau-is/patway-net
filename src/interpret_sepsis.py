@@ -21,7 +21,6 @@ for idx in range(0, len(seq_features)):
     plt.plot(x, out)
     plt.title(seq_features[idx])
     plt.show()
-"""
 
 # Print seq interaction features (first time step
 if number_interactions_seq > 0:
@@ -32,9 +31,15 @@ if number_interactions_seq > 0:
         plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
         plt.title(f"{seq_features[interactions_seq[idx][0]]} x {seq_features[interactions_seq[idx][1]]}")
         plt.show()
+"""
 
 # Print stat features
 for idx in range(0, len(static_features)):
-    pass
+    x, out = model.plot_feat_stat_effect(idx, -2, 2)
+    x = x.detach().numpy().squeeze()
+    out = out.detach().numpy()
+    plt.plot(x, out)
+    plt.title(static_features[idx])
+    plt.show()
 
 
