@@ -12,14 +12,15 @@ number_interactions_seq = len(interactions_seq)
 
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 100, 3)
 
-"""
 # Print seq features (first time step)
 for idx in range(0, len(seq_features)):
     x, out = model.plot_feat_seq_effect(idx, -2, 2)
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
     plt.plot(x, out)
-    plt.title(seq_features[idx])
+    plt.xlabel("Feature value")
+    plt.ylabel("Feature effect on model output")
+    plt.title(f"Sequential feature:{seq_features[idx]}")
     plt.show()
 
 # Print seq interaction features (first time step
@@ -29,9 +30,11 @@ if number_interactions_seq > 0:
         X_seq = X_seq.detach().numpy().squeeze()
         out = out.detach().numpy()
         plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
-        plt.title(f"{seq_features[interactions_seq[idx][0]]} x {seq_features[interactions_seq[idx][1]]}")
+        plt.title(f"Interaction:{seq_features[interactions_seq[idx][0]]} x {seq_features[interactions_seq[idx][1]]}")
+        plt.xlabel(f"{seq_features[interactions_seq[idx][0]]}")
+        plt.ylabel(f"{seq_features[interactions_seq[idx][1]]}")
         plt.show()
-"""
+
 
 # Print stat features
 for idx in range(0, len(static_features)):
@@ -39,7 +42,9 @@ for idx in range(0, len(static_features)):
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
     plt.plot(x, out)
-    plt.title(static_features[idx])
+    plt.xlabel("Feature value")
+    plt.ylabel("Feature effect on model output")
+    plt.title(f"Static feature:{static_features[idx]}")
     plt.show()
 
 
