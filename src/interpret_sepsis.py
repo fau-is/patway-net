@@ -61,7 +61,7 @@ if number_interactions_seq > 0:
 
 # Print stat features
 for idx in range(0, len(static_features)):
-    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)))
+    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
     plt.plot(x, out)
