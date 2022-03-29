@@ -182,15 +182,15 @@ class Net(nn.Module):
         self.interactions_seq_itr = interactions_seq_itr
         self.masking = masking
 
-        if self.interactions_auto and self.interactions_seq == [] and self.masking:
-            self.interactions_seq = self.get_interactions_auto(x_seq, y)
+        if self.interactions_seq_auto and self.interactions_seq == [] and self.masking:
+            self.interactions_seq = self.get_interactions_seq_auto(x_seq, y)
 
         self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, interactions_seq)
         self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
         self.output_bias = nn.Parameter(torch.randn(output_sz))
         self.input_sz_stat = input_sz_stat
 
-    def get_interactions_auto(self, x_seq, y):
+    def get_interactions_seq_auto(self, x_seq, y):
         """
         Determines interactions automatically from data
         :param x_seq:

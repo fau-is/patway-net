@@ -434,7 +434,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             model = Net(input_sz_seq=num_features_seq,
                                         hidden_per_seq_feat_sz=feature_sz,
                                         interactions_seq=[],
-                                        interactions_seq_itr=100,
+                                        interactions_seq_itr=1000,
                                         interactions_seq_best=inter_seq_best,
                                         interactions_seq_auto=True,
                                         input_sz_stat=num_features_stat,
