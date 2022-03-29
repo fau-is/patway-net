@@ -449,7 +449,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             idx = np.arange(len(x_train_seq))
 
                             import copy
-                            last_val_loss = np.inf
+                            best_val_loss = np.inf
                             patience = 10
                             epochs = 100
                             trigger_times = 0
@@ -497,7 +497,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 current_val_loss = validation(model, x_val_seq, x_val_stat, y_val, criterion)
                                 print('Validation loss:', current_val_loss)
 
-                                if current_val_loss >= last_val_loss:
+                                if current_val_loss > best_val_loss:
                                     trigger_times += 1
                                     print('trigger times:', trigger_times)
 
@@ -509,9 +509,12 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                     print('trigger times: 0')
                                     trigger_times = 0
                                     model_best_es = copy.deepcopy(model)
+                                    best_val_loss = current_val_loss
 
                                 if flag_es:
                                     break
+
+
 
                             # Select model based on val auc
                             model.eval()
