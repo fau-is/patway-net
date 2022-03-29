@@ -1296,7 +1296,7 @@ def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_static
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 hpos = {
-    "test": {"feature_sz": [8], "learning_rate": [0.01], "batch_size": [64], "inter_seq_best": [8]},
+    "test": {"feature_sz": [8], "learning_rate": [0.01], "batch_size": [64], "inter_seq_best": [2]},
     "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
     "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},

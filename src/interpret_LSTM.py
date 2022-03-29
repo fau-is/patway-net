@@ -143,12 +143,12 @@ class NaiveCustomLSTM(nn.Module):
             U_o = (self.U_o * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
 
             b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                                        self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
             # b_f = self.b_f[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
             b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                                        self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
             b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                                        self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
 
         else:
             U_i = (self.U_i * self.U_mask)[feat_id, :].unsqueeze(0)
@@ -214,7 +214,7 @@ class Net(nn.Module):
         self.input_sz_stat = input_sz_stat
 
     def get_number_interactions_seq(self):
-        return len(self.interactions_seq)
+        return self.interactions_seq
 
     def get_interactions_seq_auto(self, x_seq, y):
         """
@@ -280,8 +280,8 @@ class Net(nn.Module):
                 except:
                     pass
 
-                # Save result
-                results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
+            # Save result
+            results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
 
         # Retrieve best interactions
         results = results.nlargest(n=num_best_inters, columns=['Measure'])
@@ -315,11 +315,7 @@ class Net(nn.Module):
         return out
 
     def plot_feat_seq_effect(self, feat_id, min_v, max_v):
-        n_steps = False
-        if n_steps:
-            x = torch.linspace(min_v, max_v).reshape(-1, 10, 1)
-        else:
-            x = torch.linspace(min_v, max_v).reshape(-1, 1, 1)
+        x = torch.linspace(min_v, max_v).reshape(-1, 1, 1)
 
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, feat_id)
         out = h_t @ self.output_coef[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
@@ -332,7 +328,7 @@ class Net(nn.Module):
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
         out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
-                                                                                                       self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
+                                                    self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
         return x, out
 
     def plot_feat_stat_effect(self, feat_id, min_v, max_v):
