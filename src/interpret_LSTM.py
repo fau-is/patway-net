@@ -336,24 +336,23 @@ class Net(nn.Module):
         return x, out
 
     def plot_feat_seq_effect_inter(self, inter_id, x):
-        # x = [[x1, x2] for x1 in np.linspace(min_f1, max_f1) for x2 in np.linspace(max_f2, min_f2)]
-        # x = [[x1, x2] for
-
-        x = torch.Tensor(x).unsqueeze(1)
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
         out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
                                                     self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
         return x, out
 
-
-
-    def plot_feat_stat_effect(self, feat_id, min_v, max_v):
+    def plot_feat_stat_effect_custom(self, feat_id, min_v, max_v):
         x = torch.linspace(min_v, max_v).reshape(-1, 1)
-
         mlp = self.mlps[feat_id]
         mlp_out = mlp(x)
+        out = self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size] * mlp_out
 
+        return x, out
+
+    def plot_feat_stat_effect(self, feat_id, x):
+        mlp = self.mlps[feat_id]
+        mlp_out = mlp(x)
         out = self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size] * mlp_out
 
         return x, out

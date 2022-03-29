@@ -28,27 +28,40 @@ for idx in range(0, len(seq_features)):
     plt.title(f"Sequential feature:{seq_features[idx]}")
     plt.show()
     print(0)
-"""
+
 
 # Print seq interaction features (first time step
-t = 5
+t = 7
 if number_interactions_seq > 0:
     for idx in range(0, number_interactions_seq):
-        X_seq, out = model.plot_feat_seq_effect_inter_custom(idx, -1, 1, -1, 1)
+
+        a = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][0]].reshape(-1, 1, 1))
+        b = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][1]].reshape(-1, 1, 1))
+        x = torch.cat((a, b), dim=2)
+
+        X_seq, out = model.plot_feat_seq_effect_inter(idx, x)
         X_seq = X_seq.detach().numpy().squeeze()
         out = out.detach().numpy()
+
+        # max_size = int(np.sqrt(len(X_seq))) ** 2
+        # out = out[0:max_size]
+        a_vals = len(set(X_seq[:,0]))
+        b_vals = len(set(X_seq[:,1]))
         im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+        # todo:
+        # im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+                        # vmin=0, vmax=1)
         cbar = plt.colorbar(im)
         # cbar.set_label("")
         plt.title(f"Interaction:{seq_features[interactions_seq[idx][0]]} x {seq_features[interactions_seq[idx][1]]}")
         plt.xlabel(f"{seq_features[interactions_seq[idx][0]]}")
         plt.ylabel(f"{seq_features[interactions_seq[idx][1]]}")
         plt.show()
-
 """
+
 # Print stat features
 for idx in range(0, len(static_features)):
-    x, out = model.plot_feat_stat_effect(idx, -2, 2)
+    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)))
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
     plt.plot(x, out)
@@ -56,5 +69,5 @@ for idx in range(0, len(static_features)):
     plt.ylabel("Feature effect on model output")
     plt.title(f"Static feature:{static_features[idx]}")
     plt.show()
-"""
+
 
