@@ -105,10 +105,14 @@ class NaiveCustomLSTM(nn.Module):
             x_t = x[:, t, :]
 
             if self.masking:
-                i_t = torch.sigmoid(x_t[:, feat_seq] @ (self.U_i * self.U_mask) + h_t @ (self.V_i * self.V_mask) + self.b_i)
-                f_t = torch.sigmoid(x_t[:, feat_seq] @ (self.U_f * self.U_mask) + h_t @ (self.V_f * self.V_mask) + self.b_f)
-                g_t = torch.tanh(x_t[:, feat_seq] @ (self.U_c * self.U_mask) + h_t @ (self.V_c * self.V_mask) + self.b_c)
-                o_t = torch.sigmoid(x_t[:, feat_seq] @ (self.U_o * self.U_mask) + h_t @ (self.V_o * self.V_mask) + self.b_o)
+                i_t = torch.sigmoid(
+                    x_t[:, feat_seq] @ (self.U_i * self.U_mask) + h_t @ (self.V_i * self.V_mask) + self.b_i)
+                f_t = torch.sigmoid(
+                    x_t[:, feat_seq] @ (self.U_f * self.U_mask) + h_t @ (self.V_f * self.V_mask) + self.b_f)
+                g_t = torch.tanh(
+                    x_t[:, feat_seq] @ (self.U_c * self.U_mask) + h_t @ (self.V_c * self.V_mask) + self.b_c)
+                o_t = torch.sigmoid(
+                    x_t[:, feat_seq] @ (self.U_o * self.U_mask) + h_t @ (self.V_o * self.V_mask) + self.b_o)
                 c_t = f_t * c_t + i_t * g_t
                 h_t = o_t * torch.tanh(c_t)
             else:
@@ -139,12 +143,12 @@ class NaiveCustomLSTM(nn.Module):
             U_o = (self.U_o * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
 
             b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                        self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
             # b_f = self.b_f[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
             b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                        self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
             b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                        self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
 
         else:
             U_i = (self.U_i * self.U_mask)[feat_id, :].unsqueeze(0)
@@ -209,6 +213,9 @@ class Net(nn.Module):
         self.output_bias = nn.Parameter(torch.randn(output_sz))
         self.input_sz_stat = input_sz_stat
 
+    def get_number_interactions_seq(self):
+        return len(self.interactions_seq)
+
     def get_interactions_seq_auto(self, x_seq, y):
         """
         Determines interactions automatically from data
@@ -252,7 +259,11 @@ class Net(nn.Module):
 
             # Learn and apply linear model
             x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(x_seq_sample[:, :, :].reshape(-1,
-                                                                    x_seq_sample.shape[1]*x_seq_sample.shape[2]), y,
+                                                                                                                    x_seq_sample.shape[
+                                                                                                                        1] *
+                                                                                                                    x_seq_sample.shape[
+                                                                                                                        2]),
+                                                                                      y,
                                                                                       train_size=0.7, shuffle=False)
             c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
 
@@ -321,7 +332,7 @@ class Net(nn.Module):
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
         out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
-                                                        self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
+                                                                                                       self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
         return x, out
 
     def plot_feat_stat_effect(self, feat_id, min_v, max_v):

@@ -434,7 +434,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             model = Net(input_sz_seq=num_features_seq,
                                         hidden_per_seq_feat_sz=feature_sz,
                                         interactions_seq=[],
-                                        interactions_seq_itr=10,
+                                        interactions_seq_itr=100,
                                         interactions_seq_best=inter_seq_best,
                                         interactions_seq_auto=True,
                                         input_sz_stat=num_features_stat,
@@ -1194,6 +1194,10 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         results['all']['rep'].append(
             metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds'], output_dict=True))
 
+        # Save model
+        if mode == 'test':
+            torch.save(model, os.path.join("../model", f"model_{repetition}"))
+
         try:
             auc = metrics.roc_auc_score(y_true=results_temp['gts'], y_score=results_temp['preds_proba'])
             results['all']['auc'].append(auc)
@@ -1319,6 +1323,7 @@ if data_set == "sepsis":
             x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
                 x_seqs, x_statics, y, mode, target_activity,
                 data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=None)
+
 
             if mode == "complete":
                 # Train model and plot linear coeff --> Figure 2
