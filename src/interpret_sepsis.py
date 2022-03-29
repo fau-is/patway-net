@@ -12,6 +12,7 @@ number_interactions_seq = len(interactions_seq)
 
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 100, 3)
 
+"""
 # Print seq features (first time step)
 for idx in range(0, len(seq_features)):
     x, out = model.plot_feat_seq_effect(idx, -2, 2)
@@ -20,7 +21,7 @@ for idx in range(0, len(seq_features)):
     plt.plot(x, out)
     plt.title(seq_features[idx])
     plt.show()
-
+"""
 
 # Print seq interaction features (first time step
 if number_interactions_seq > 0:
@@ -29,6 +30,7 @@ if number_interactions_seq > 0:
         X_seq = X_seq.detach().numpy().squeeze()
         out = out.detach().numpy()
         plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+        plt.title(f"{seq_features[interactions_seq[idx][0]]} x {seq_features[interactions_seq[idx][1]]}")
         plt.show()
 
 # Print stat features

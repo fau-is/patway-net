@@ -163,13 +163,10 @@ class NaiveCustomLSTM(nn.Module):
 
         for t in range(seq_sz):
             x_t = x[:, t]
-            i_t = torch.sigmoid(
-                (x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_i)
+            i_t = torch.sigmoid((x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] + b_i)
             # f_t = torch.sigmoid((x_t @ U_f)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_f)
-            g_t = torch.tanh(
-                (x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_c)
-            o_t = torch.sigmoid(
-                (x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_o)
+            g_t = torch.tanh((x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_c)
+            o_t = torch.sigmoid((x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_o)
             # todo: f_t not used?
             c_t = i_t * g_t  # * f_t
             h_t = o_t * torch.tanh(c_t)
@@ -207,7 +204,7 @@ class Net(nn.Module):
         if self.interactions_seq_auto and self.interactions_seq == [] and self.masking:
             self.interactions_seq = self.get_interactions_seq_auto(x_seq, y)
 
-        self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, interactions_seq)
+        self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, self.interactions_seq)
         self.mlps = nn.ModuleList([MLP(1, 10) for i in range(input_sz_stat)])
         self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
         self.output_bias = nn.Parameter(torch.randn(output_sz))
