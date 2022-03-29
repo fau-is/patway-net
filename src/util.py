@@ -62,79 +62,13 @@ def get_one_hot_of_activity_mimic(x):
     return one_hot
 
 
-def get_one_hot_of_activity_sepsis_test(x, max_leucocytes, max_lacticacid, max_crp, act2int):
-
-    one_hot = np.zeros(4, dtype=np.float32)
-
-    one_hot[0] = act2int[x['Activity']] / len(act2int.keys())
-
-    if np.isnan(x['Leucocytes']):
-        one_hot[1] = -1
-    else:
-        one_hot[1] = min(x['Leucocytes'], max_leucocytes) / max_leucocytes
-
-    if np.isnan(x['LacticAcid']):
-        one_hot[2] = -1
-    else:
-        one_hot[2] = min(x['LacticAcid'], max_lacticacid) / max_lacticacid
-
-    if np.isnan(x['CRP']):
-        one_hot[3] = -1
-    else:
-        one_hot[3] = min(x['CRP'], max_crp) / max_crp
-
-    """
+def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_lacticacid, max_crp):
     if x['Activity'] == 'Leucocytes':
         ret = [0, min(x['Leucocytes'], max_leucocytes) / max_leucocytes]
         if np.isnan(ret[1]):
             ret[1] = -1
     elif x['Activity'] == 'CRP':
-        ret = [1, x['CRP']]
-        if np.isnan(ret[1]):
-            ret[1] = -1
-    elif x['Activity'] == 'LacticAcid':
-        ret = [2, min(x['LacticAcid'], max_lacticacid) / max_lacticacid]
-        if np.isnan(ret[1]):
-            ret[1] = -1
-    elif x['Activity'] == 'ER Registration':
-        ret = [3, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'ER Triage':
-        ret = [4, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'ER Sepsis Triage':
-        ret = [5, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'IV Liquid':
-        ret = [6, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'IV Antibiotics':
-        ret = [7, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'Admission NC':
-        ret = [8, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'Admission IC':
-        ret = [9, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'Return ER':
-        ret = [10, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'Release A':
-        ret = [11, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'Release B':
-        ret = [12, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'Release C':
-        ret = [13, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'Release D':
-        ret = [14, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'Release E':
-        ret = [15, 1]  # No additional information, so normal one hot
-    """
-
-
-    return one_hot
-
-
-def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_lacticacid):
-    if x['Activity'] == 'Leucocytes':
-        ret = [0, min(x['Leucocytes'], max_leucocytes) / max_leucocytes]
-        if np.isnan(ret[1]):
-            ret[1] = -1
-    elif x['Activity'] == 'CRP':
-        ret = [1, x['CRP']]
+        ret = [1, min(x['CRP'], max_crp) / max_crp]
         if np.isnan(ret[1]):
             ret[1] = -1
     elif x['Activity'] == 'LacticAcid':
