@@ -449,42 +449,74 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                             idx = np.arange(len(x_train_seq))
 
                             import copy
-                            last_loss_all = np.inf
+                            last_val_loss = np.inf
                             patience = 10
                             epochs = 100
                             trigger_times = 0
                             model_best_es = copy.deepcopy(model)
+                            flag_es = False
 
                             for epoch in range(epochs):
                                 np.random.shuffle(idx)
                                 x_train_seq = x_train_seq[idx]
                                 x_train_stat = x_train_stat[idx]
                                 y_train = y_train[idx]
+                                number_batches = x_train_seq.shape[0] // batch_size
 
-                                loss_all = 0
-                                for i in range(x_train_seq.shape[0] // batch_size):
+                                for i in range(number_batches):
+
+                                    optimizer.zero_grad()  # a clean up step for PyTorch
                                     out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
                                                 x_train_stat[i * batch_size:(i + 1) * batch_size])
-
-                                    # torch.sigmoid()
                                     loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
                                     loss.backward()  # compute updates for each parameter
                                     optimizer.step()  # make the updates for each parameter
-                                    optimizer.zero_grad()  # a clean up step for PyTorch
 
-                                    loss_all += float(loss) / batch_size
-                                print(f"Epoch: {epoch} -- Loss: {loss_all}")
+                                    # train loss per batch
+                                    print('[{}/{} {}/{}] train loss: {:.8}'.format(epoch, epochs, i+1, number_batches, loss.item()))
 
-                                if loss_all > last_loss_all:
+                                # Early stopping
+                                def validation(model, x_val_seq, x_val_stat, y_val, loss_function):
+
+                                    x_val_stat = torch.from_numpy(x_val_stat)
+                                    x_val_seq = torch.from_numpy(x_val_seq)
+                                    y_val = torch.from_numpy(y_val)
+
+                                    model.eval()
+                                    loss_total = 0
+                                    number_batches = x_val_seq.shape[0] // batch_size
+
+                                    with torch.no_grad():
+                                        for i in range(number_batches):
+                                            out = model(x_val_seq[i * batch_size: (i + 1) * batch_size],
+                                                        x_val_stat[i * batch_size: (i + 1) * batch_size])
+                                            loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
+                                            loss_total += loss.item()
+                                    return loss_total / number_batches
+
+                                current_val_loss = validation(model, x_val_seq, x_val_stat, y_val, criterion)
+                                print('Validation loss:', current_val_loss)
+
+                                if current_val_loss >= last_val_loss:
                                     trigger_times += 1
+                                    print('trigger times:', trigger_times)
+
                                     if trigger_times >= patience:
+                                        print('Early stopping!\nStart to test process.')
+                                        flag_es = True
                                         break
                                 else:
-                                    last_loss_all = loss_all
+                                    print('trigger times: 0')
                                     trigger_times = 0
                                     model_best_es = copy.deepcopy(model)
 
+                                if flag_es:
+                                    break
+
+                            # Select model based on val auc
+                            model.eval()
                             with torch.no_grad():
+
                                 x_val_stat = torch.from_numpy(x_val_stat)
                                 x_val_seq = torch.from_numpy(x_val_seq)
 
@@ -1025,7 +1057,9 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             X_test_seq = torch.from_numpy(X_test_seq)
             X_test_stat = torch.from_numpy(X_test_stat)
 
-            preds_proba = torch.sigmoid(model(X_test_seq, X_test_stat))
+            model.eval()
+            with torch.no_grad():
+                preds_proba = torch.sigmoid(model(X_test_seq, X_test_stat))
 
             def map_value(value):
                 if value >= 0.5:
