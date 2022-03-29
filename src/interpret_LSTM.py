@@ -162,8 +162,9 @@ class NaiveCustomLSTM(nn.Module):
 
 class Net(nn.Module):
     def __init__(self, input_sz_seq: int, hidden_per_seq_feat_sz: int, input_sz_stat: int, output_sz: int,
-                 epochs: int, interactions_seq_best: int, interactions_auto: bool, x_seq: torch.Tensor,
-                 masking: bool, x_stat: torch.Tensor, y: torch.Tensor, interactions_seq: list = []):
+                 interactions_seq_itr: int, interactions_seq_best: int, interactions_seq_auto: bool,
+                 x_seq: torch.Tensor, masking: bool, x_stat: torch.Tensor, y: torch.Tensor,
+                 interactions_seq: list = []):
         """
         :param input_sz_seq:
         :param hidden_per_seq_feat_sz:
@@ -177,8 +178,8 @@ class Net(nn.Module):
         self.hidden_per_feat_sz = hidden_per_seq_feat_sz
         self.interactions_seq = interactions_seq
         self.interactions_seq_best = interactions_seq_best
-        self.interactions_auto = interactions_auto
-        self.epochs = epochs
+        self.interactions_seq_auto = interactions_seq_auto
+        self.interactions_seq_itr = interactions_seq_itr
         self.masking = masking
 
         if self.interactions_auto and self.interactions_seq == [] and self.masking:
@@ -204,7 +205,7 @@ class Net(nn.Module):
 
         x_seq_features = list(range(x_seq.shape[2]))
 
-        num_iters = self.epochs
+        num_iters = self.interactions_seq_itr
         num_best_inters = self.interactions_seq_best
         results = pd.DataFrame({'Pair': [], 'Measure': []})
 
