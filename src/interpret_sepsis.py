@@ -2,6 +2,7 @@ import torch
 import os
 import matplotlib.pyplot as plt
 import src.data as data
+from src.main import time_step_blow_up
 import numpy as np
 
 repetition = 0
@@ -11,10 +12,14 @@ interactions_seq = model.get_number_interactions_seq()
 number_interactions_seq = len(interactions_seq)
 
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 100, 3)
+x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 100)
 
 # Print seq features (first time step)
+"""
+t = 5
 for idx in range(0, len(seq_features)):
-    x, out = model.plot_feat_seq_effect(idx, -2, 2)
+    # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
+    x, out = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seqs_final[:, t, idx].reshape(-1, 1, 1)))
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
     plt.plot(x, out)
@@ -22,20 +27,25 @@ for idx in range(0, len(seq_features)):
     plt.ylabel("Feature effect on model output")
     plt.title(f"Sequential feature:{seq_features[idx]}")
     plt.show()
+    print(0)
+"""
 
 # Print seq interaction features (first time step
+t = 5
 if number_interactions_seq > 0:
     for idx in range(0, number_interactions_seq):
-        X_seq, out = model.plot_feat_seq_effect_inter(idx, -1, 1, -1, 1)
+        X_seq, out = model.plot_feat_seq_effect_inter_custom(idx, -1, 1, -1, 1)
         X_seq = X_seq.detach().numpy().squeeze()
         out = out.detach().numpy()
-        plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+        im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+        cbar = plt.colorbar(im)
+        # cbar.set_label("")
         plt.title(f"Interaction:{seq_features[interactions_seq[idx][0]]} x {seq_features[interactions_seq[idx][1]]}")
         plt.xlabel(f"{seq_features[interactions_seq[idx][0]]}")
         plt.ylabel(f"{seq_features[interactions_seq[idx][1]]}")
         plt.show()
 
-
+"""
 # Print stat features
 for idx in range(0, len(static_features)):
     x, out = model.plot_feat_stat_effect(idx, -2, 2)
@@ -46,5 +56,5 @@ for idx in range(0, len(static_features)):
     plt.ylabel("Feature effect on model output")
     plt.title(f"Static feature:{static_features[idx]}")
     plt.show()
-
+"""
 

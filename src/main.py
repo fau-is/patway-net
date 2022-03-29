@@ -1289,96 +1289,98 @@ def run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_static
     return model
 
 
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# for gpu in gpus:
-#    tf.config.experimental.set_memory_growth(gpu, True)
+if __name__ == "__main__":
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    # gpus = tf.config.experimental.list_physical_devices('GPU')
+    # for gpu in gpus:
+    #    tf.config.experimental.set_memory_growth(gpu, True)
 
-hpos = {
-    "test": {"feature_sz": [8], "learning_rate": [0.01], "batch_size": [64], "inter_seq_best": [2]},
-    "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-    "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-    "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
-    "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
-           "solver": ["lbfgs"]},
-    "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
-    # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
-    "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
-    "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
-    "nb": {"var_smoothing": [pow(1, -9)]},
-    "dt": {"max_depth": [5, 10, 15], "min_samples_split": [1, 3, 5, 10]},
-    "knn": {"n_neighbors": [3, 5, 10, 15]}
-}
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-if data_set == "sepsis":
+    hpos = {
+        "test": {"feature_sz": [8], "learning_rate": [0.01], "batch_size": [64], "inter_seq_best": [2]},
+        "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+        "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+        "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
+        "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
+               "solver": ["lbfgs"]},
+        "rf": {"num_trees": [100, 200, 500], "max_depth_trees": [2, 5, 10], "num_rand_vars": [1, 3, 5, 10]},
+        # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
+        "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
+        "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
+        "nb": {"var_smoothing": [pow(1, -9)]},
+        "dt": {"max_depth": [5, 10, 15], "min_samples_split": [1, 3, 5, 10]},
+        "knn": {"n_neighbors": [3, 5, 10, 15]}
+    }
 
-    for mode in ['test']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
-        for target_activity in ['Admission IC']:
+    if data_set == "sepsis":
 
-            x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
-                target_activity, max_len, min_len)
+        for mode in ['test']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+            for target_activity in ['Admission IC']:
 
-            # Run eval on cuts to plot results --> Figure 1
-            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
-                x_seqs, x_statics, y, mode, target_activity,
-                data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=None)
+                x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
+                    target_activity, max_len, min_len)
+
+                # Run eval on cuts to plot results --> Figure 1
+                x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
+                    x_seqs, x_statics, y, mode, target_activity,
+                    data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=None)
 
 
-            if mode == "complete":
-                # Train model and plot linear coeff --> Figure 2
-                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
-                                        target_activity, static_features, best_hpos_repetitions)
+                if mode == "complete":
+                    # Train model and plot linear coeff --> Figure 2
+                    model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
+                                            target_activity, static_features, best_hpos_repetitions)
 
-                x_seqs_train = x_seqs_train[0:1000]
-                x_statics_train = x_statics_train[0:1000]
+                    x_seqs_train = x_seqs_train[0:1000]
+                    x_statics_train = x_statics_train[0:1000]
 
-                # Get Explanations for LSTM inputs --> Figure 3
-                explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
-                shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
+                    # Get Explanations for LSTM inputs --> Figure 3
+                    explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
+                    shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
 
-                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
-                                       columns=seq_features)
-                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                                         columns=[f'SHAP {x}' for x in seq_features])
-                seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+                    seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
+                                           columns=seq_features)
+                    seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                             columns=[f'SHAP {x}' for x in seq_features])
+                    seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
 
-                with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
-                    pickle.dump(seq_value_shape, f)
+                    with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
+                        pickle.dump(seq_value_shape, f)
 
-elif data_set == "mimic":
+    elif data_set == "mimic":
 
-    for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
-        for target_activity in ['LEFT AGAINST MEDICAL ADVI']:
+        for mode in ['complete']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+            for target_activity in ['LEFT AGAINST MEDICAL ADVI']:
 
-            x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features, static_vals_corr = data.get_mimic_data(
-                target_activity, max_len, min_len)
+                x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features, static_vals_corr = data.get_mimic_data(
+                    target_activity, max_len, min_len)
 
-            # Run eval on cuts to plot results
-            x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
-                x_seqs, x_statics, y, mode, target_activity,
-                data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=static_vals_corr)
+                # Run eval on cuts to plot results
+                x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
+                    x_seqs, x_statics, y, mode, target_activity,
+                    data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=static_vals_corr)
 
-            if mode == "complete":
-                # Train model and plot linear coeff
-                model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
-                                        target_activity, static_features, best_hpos_repetitions)
+                if mode == "complete":
+                    # Train model and plot linear coeff
+                    model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
+                                            target_activity, static_features, best_hpos_repetitions)
 
-                x_seqs_train = x_seqs_train[0:1000]
-                x_statics_train = x_statics_train[0:1000]
+                    x_seqs_train = x_seqs_train[0:1000]
+                    x_statics_train = x_statics_train[0:1000]
 
-                # Get Explanations for LSTM inputs
-                explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
-                shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
+                    # Get Explanations for LSTM inputs
+                    explainer = shap.DeepExplainer(model, [x_seqs_train, x_statics_train])
+                    shap_values = explainer.shap_values([x_seqs_train, x_statics_train])
 
-                seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
-                                       columns=seq_features)
-                seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
-                                         columns=[f'SHAP {x}' for x in seq_features])
-                seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
+                    seqs_df = pd.DataFrame(data=x_seqs_train.reshape(-1, len(seq_features)),
+                                           columns=seq_features)
+                    seq_shaps = pd.DataFrame(data=shap_values[0][0].reshape(-1, len(seq_features)),
+                                             columns=[f'SHAP {x}' for x in seq_features])
+                    seq_value_shape = pd.concat([seqs_df, seq_shaps], axis=1)
 
-                with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
-                    pickle.dump(seq_value_shape, f)
+                    with open(f'../output/{data_set}_{mode}_{target_activity}_shap.npy', 'wb') as f:
+                        pickle.dump(seq_value_shape, f)
 
-else:
-    print("Data set not available!")
+    else:
+        print("Data set not available!")
