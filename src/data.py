@@ -4,7 +4,7 @@ import numpy as np
 
 
 def get_sim_data(label):
-    ds_path = '../data/Simulation_data.csv'
+    ds_path = '../data/Simulation_data_5k.csv'
 
     static_features = ['Gender', 'Foreigner', 'Age', 'BMI']
     seq_features = ['Start', 'IVL', 'IVA', 'CRP', 'LacticAcid']

@@ -1,0 +1,84 @@
+{'learning_rate': 0.02, 'batch_size': 64}
+Validation aucs,0.7717694795219221
+Avg,0.7717694795219221
+Std,nan
+{'learning_rate': 0.02, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.6643835616438356
+Avg,0.6643835616438356
+Std,nan
+{'learning_rate': 0.02, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.7397260273972602
+Avg,0.7397260273972602
+Std,nan
+{'learning_rate': 0.02, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.4931506849315068
+Avg,0.4931506849315068
+Std,nan
+{'learning_rate': 0.02, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.7913651795864443
+Avg,0.7913651795864443
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.7921352198359296
+Avg,0.7921352198359296
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.32191780821917804
+Avg,0.32191780821917804
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.7808219178082192
+Avg,0.7808219178082192
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.4178082191780822
+Avg,0.4178082191780822
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.2465753424657534
+Avg,0.2465753424657534
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.4657534246575342
+Avg,0.4657534246575342
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 8}
+Validation aucs,0.4452054794520548
+Avg,0.4452054794520548
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 2}
+Validation aucs,0.3013698630136986
+Avg,0.3013698630136986
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 2}
+Validation aucs,0.14383561643835618
+Avg,0.14383561643835618
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 2}
+Validation aucs,0.6643835616438356
+Avg,0.6643835616438356
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 2}
+Validation aucs,0.6027397260273973
+Avg,0.6027397260273973
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 2}
+Validation aucs,0.8102954957446156
+Avg,0.8102954957446156
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 2}
+Validation aucs,0.37671232876712324
+Avg,0.37671232876712324
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 2}
+Validation aucs,0.17808219178082196
+Avg,0.17808219178082196
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 2}
+Validation aucs,0.5205479452054795
+Avg,0.5205479452054795
+Std,nan
+{'learning_rate': 0.01, 'batch_size': 64, 'feature_sz': 8, 'inter_seq_best': 2}
+Validation aucs,0.5753424657534247
+Avg,0.5753424657534247
+Std,nan

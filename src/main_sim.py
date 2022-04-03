@@ -17,10 +17,9 @@ y_final = np.array(y).astype(np.int32)
 
 x_seq_final = torch.from_numpy(x_seq_final)
 x_stat_final = torch.from_numpy(x_stat_final)
-y_final = torch.from_numpy(y_final)
+y_final = torch.from_numpy(y_final).reshape(-1)
 
 epochs = 100
-n = 100
 batch_size = 64
 
 model = Net(input_sz_seq=len(seq_features),
@@ -37,7 +36,7 @@ model = Net(input_sz_seq=len(seq_features),
             y=y_final)
 
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-3)  # 0.003
+optimizer = optim.Adam(model.parameters(), lr=1e-1)
 
 idx = np.arange(x_seq_final.shape[0])
 
