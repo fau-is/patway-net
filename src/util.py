@@ -62,6 +62,29 @@ def get_one_hot_of_activity_mimic(x):
     return one_hot
 
 
+def get_one_hot_of_activity_sim(x, max_lacticacid, max_crp):
+
+    if x['Activity'] == 'CRP':
+        ret = [0, min(x['CRP'], max_crp) / max_crp]
+        if np.isnan(ret[1]):
+            ret[1] = -1
+    elif x['Activity'] == 'LacticAcid':
+        ret = [1, min(x['LacticAcid'], max_lacticacid) / max_lacticacid]
+        if np.isnan(ret[1]):
+            ret[1] = -1
+    elif x['Activity'] == 'Start':
+        ret = [2, 1]  # No additional information, so normal one hot
+    elif x['Activity'] == 'IVL':
+        ret = [3, 1]  # No additional information, so normal one hot
+    elif x['Activity'] == 'IVA':
+        ret = [4, 1]  # No additional information, so normal one hot
+
+    one_hot = np.zeros(5, dtype=np.float32)
+    one_hot[ret[0]] = ret[1]
+
+    return one_hot
+
+
 def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_lacticacid, max_crp):
     if x['Activity'] == 'Leucocytes':
         ret = [0, min(x['Leucocytes'], max_leucocytes) / max_leucocytes]

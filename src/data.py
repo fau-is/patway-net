@@ -3,6 +3,64 @@ import src.util as util
 import numpy as np
 
 
+def get_sim_data(label):
+    ds_path = '../data/Simulation_data.csv'
+
+    static_features = ['Gender', 'Foreigner', 'Age', 'BMI']
+    seq_features = ['Start', 'IVL', 'IVA', 'CRP', 'LacticAcid']
+
+    df = pd.read_csv(ds_path)
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+
+    df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
+    df['BMI'] = df['BMI'].apply(lambda x: x / max(df['BMI']))
+
+    max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)  # remove outliers
+    max_crp = np.percentile(df['CRP'].dropna(), 95)  # remove outliers
+
+    x_seqs = []
+    x_statics = []
+    x_time_vals = []
+    y = []
+
+    for case in df['Case ID'].unique():
+
+        after_registration_flag = False
+
+        df_tmp = df[df['Case ID'] == case]
+
+        idx = -1
+        for _, x in df_tmp.iterrows():
+            idx = idx + 1
+            if x['Activity'] == 'Start' and idx == 0:
+                x_statics.append(x[static_features].values.astype(float))
+                x_time_vals.append([])
+                x_seqs.append([])
+                after_registration_flag = True
+
+            if after_registration_flag:
+                x_seqs[-1].append(util.get_one_hot_of_activity_sim(x, max_lacticacid, max_crp))
+                x_time_vals[-1].append(x['Timestamp'])
+
+        if after_registration_flag:
+            y.append(x[label])
+
+    assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
+
+    """
+    x_seqs_, x_statics_, y_, x_time_vals_ = [], [], [], []
+    for i, x in enumerate(x_seqs):
+        x_seqs_.append(x)
+        x_statics_.append(x_statics[i])
+        y_.append(y[i])
+        x_time_vals_.append(x_time_vals[i])
+    """
+    print(0)
+
+    return x_seqs, x_statics, y, x_time_vals, seq_features, static_features
+
+
+
 def get_sepsis_data(target_activity, max_len, min_len):
     ds_path = '../data/Sepsis Cases - Event Log_sub.csv'
 
@@ -38,8 +96,6 @@ def get_sepsis_data(target_activity, max_len, min_len):
     df['Diagnose'] = df['Diagnose'].apply(lambda x: x / max(df['Diagnose']))  # normalise ordinal encoding
     df['Age'] = df['Age'].fillna(-1)
     df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
-
-    df['Age'] = df['Age'].fillna(-1)
 
     max_leucocytes = np.percentile(df['Leucocytes'].dropna(), 95)  # remove outliers
     max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)  # remove outliers

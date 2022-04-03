@@ -6,7 +6,6 @@ from src.main import time_step_blow_up
 import numpy as np
 
 repetition = 0
-
 model = torch.load(os.path.join("../model", f"model_{repetition}"))
 interactions_seq = model.get_number_interactions_seq()
 number_interactions_seq = len(interactions_seq)
@@ -15,7 +14,6 @@ x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.ge
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 100)
 
 # Print seq features (first time step)
-"""
 t = 5
 for idx in range(0, len(seq_features)):
     # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
@@ -43,13 +41,13 @@ if number_interactions_seq > 0:
         X_seq = X_seq.detach().numpy().squeeze()
         out = out.detach().numpy()
 
-        # max_size = int(np.sqrt(len(X_seq))) ** 2
-        # out = out[0:max_size]
-        a_vals = len(set(X_seq[:,0]))
-        b_vals = len(set(X_seq[:,1]))
-        im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
-        # todo:
+        max_size = int(np.sqrt(len(X_seq))) ** 2
+        out = out[0:max_size]
+        # a_vals = len(set(X_seq[:,0]))
+        # b_vals = len(set(X_seq[:,1]))
         # im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+        # todo:
+        im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
                         # vmin=0, vmax=1)
         cbar = plt.colorbar(im)
         # cbar.set_label("")
@@ -57,7 +55,6 @@ if number_interactions_seq > 0:
         plt.xlabel(f"{seq_features[interactions_seq[idx][0]]}")
         plt.ylabel(f"{seq_features[interactions_seq[idx][1]]}")
         plt.show()
-"""
 
 # Print stat features
 for idx in range(0, len(static_features)):
