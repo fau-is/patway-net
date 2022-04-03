@@ -23,7 +23,7 @@ epochs = 100
 batch_size = 64
 
 model = Net(input_sz_seq=len(seq_features),
-            hidden_per_seq_feat_sz=8,
+            hidden_per_seq_feat_sz=4,
             interactions_seq=[],
             interactions_seq_itr=10,
             interactions_seq_best=1,

@@ -4,7 +4,7 @@ import numpy as np
 
 
 def get_sim_data(label):
-    ds_path = '../data/Simulation_data_5k.csv'
+    ds_path = '../data/Simulation_data_1k.csv'
 
     static_features = ['Gender', 'Foreigner', 'Age', 'BMI']
     seq_features = ['Start', 'IVL', 'IVA', 'CRP', 'LacticAcid']
@@ -12,8 +12,10 @@ def get_sim_data(label):
     df = pd.read_csv(ds_path)
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
 
-    df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
-    df['BMI'] = df['BMI'].apply(lambda x: x / max(df['BMI']))
+    age_max = max(df['Age'])
+    df['Age'] = df['Age'].apply(lambda x: x / age_max)
+    bmi_max = max(df['BMI'])
+    df['BMI'] = df['BMI'].apply(lambda x: x / bmi_max)
 
     max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)  # remove outliers
     max_crp = np.percentile(df['CRP'].dropna(), 95)  # remove outliers
