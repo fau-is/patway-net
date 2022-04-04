@@ -26,7 +26,7 @@ y_final = torch.from_numpy(y_final).reshape(-1)
 
 epochs = 100
 batch_size = 64
-lr = 0.001
+lr = 0.0001
 
 model = Net(input_sz_seq=len(seq_features),
             hidden_per_seq_feat_sz=16,
@@ -55,7 +55,8 @@ for _ in range(epochs):
     y_final = y_final[idx]
 
     loss_all = 0
-    for i in range(x_seq_final.shape[0] // batch_size):
+    num_batches = x_seq_final.shape[0] // batch_size
+    for i in range(num_batches):
 
         optimizer.zero_grad()  # a clean up step for PyTorch
         out = model(x_seq_final[i * batch_size:(i + 1) * batch_size].float(),
@@ -65,7 +66,7 @@ for _ in range(epochs):
         optimizer.step()  # make the updates for each parameter
         loss_all += float(loss)
 
-    print(loss_all)
+    print(loss_all / num_batches)
 
 torch.save(model, os.path.join("../model", f"model_sim"))
 
