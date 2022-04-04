@@ -7,7 +7,7 @@ import numpy as np
 import os
 from sklearn.preprocessing import PowerTransformer
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_5k_stat.csv')
 
 x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
 x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
@@ -21,7 +21,6 @@ x_stat_final = torch.from_numpy(x_stat_final)
 
 pt = PowerTransformer()
 y_final = pt.fit_transform(y_final.reshape(-1, 1))
-
 y_final = torch.from_numpy(y_final).reshape(-1)
 
 epochs = 100
@@ -37,8 +36,8 @@ model = Net(input_sz_seq=len(seq_features),
             input_sz_stat=len(static_features),
             output_sz=1,
             masking=True,
-            mlp_hidden_size=8,
-            only_static=False,
+            mlp_hidden_size=16,
+            only_static=True,
             x_seq=x_seq_final,
             x_stat=x_stat_final,
             y=y_final)

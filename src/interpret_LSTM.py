@@ -359,7 +359,9 @@ class Net(nn.Module):
     def plot_feat_stat_effect(self, feat_id, x):
         mlp = self.mlps[feat_id]
         mlp_out = mlp(x)
-        # out = mlp_out @ self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
-        out = mlp_out @ self.output_coef[feat_id: (feat_id + 1)]
+        if not self.only_static:
+            out = mlp_out @ self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
+        else:
+            out = mlp_out @ self.output_coef[feat_id: (feat_id + 1)]
 
         return x, out
