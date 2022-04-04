@@ -1,17 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Mar 17 11:10:35 2022
-
-@author: makraus
-"""
 
 import math
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import matplotlib.pyplot as plt
 
 
 class MLP(nn.Module):
@@ -183,8 +174,8 @@ class NaiveCustomLSTM(nn.Module):
 class Net(nn.Module):
     def __init__(self, input_sz_seq: int, hidden_per_seq_feat_sz: int, input_sz_stat: int, output_sz: int,
                  interactions_seq_itr: int, interactions_seq_best: int, interactions_seq_auto: bool,
-                 x_seq: torch.Tensor, masking: bool, x_stat: torch.Tensor, y: torch.Tensor, mlp_hidden_size: int,
-                 interactions_seq: list = []):
+                 x_seq: torch.Tensor, masking: bool, only_static: bool, x_stat: torch.Tensor, y: torch.Tensor,
+                 mlp_hidden_size: int, interactions_seq: list = []):
         """
         :param input_sz_seq:
         :param hidden_per_seq_feat_sz:
@@ -201,14 +192,19 @@ class Net(nn.Module):
         self.interactions_seq_auto = interactions_seq_auto
         self.interactions_seq_itr = interactions_seq_itr
         self.masking = masking
+        self.only_static = only_static
 
         if self.interactions_seq_auto and self.interactions_seq == [] and self.masking:
             self.interactions_seq = self.get_interactions_seq_auto(x_seq, y)
 
         self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, self.interactions_seq)
         self.mlps = nn.ModuleList([MLP(1, mlp_hidden_size) for i in range(input_sz_stat)])
-        # self.output_coef = nn.Parameter(torch.randn(input_sz_stat, output_sz))  # only stat
-        self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
+
+        if only_static:
+            self.output_coef = nn.Parameter(torch.randn(input_sz_stat, output_sz))  # only stat
+        else:
+            self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
+
         self.output_bias = nn.Parameter(torch.randn(output_sz))
         self.input_sz_stat = input_sz_stat
 
@@ -293,32 +289,31 @@ class Net(nn.Module):
 
     def forward(self, x_seq, x_stat):
 
+        if not self.only_static:
+            hidden_seq, (h_t, c_t) = self.lstm(x_seq)
 
-        hidden_seq, (h_t, c_t) = self.lstm(x_seq)
+            out_mlp = []
+            for i, mlp in enumerate(self.mlps):
+                if i == 0:
+                    out_mlp = mlp(x_stat[:, i].reshape(-1, 1).float())
+                else:
+                    out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
+                    out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
 
-        out_mlp = []
-        for i, mlp in enumerate(self.mlps):
-            if i == 0:
-                out_mlp = mlp(x_stat[:, i].reshape(-1, 1).float())
-            else:
-                out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
-                out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
+            out = torch.cat((h_t, out_mlp), dim=1) @ self.output_coef.float() + self.output_bias
 
-        out = torch.cat((h_t, out_mlp), dim=1) @ self.output_coef.float() + self.output_bias
+        else:
+            out_mlp = []
+            for i, mlp in enumerate(self.mlps):
+                if i == 0:
+                    out_mlp = mlp(x_stat[:, i].reshape(-1, 1).float())
+                else:
+                    out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
+                    out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
 
-        """
-        out_mlp = []
-        for i, mlp in enumerate(self.mlps):
-            if i == 0:
-                out_mlp = mlp(x_stat[:, i].reshape(-1, 1).float())
-            else:
-                out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
-                out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
-
-        output_sz = 1
-        self.output_coef = nn.Parameter(torch.randn(self.input_sz_stat, output_sz))
-        out = out_mlp @ self.output_coef.float() + self.output_bias
-        """
+            output_sz = 1
+            self.output_coef = nn.Parameter(torch.randn(self.input_sz_stat, output_sz))
+            out = out_mlp @ self.output_coef.float() + self.output_bias
 
         return out
 

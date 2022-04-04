@@ -26,10 +26,10 @@ y_final = torch.from_numpy(y_final).reshape(-1)
 
 epochs = 100
 batch_size = 64
-lr = 0.0001
+lr = 0.001
 
 model = Net(input_sz_seq=len(seq_features),
-            hidden_per_seq_feat_sz=16,
+            hidden_per_seq_feat_sz=8,
             interactions_seq=[],
             interactions_seq_itr=10,
             interactions_seq_best=1,
@@ -37,7 +37,8 @@ model = Net(input_sz_seq=len(seq_features),
             input_sz_stat=len(static_features),
             output_sz=1,
             masking=True,
-            mlp_hidden_size=16,
+            mlp_hidden_size=8,
+            only_static=False,
             x_seq=x_seq_final,
             x_stat=x_stat_final,
             y=y_final)
