@@ -3,8 +3,8 @@ import src.util as util
 import numpy as np
 
 
-def get_sim_data(label):
-    ds_path = '../data/Simulation_data_1k.csv'
+def get_sim_data(label, file):
+    ds_path = f'../data/{file}'
 
     static_features = ['Gender', 'Foreigner', 'Age', 'BMI']
     seq_features = ['Start', 'IVL', 'IVA', 'CRP', 'LacticAcid']
@@ -48,16 +48,6 @@ def get_sim_data(label):
             y.append(x[label])
 
     assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
-
-    """
-    x_seqs_, x_statics_, y_, x_time_vals_ = [], [], [], []
-    for i, x in enumerate(x_seqs):
-        x_seqs_.append(x)
-        x_statics_.append(x_statics[i])
-        y_.append(y[i])
-        x_time_vals_.append(x_time_vals[i])
-    """
-    print(0)
 
     return x_seqs, x_statics, y, x_time_vals, seq_features, static_features
 

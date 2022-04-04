@@ -1,3 +1,11 @@
+Good parameters for simulation
+- hidden seq fz size: 16
+- epochs: 1000
+- lr: 1e-4
+- mlp hidden act: relu
+- mlp hidden size: 16
+
+
 Should be checked
 - CRP values in one-hot encoding not used; also no outlier
 - Early stopping with val_loss

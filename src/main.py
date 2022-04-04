@@ -440,6 +440,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                         input_sz_stat=num_features_stat,
                                         output_sz=1,
                                         masking=True,
+                                        mlp_hidden_size=16,
                                         x_seq=x_train_seq,
                                         x_stat=x_train_stat,
                                         y=y_train)

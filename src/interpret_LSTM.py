@@ -21,6 +21,7 @@ class MLP(nn.Module):
         self.hidden_size = hidden_size
         self.fc1 = torch.nn.Linear(self.input_size, self.hidden_size)
         self.relu = torch.nn.ReLU()
+        # self.relu = torch.nn.Tanh()
         self.fc2 = torch.nn.Linear(self.hidden_size, 1)
         self.sigmoid = torch.nn.Sigmoid()
 
@@ -182,7 +183,7 @@ class NaiveCustomLSTM(nn.Module):
 class Net(nn.Module):
     def __init__(self, input_sz_seq: int, hidden_per_seq_feat_sz: int, input_sz_stat: int, output_sz: int,
                  interactions_seq_itr: int, interactions_seq_best: int, interactions_seq_auto: bool,
-                 x_seq: torch.Tensor, masking: bool, x_stat: torch.Tensor, y: torch.Tensor,
+                 x_seq: torch.Tensor, masking: bool, x_stat: torch.Tensor, y: torch.Tensor, mlp_hidden_size: int,
                  interactions_seq: list = []):
         """
         :param input_sz_seq:
@@ -205,7 +206,7 @@ class Net(nn.Module):
             self.interactions_seq = self.get_interactions_seq_auto(x_seq, y)
 
         self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, self.interactions_seq)
-        self.mlps = nn.ModuleList([MLP(1, 10) for i in range(input_sz_stat)])
+        self.mlps = nn.ModuleList([MLP(1, mlp_hidden_size) for i in range(input_sz_stat)])
         self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
         self.output_bias = nn.Parameter(torch.randn(output_sz))
         self.input_sz_stat = input_sz_stat
@@ -346,13 +347,13 @@ class Net(nn.Module):
         x = torch.linspace(min_v, max_v).reshape(-1, 1)
         mlp = self.mlps[feat_id]
         mlp_out = mlp(x)
-        out = self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size] * mlp_out
+        out = mlp_out @ self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
 
         return x, out
 
     def plot_feat_stat_effect(self, feat_id, x):
         mlp = self.mlps[feat_id]
         mlp_out = mlp(x)
-        out = self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size] * mlp_out
+        out = mlp_out @ self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
 
         return x, out

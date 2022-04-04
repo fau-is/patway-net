@@ -6,7 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Define number and length of cases
-num_cases = 5000  # 50000
+num_cases = 50000  # 50000
 length = 12
 num_events = num_cases * length
 

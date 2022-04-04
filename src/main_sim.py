@@ -6,7 +6,7 @@ import torch.optim as optim
 import numpy as np
 import os
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_5k.csv')
 
 x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
 x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
@@ -14,16 +14,18 @@ for i, x in enumerate(x_seqs):
     x_seq_final[i, :len(x), :] = np.array(x)
     x_stat_final[i, :] = np.array(x_statics[i])
 y_final = np.array(y).astype(np.int32)
+# y_final = (y_final - y_final.mean()) / y_final.std()
 
 x_seq_final = torch.from_numpy(x_seq_final)
 x_stat_final = torch.from_numpy(x_stat_final)
 y_final = torch.from_numpy(y_final).reshape(-1)
 
-epochs = 100
+epochs = 30
 batch_size = 64
+lr = 0.01
 
 model = Net(input_sz_seq=len(seq_features),
-            hidden_per_seq_feat_sz=4,
+            hidden_per_seq_feat_sz=16,
             interactions_seq=[],
             interactions_seq_itr=10,
             interactions_seq_best=1,
@@ -31,12 +33,13 @@ model = Net(input_sz_seq=len(seq_features),
             input_sz_stat=len(static_features),
             output_sz=1,
             masking=True,
+            mlp_hidden_size=16,
             x_seq=x_seq_final,
             x_stat=x_stat_final,
             y=y_final)
 
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-1)
+optimizer = optim.Adam(model.parameters(), lr=lr)
 
 idx = np.arange(x_seq_final.shape[0])
 
