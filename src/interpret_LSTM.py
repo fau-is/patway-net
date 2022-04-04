@@ -207,6 +207,7 @@ class Net(nn.Module):
 
         self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, self.interactions_seq)
         self.mlps = nn.ModuleList([MLP(1, mlp_hidden_size) for i in range(input_sz_stat)])
+        # self.output_coef = nn.Parameter(torch.randn(input_sz_stat, output_sz))  # only stat
         self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
         self.output_bias = nn.Parameter(torch.randn(output_sz))
         self.input_sz_stat = input_sz_stat
@@ -292,6 +293,7 @@ class Net(nn.Module):
 
     def forward(self, x_seq, x_stat):
 
+
         hidden_seq, (h_t, c_t) = self.lstm(x_seq)
 
         out_mlp = []
@@ -305,9 +307,17 @@ class Net(nn.Module):
         out = torch.cat((h_t, out_mlp), dim=1) @ self.output_coef.float() + self.output_bias
 
         """
+        out_mlp = []
+        for i, mlp in enumerate(self.mlps):
+            if i == 0:
+                out_mlp = mlp(x_stat[:, i].reshape(-1, 1).float())
+            else:
+                out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
+                out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
+
         output_sz = 1
         self.output_coef = nn.Parameter(torch.randn(self.input_sz_stat, output_sz))
-        out = x_stat @ self.output_coef.double() + self.output_bias
+        out = out_mlp @ self.output_coef.float() + self.output_bias
         """
 
         return out
@@ -354,6 +364,7 @@ class Net(nn.Module):
     def plot_feat_stat_effect(self, feat_id, x):
         mlp = self.mlps[feat_id]
         mlp_out = mlp(x)
-        out = mlp_out @ self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
+        # out = mlp_out @ self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
+        out = mlp_out @ self.output_coef[feat_id: (feat_id + 1)]
 
         return x, out

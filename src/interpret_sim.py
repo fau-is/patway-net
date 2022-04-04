@@ -15,7 +15,7 @@ x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
 for i, x in enumerate(x_seqs):
     x_seq_final[i, :len(x), :] = np.array(x)
     x_stat_final[i, :] = np.array(x_statics[i])
-y_final = np.array(y).astype(np.int32)
+y_final = np.array(y)  # .astype(np.int32)
 
 
 # x_seq_final = torch.from_numpy(x_seq_final)
@@ -51,4 +51,7 @@ for idx, value in enumerate(static_features):
     plt.xlabel("Feature value")
     plt.ylabel("Feature effect on model output")
     plt.title(f"Static feature:{static_features[idx]}")
+    fig1 = plt.gcf()
     plt.show()
+    plt.draw()
+    fig1.savefig(f'../plots/{value}.png', dpi=100)

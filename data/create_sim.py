@@ -6,7 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Define number and length of cases
-num_cases = 50000  # 50000
+num_cases = 5000  # 50000
 length = 12
 num_events = num_cases * length
 
@@ -146,9 +146,10 @@ for idx in range(0, num_cases):
         pattern_occurance = 0
 
     # Create label based on rules 
-    weight = 0.25
+    weight = 0.50 # 0.25
 
-    label_init = weight * gender_rnd + (-(age_rnd - 0.5) ** 2 + weight) + weight * crp_rnd + weight * pattern_occurance
+    # label_init = weight * gender_rnd + (-(age_rnd - 0.5) ** 2 + weight) + weight * crp_rnd + weight * pattern_occurance
+    label_init = weight * gender_rnd + (-2*(age_rnd - 0.5) ** 2 + weight)
     label = [label_init] * length
 
     # Concatenate vectors and transpose matrix
