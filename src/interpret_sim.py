@@ -10,7 +10,7 @@ from sklearn.preprocessing import PowerTransformer
 
 model = torch.load(os.path.join("../model", f"model_sim"))
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_5k_stat.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_5k.csv')
 x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
 x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
 for i, x in enumerate(x_seqs):
@@ -43,6 +43,7 @@ for idx in range(0, len(seq_features)):
 
 # Print stat features
 for idx, value in enumerate(static_features):
+    # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
     x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_stat_final[:, idx].reshape(-1, 1)).float())
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()

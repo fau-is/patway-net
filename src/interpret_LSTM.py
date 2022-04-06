@@ -311,8 +311,7 @@ class Net(nn.Module):
                     out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
                     out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
 
-            output_sz = 1
-            self.output_coef = nn.Parameter(torch.randn(self.input_sz_stat, output_sz))
+            # out = x_stat @ self.output_coef.float() + self.output_bias  # regression
             out = out_mlp @ self.output_coef.float() + self.output_bias
 
         return out
@@ -363,5 +362,6 @@ class Net(nn.Module):
             out = mlp_out @ self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
         else:
             out = mlp_out @ self.output_coef[feat_id: (feat_id + 1)]
+            # out = x @ self.output_coef[feat_id: (feat_id + 1)]  # regression
 
         return x, out
