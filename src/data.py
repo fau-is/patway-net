@@ -6,7 +6,7 @@ import numpy as np
 def get_sim_data(label, file):
     ds_path = f'../data/{file}'
 
-    static_features = ['Gender', 'Foreigner', 'Age', 'BMI']
+    static_features = ['Gender', 'Foreigner', 'BMI', 'Age']  # , , 'Age'
     seq_features = ['Start', 'IVL', 'IVA', 'CRP', 'LacticAcid']
 
     df = pd.read_csv(ds_path)

@@ -8,7 +8,7 @@ import os
 from sklearn.preprocessing import PowerTransformer
 import copy
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_5k.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_stat_test.csv')
 
 x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
 x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
@@ -20,20 +20,20 @@ y_final = np.array(y)
 x_seq_final = torch.from_numpy(x_seq_final)
 x_stat_final = torch.from_numpy(x_stat_final)
 
-pt = PowerTransformer()
-y_final = pt.fit_transform(y_final.reshape(-1, 1))
+# pt = PowerTransformer()
+# y_final = pt.fit_transform(y_final.reshape(-1, 1))
 y_final = torch.from_numpy(y_final).reshape(-1)
 
-epochs = 30
+epochs = 1000
 batch_size = 32
 lr = 0.001
-patience = 10
+patience = 30
 
 last_loss_all = np.inf
 trigger_times = 0
 
 model = Net(input_sz_seq=len(seq_features),
-            hidden_per_seq_feat_sz=16,
+            hidden_per_seq_feat_sz=4,
             interactions_seq=[],
             interactions_seq_itr=10,
             interactions_seq_best=1,
@@ -41,8 +41,8 @@ model = Net(input_sz_seq=len(seq_features),
             input_sz_stat=len(static_features),
             output_sz=1,
             masking=True,
-            mlp_hidden_size=16,
-            only_static=False,
+            mlp_hidden_size=8,
+            only_static=True,
             x_seq=x_seq_final,
             x_stat=x_stat_final,
             y=y_final)
@@ -70,12 +70,12 @@ for epoch in range(epochs):
         optimizer.zero_grad()  # a clean up step for PyTorch
         out = model(x_seq_final[i * batch_size:(i + 1) * batch_size].float(),
                     x_stat_final[i * batch_size:(i + 1) * batch_size].float())
-        loss = criterion(out, y_final[i * batch_size:(i + 1) * batch_size].float())
+        loss = criterion(out, y_final[i * batch_size:(i + 1) * batch_size].float().reshape(-1, 1))
         loss.backward()  # compute updates for each parameter
         optimizer.step()  # make the updates for each parameter
         loss_all += float(loss)
 
-    if loss_all > last_loss_all:
+    if loss_all >= last_loss_all:
         trigger_times += 1
         if trigger_times >= patience:
             break
