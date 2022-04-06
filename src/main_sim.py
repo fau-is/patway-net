@@ -33,7 +33,7 @@ last_loss_all = np.inf
 trigger_times = 0
 
 model = Net(input_sz_seq=len(seq_features),
-            hidden_per_seq_feat_sz=4,
+            hidden_per_seq_feat_sz=16,
             interactions_seq=[],
             interactions_seq_itr=10,
             interactions_seq_best=1,
