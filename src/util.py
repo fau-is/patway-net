@@ -62,6 +62,9 @@ def get_one_hot_of_activity_mimic(x):
     return one_hot
 
 
+def get_one_hot_of_activity_sim_test(x):
+    pass
+
 def get_one_hot_of_activity_sim(x, max_lacticacid, max_crp):
 
     if x['Activity'] == 'Start':

@@ -147,11 +147,14 @@ for idx in range(0, num_cases):
 
     # Create label based on rules 
     # weight = 0.50  # if only static
-    # weight = 0.25
+    # weight = 0.25  # normal
+    weight = 1/3
 
-    # label_init = weight * gender_rnd + (-(age_rnd - 0.5) ** 2 + weight) + weight * crp_rnd + weight * pattern_occurance
-    # label_init = weight * gender_rnd + (-2*(age_rnd - 0.5) ** 2 + weight)  # if only static
-    label_init = gender_rnd
+    # label_init = weight * gender_rnd + (-(age_rnd - 0.5) ** 2 + weight) + weight * crp_rnd + weight * pattern_occurance  #normal
+    # label_init = weight * gender_rnd + (-2*(age_rnd - 0.5) ** 2 + weight)  #test
+    # label_init = gender_rnd  #test2
+    # label_init = crp_rnd  #test3
+    label_init = weight * gender_rnd + (-(4/3)*(age_rnd - 0.5) ** 2 + weight) + weight * crp_rnd  # test4
 
     label = [label_init] * length
 
