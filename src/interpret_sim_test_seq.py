@@ -98,7 +98,7 @@ for idx, value in enumerate(seq_features):
     plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, color=colors[idx])
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
-plt.title(f"Change of static features for case: {case}")
+plt.title(f"Change of sequential features for case: {case}")
 fig1 = plt.gcf()
 plt.legend()
 plt.xticks(np.arange(1, 13, 1))
@@ -107,12 +107,9 @@ plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 """
 
-# 2) Print sequential features (local)
 
+# 2) Print sequential features (global)
 cases = 100
-colors = ['blue', 'green', 'red', 'black', 'magenta']
-
-# for case in range(0, cases):
 effect_feature_values = []
 t_values = []
 feature_names = []
@@ -126,24 +123,18 @@ for idx, value in enumerate(seq_features):
         t_values = t_values + [t+1] * cases
         feature_names = feature_names + [value] * cases
 
-df = pd.DataFrame(list(zip(effect_feature_values, t_values, feature_names)), columns =['effect', 't', 'feature'])
+df = pd.DataFrame(list(zip(effect_feature_values, t_values, feature_names)), columns=['effect', 't', 'feature'])
 
 sns.stripplot(x="t", y="effect", hue="feature", data=df)
-plt.show()
-
-
-"""    
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
-plt.title(f"Change of static features for case: {cases}")
+plt.title(f"Change of sequential features for case: {cases}")
 fig1 = plt.gcf()
 plt.legend()
-plt.xticks(np.arange(1, 13, 1))
+plt.xticks(np.arange(0, 12, 1))
 plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{cases}.png', dpi=100)
-"""
-
 
 
 """

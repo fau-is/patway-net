@@ -8,7 +8,7 @@ import os
 from sklearn.preprocessing import PowerTransformer
 import copy
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test4.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_stat_test4.csv')
 
 x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
 x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
@@ -42,7 +42,7 @@ model = Net(input_sz_seq=len(seq_features),
             output_sz=1,
             masking=True,
             mlp_hidden_size=16,
-            only_static=False,
+            only_static=True,
             x_seq=x_seq_final,
             x_stat=x_stat_final,
             y=y_final)

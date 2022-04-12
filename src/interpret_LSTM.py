@@ -3,7 +3,7 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
-
+from torch.nn.utils import weight_norm as wn
 
 class MLP(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -11,8 +11,8 @@ class MLP(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.fc1 = torch.nn.Linear(self.input_size, self.hidden_size)
-        self.relu = torch.nn.ReLU()
-        # self.relu = torch.nn.Tanh()
+        # self.relu = torch.nn.ReLU()
+        self.relu = torch.nn.Tanh()
         self.fc2 = torch.nn.Linear(self.hidden_size, 1)
         self.sigmoid = torch.nn.Sigmoid()
 
@@ -300,7 +300,7 @@ class Net(nn.Module):
                     out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
                     out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
 
-            out = torch.cat((h_t, out_mlp), dim=1) @ self.output_coef.float() + self.output_bias
+            out = torch.cat((h_t, out_mlp), dim=1) @  self.output_coef.float() + self.output_bias
 
         else:
             out_mlp = []
@@ -312,6 +312,7 @@ class Net(nn.Module):
                     out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
 
             # out = x_stat @ self.output_coef.float() + self.output_bias  # regression
+
             out = out_mlp @ self.output_coef.float() + self.output_bias
 
         return out
