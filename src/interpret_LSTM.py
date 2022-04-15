@@ -11,16 +11,21 @@ class MLP(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.fc1 = torch.nn.Linear(self.input_size, self.hidden_size)
+        self.act1 = torch.nn.Tanh()  # torch.nn.Tanh()
+        # self.fc2 = torch.nn.Linear(self.hidden_size, self.hidden_size)
         # self.relu = torch.nn.ReLU()
-        self.relu = torch.nn.Tanh()
-        self.fc2 = torch.nn.Linear(self.hidden_size, 1)
-        self.sigmoid = torch.nn.Sigmoid()
+        # self.act2 = torch.nn.ReLU() # torch.nn.Tanh()
+
+        self.fc3 = torch.nn.Linear(self.hidden_size, 1)
+        self.act3 = torch.nn.Sigmoid()
 
     def forward(self, x):
         hidden = self.fc1(x)
-        relu = self.relu(hidden)
-        output = self.fc2(relu)
-        output = self.sigmoid(output)
+        act1 = self.act1(hidden)
+        # output = self.fc2(act1)
+        # act2 = self.act2(hidden)
+        output = self.fc3(act1)
+        output = self.act3(output)
         return output
 
 
@@ -136,7 +141,8 @@ class NaiveCustomLSTM(nn.Module):
 
             b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
                                                             self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
-            # b_f = self.b_f[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+            # b_f = self.b_f[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (self.input_sz + feat_id + 1) *
+            # self.hidden_per_feat_sz]
             b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
                                                             self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
             b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
@@ -156,7 +162,8 @@ class NaiveCustomLSTM(nn.Module):
         for t in range(seq_sz):
             x_t = x[:, t]
             i_t = torch.sigmoid((x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] + b_i)
-            # f_t = torch.sigmoid((x_t @ U_f)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_f)
+            # f_t = torch.sigmoid((x_t @ U_f)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) *
+            # self.hidden_per_feat_sz] + b_f)
             g_t = torch.tanh((x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_c)
             o_t = torch.sigmoid((x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_o)
             # todo: f_t not used?
@@ -311,9 +318,9 @@ class Net(nn.Module):
                     out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
                     out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
 
-            # out = x_stat @ self.output_coef.float() + self.output_bias  # regression
-
             out = out_mlp @ self.output_coef.float() + self.output_bias
+            # out = sum(out_mlp) + self.output_bias  # test GAM idea
+            # out = x_stat @ self.output_coef.float() + self.output_bias  # test regression
 
         return out
 
@@ -363,6 +370,6 @@ class Net(nn.Module):
             out = mlp_out @ self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
         else:
             out = mlp_out @ self.output_coef[feat_id: (feat_id + 1)]
-            # out = x @ self.output_coef[feat_id: (feat_id + 1)]  # regression
+            # out = x @ self.output_coef[feat_id: (feat_id + 1)]  # test regression
 
         return x, out

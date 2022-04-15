@@ -155,6 +155,7 @@ for idx in range(0, num_cases):
     # label_init = gender_rnd  #test2
     # label_init = crp_rnd  #test3
     label_init = weight * gender_rnd + (-(4/3)*(age_rnd - 0.5) ** 2 + weight) + weight * crp_rnd  # test4
+    # label_init = weight * gender_rnd + (-(4 / 3) * (age_rnd - 0.5) ** 2 + weight) + weight * (1-crp_rnd)  # test5
 
     label = [label_init] * length
 

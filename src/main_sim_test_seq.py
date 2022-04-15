@@ -8,14 +8,19 @@ import os
 from sklearn.preprocessing import PowerTransformer
 import copy
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_stat_test4.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test5.csv')
 
+"""
+# Create data set without prefixes
 x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
 x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
 for i, x in enumerate(x_seqs):
     x_seq_final[i, :len(x), :] = np.array(x)
     x_stat_final[i, :] = np.array(x_statics[i])
 y_final = np.array(y)
+"""
+
+
 
 x_seq_final = torch.from_numpy(x_seq_final)
 x_stat_final = torch.from_numpy(x_stat_final)
@@ -42,7 +47,7 @@ model = Net(input_sz_seq=len(seq_features),
             output_sz=1,
             masking=True,
             mlp_hidden_size=16,
-            only_static=True,
+            only_static=False,
             x_seq=x_seq_final,
             x_stat=x_stat_final,
             y=y_final)

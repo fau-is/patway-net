@@ -107,7 +107,7 @@ plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 """
 
-
+"""
 # 2) Print sequential features (global)
 cases = 100
 effect_feature_values = []
@@ -135,10 +135,10 @@ plt.xticks(np.arange(0, 12, 1))
 plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{cases}.png', dpi=100)
-
-
 """
-# 3) Print static features (global)
+
+
+""""# 3) Print static features (global)
 for idx, value in enumerate(static_features):
     # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
     x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_stat_final[:, idx].reshape(-1, 1)).float())
@@ -162,3 +162,33 @@ for idx, value in enumerate(static_features):
     plt.draw()
     fig1.savefig(f'../plots/{value}.png', dpi=100)
 """
+
+
+# 4) Print sequential feature over time with value range (global)
+for t in range(0, 12):
+    for idx, value in enumerate(seq_features):
+        if value == "CRP":
+            # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
+            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
+            x = x.detach().numpy().squeeze()
+            out = out.detach().numpy()
+
+            if value == "CRP" or value == "LacticAcid" or value == "Start":
+                plt.scatter(x, out)  # scatter plot
+            elif value == "IVA" or value == "IVL":
+                # todo: check bar plot
+                a, b = zip(set(x), set(np.squeeze(out)))
+                x = [list(a)[0], list(b)[0]]
+                out = [list(a)[1], list(b)[1]]
+                plt.bar(x, out)  # bar plot
+                plt.xticks(x, x)
+            else:
+                plt.plot(x, out)  # line plot
+
+            plt.xlabel("Feature value")
+            plt.ylabel("Feature effect on model output")
+            plt.title(f"Sequential feature:{seq_features[idx]}")
+            fig1 = plt.gcf()
+            plt.show()
+            plt.draw()
+            fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
