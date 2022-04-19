@@ -11,14 +11,13 @@ def get_sim_data(label, file):
 
     df = pd.read_csv(ds_path)
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-
     age_max = max(df['Age'])
     df['Age'] = df['Age'].apply(lambda x: x / age_max)
     bmi_max = max(df['BMI'])
     df['BMI'] = df['BMI'].apply(lambda x: x / bmi_max)
 
-    max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)  # remove outliers
-    max_crp = np.percentile(df['CRP'].dropna(), 95)  # remove outliers
+    max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 100)  # remove outliers
+    max_crp = np.percentile(df['CRP'].dropna(), 100)  # remove outliers
 
     x_seqs = []
     x_statics = []

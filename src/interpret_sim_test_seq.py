@@ -9,15 +9,23 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import PowerTransformer
 import seaborn as sns
 import pandas as pd
+from src.main import time_step_blow_up
 
 model = torch.load(os.path.join("../model", f"model_sim"))
 
 x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test4.csv')
+
+# Create dataset with prefixes
+# x_seq_final, x_stat_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 12)
+
+
+# Create dataset without prefixes
 x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
 x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
 for i, x in enumerate(x_seqs):
     x_seq_final[i, :len(x), :] = np.array(x)
     x_stat_final[i, :] = np.array(x_statics[i])
+
 
 """"
 def slopee(x1,y1,x2,y2):
@@ -163,13 +171,12 @@ for idx, value in enumerate(static_features):
     fig1.savefig(f'../plots/{value}.png', dpi=100)
 """
 
-
 # 4) Print sequential feature over time with value range (global)
 for t in range(0, 12):
     for idx, value in enumerate(seq_features):
         if value == "CRP":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
-            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
+            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[2, t, idx].reshape(-1, 1, 1)).float())
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
 
@@ -192,3 +199,40 @@ for t in range(0, 12):
             plt.show()
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
+
+
+"""
+# 5) Print sequential feature over time with value range (global, with history)
+cases = 1
+for t in range(0, 12):
+    for idx, value in enumerate(seq_features):
+        if value == "CRP":
+            # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
+            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[0:cases, 0:t+1, idx].reshape(-1, t+1, 1)).float())
+
+            # get last value
+            x = x[:, -1, :]
+
+            x = x.detach().numpy().squeeze()
+            out = out.detach().numpy()
+
+            if value == "CRP" or value == "LacticAcid" or value == "Start":
+                plt.scatter(x, out)  # scatter plot
+            elif value == "IVA" or value == "IVL":
+                # todo: check bar plot
+                a, b = zip(set(x), set(np.squeeze(out)))
+                x = [list(a)[0], list(b)[0]]
+                out = [list(a)[1], list(b)[1]]
+                plt.bar(x, out)  # bar plot
+                plt.xticks(x, x)
+            else:
+                plt.plot(x, out)  # line plot
+
+            plt.xlabel("Feature value")
+            plt.ylabel("Feature effect on model output")
+            plt.title(f"Sequential feature:{seq_features[idx]}")
+            fig1 = plt.gcf()
+            plt.show()
+            plt.draw()
+            fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
+"""

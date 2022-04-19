@@ -127,55 +127,143 @@ class NaiveCustomLSTM(nn.Module):
         hidden_seq = hidden_seq.transpose(0, 1).contiguous()
         return hidden_seq, (h_t, c_t)
 
-    def single_forward(self, x, feat_id, interaction=False):
-        # We start with no history (h_t = 0, c_t = 0)
-        bs, seq_sz, _ = x.size()
-        hidden_seq = []
+    def single_forward(self, x, feat_id, interaction=False, init_states=None):
+        # todo: interactions
 
-        # get interaction/feature specific parameters
-        if interaction:
-            U_i = (self.U_i * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
-            # U_f = (self.U_f * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
-            U_c = (self.U_c * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
-            U_o = (self.U_o * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+        history = False
 
-            b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
-            # b_f = self.b_f[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (self.input_sz + feat_id + 1) *
-            # self.hidden_per_feat_sz]
-            b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
-            b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+        if history:
+            bs, seq_sz, feat = x.size()
+            hidden_seq = []
+
+            if init_states is None:
+                h_t, c_t = (
+                    torch.zeros(bs, self.hidden_size).to(x.device),
+                    0 # torch.zeros(bs, self.hidden_size).to(x.device),
+                )
+            else:
+                h_t, c_t = init_states
+
+
+            # get interaction/feature specific parameters
+            if interaction:
+                U_i = (self.U_i * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+                U_f = (self.U_f * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+                U_c = (self.U_c * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+                U_o = (self.U_o * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+
+                V_i = (self.V_i * self.V_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+                V_f = (self.V_f * self.V_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+                V_c = (self.V_c * self.V_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+                V_o = (self.V_o * self.V_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+
+                b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                    self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                b_f = self.b_f[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                    self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                    self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                    self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+
+            else:
+                U_i = (self.U_i * self.U_mask)[feat_id, :].unsqueeze(0)
+                U_f = (self.U_f * self.U_mask)[feat_id, :].unsqueeze(0)
+                U_c = (self.U_c * self.U_mask)[feat_id, :].unsqueeze(0)
+                U_o = (self.U_o * self.U_mask)[feat_id, :].unsqueeze(0)
+
+                V_i = (self.V_i * self.V_mask)[feat_id, :].unsqueeze(0)
+                V_f = (self.V_f * self.V_mask)[feat_id, :].unsqueeze(0)
+                V_c = (self.V_c * self.V_mask)[feat_id, :].unsqueeze(0)
+                V_o = (self.V_o * self.V_mask)[feat_id, :].unsqueeze(0)
+
+                b_i = self.b_i[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+                b_f = self.b_f[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+                b_c = self.b_c[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+                b_o = self.b_o[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+
+            def check_h_t(t, h_t):
+                if t == 0:
+                    return h_t[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+                else:
+                    return h_t
+
+            for t in range(seq_sz):
+                x_t = x[:, t]
+
+                i_t = torch.sigmoid(
+                    (x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] +
+                    (check_h_t(t, h_t) @ torch.transpose(V_i[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz], 1, 0)) +
+                    b_i)
+
+                f_t = torch.sigmoid(
+                    (x_t @ U_f)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] +
+                    (check_h_t(t, h_t) @ torch.transpose(V_f[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz],
+                    1, 0)) + b_f)
+
+                g_t = torch.tanh(
+                    (x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] +
+                    (check_h_t(t, h_t) @ torch.transpose(V_c[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz],
+                    1, 0)) + b_c)
+
+                o_t = torch.sigmoid(
+                    (x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] +
+                    (check_h_t(t, h_t) @ torch.transpose(V_o[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz],
+                    1, 0)) + b_o)
+
+                c_t = f_t * c_t + i_t * g_t
+                h_t = o_t * torch.tanh(c_t)
+
+                hidden_seq.append(h_t.unsqueeze(0))
+
+            # reshape hidden_seq p/ retornar
+            hidden_seq = torch.cat(hidden_seq, dim=0)
+            hidden_seq = hidden_seq.transpose(0, 1).contiguous()
+            return hidden_seq, (h_t, c_t)
 
         else:
-            U_i = (self.U_i * self.U_mask)[feat_id, :].unsqueeze(0)
-            # U_f = (self.U_f * self.U_mask)[feat_id, :].unsqueeze(0)
-            U_c = (self.U_c * self.U_mask)[feat_id, :].unsqueeze(0)
-            U_o = (self.U_o * self.U_mask)[feat_id, :].unsqueeze(0)
 
-            b_i = self.b_i[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
-            # b_f = self.b_f[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
-            b_c = self.b_c[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
-            b_o = self.b_o[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+            # We start with no history (h_t = 0, c_t = 0)
+            # Todo: question - only last time step; no recurrence?
+            bs, seq_sz, _ = x.size()
+            hidden_seq = []
 
-        for t in range(seq_sz):
-            x_t = x[:, t]
-            i_t = torch.sigmoid((x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] + b_i)
-            # f_t = torch.sigmoid((x_t @ U_f)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) *
-            # self.hidden_per_feat_sz] + b_f)
-            g_t = torch.tanh((x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_c)
-            o_t = torch.sigmoid((x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_o)
-            # todo: f_t not used?
-            c_t = i_t * g_t  # * f_t
-            h_t = o_t * torch.tanh(c_t)
+            # get interaction/feature specific parameters
+            if interaction:
+                U_i = (self.U_i * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+                U_c = (self.U_c * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
+                U_o = (self.U_o * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
 
-            hidden_seq.append(h_t.unsqueeze(0))
+                b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                                                self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                                                self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
+                                                                self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
 
-        # reshape hidden_seq p/ retornar
-        hidden_seq = torch.cat(hidden_seq, dim=0)
-        hidden_seq = hidden_seq.transpose(0, 1).contiguous()
-        return hidden_seq, (h_t, c_t)
+            else:
+                U_i = (self.U_i * self.U_mask)[feat_id, :].unsqueeze(0)
+                U_c = (self.U_c * self.U_mask)[feat_id, :].unsqueeze(0)
+                U_o = (self.U_o * self.U_mask)[feat_id, :].unsqueeze(0)
+
+                b_i = self.b_i[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+                b_c = self.b_c[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+                b_o = self.b_o[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+
+            for t in range(seq_sz):
+                x_t = x[:, t]
+                i_t = torch.sigmoid((x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] + b_i)
+                g_t = torch.tanh((x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_c)
+                o_t = torch.sigmoid((x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_o)
+                c_t = i_t * g_t
+                h_t = o_t * torch.tanh(c_t)
+
+                hidden_seq.append(h_t.unsqueeze(0))
+
+            # reshape hidden_seq p/ retornar
+            hidden_seq = torch.cat(hidden_seq, dim=0)
+            hidden_seq = hidden_seq.transpose(0, 1).contiguous()
+            return hidden_seq, (h_t, c_t)
 
 
 class Net(nn.Module):

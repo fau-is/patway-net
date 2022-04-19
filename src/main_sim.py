@@ -5,26 +5,31 @@ import torch
 import torch.optim as optim
 import numpy as np
 import os
-from sklearn.preprocessing import PowerTransformer
 import copy
+from src.main import time_step_blow_up
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k.csv')
 
-x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
-x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test4.csv')
+
+# Create dataset without prefixes
+# x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 12)
+
+
+# Create dataset with prefixes
+x_seqs_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
+x_statics_final = np.zeros((len(x_seqs), len(x_statics[0])))
 for i, x in enumerate(x_seqs):
-    x_seq_final[i, :len(x), :] = np.array(x)
-    x_stat_final[i, :] = np.array(x_statics[i])
+    x_seqs_final[i, :len(x), :] = np.array(x)
+    x_statics_final[i, :] = np.array(x_statics[i])
 y_final = np.array(y)
 
-x_seq_final = torch.from_numpy(x_seq_final)
-x_stat_final = torch.from_numpy(x_stat_final)
 
-# pt = PowerTransformer()
-# y_final = pt.fit_transform(y_final.reshape(-1, 1))
+x_seq_final = torch.from_numpy(x_seqs_final)
+x_stat_final = torch.from_numpy(x_statics_final)
+
 y_final = torch.from_numpy(y_final).reshape(-1)
 
-epochs = 1000
+epochs = 10
 batch_size = 32
 lr = 0.001
 patience = 50
