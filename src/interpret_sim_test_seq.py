@@ -97,8 +97,7 @@ colors = ['blue', 'green', 'red', 'black', 'magenta']
 for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
     for t in range(0, 12):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
-            x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
+        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
         effect_feature_values[-1].append(out[0][0])
@@ -114,6 +113,7 @@ plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 """
+
 
 """
 # 2) Print sequential features (global)
@@ -171,6 +171,7 @@ for idx, value in enumerate(static_features):
     fig1.savefig(f'../plots/{value}.png', dpi=100)
 """
 
+"""
 # 4) Print sequential feature over time with value range (global)
 for t in range(0, 12):
     for idx, value in enumerate(seq_features):
@@ -199,17 +200,17 @@ for t in range(0, 12):
             plt.show()
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
-
-
 """
+
+
 # 5) Print sequential feature over time with value range (global, with history)
-cases = 1
+cases = 2
 for t in range(0, 12):
     for idx, value in enumerate(seq_features):
         if value == "CRP":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
-            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[0:cases, 0:t+1, idx].reshape(-1, t+1, 1)).float())
-
+            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[2, 0:t+1, idx].reshape(-1, t+1, 1)).float())
+            print(out)
             # get last value
             x = x[:, -1, :]
 
@@ -235,4 +236,3 @@ for t in range(0, 12):
             plt.show()
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
-"""

@@ -27,10 +27,11 @@ def get_sim_data(label, file):
     for case in df['Case ID'].unique():
 
         after_registration_flag = False
-
         df_tmp = df[df['Case ID'] == case]
-
         idx = -1
+        current_crp_value = 0
+        current_lacticacid_value = 0
+
         for _, x in df_tmp.iterrows():
             idx = idx + 1
             if x['Activity'] == 'Start' and idx == 0:
@@ -40,7 +41,9 @@ def get_sim_data(label, file):
                 after_registration_flag = True
 
             if after_registration_flag:
-                x_seqs[-1].append(util.get_one_hot_of_activity_sim(x, max_lacticacid, max_crp))
+
+                one_hot, current_crp_value, current_lacticacid_value = util.get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, current_lacticacid_value)
+                x_seqs[-1].append(one_hot)
                 x_time_vals[-1].append(x['Timestamp'])
 
         if after_registration_flag:

@@ -29,7 +29,7 @@ x_stat_final = torch.from_numpy(x_statics_final)
 
 y_final = torch.from_numpy(y_final).reshape(-1)
 
-epochs = 10
+epochs = 1000
 batch_size = 32
 lr = 0.001
 patience = 50
