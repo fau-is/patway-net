@@ -130,7 +130,7 @@ class NaiveCustomLSTM(nn.Module):
     def single_forward(self, x, feat_id, interaction=False, init_states=None):
         # todo: interactions
 
-        history = False
+        history = True
 
         if history:
             bs, seq_sz, feat = x.size()
