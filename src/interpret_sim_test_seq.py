@@ -13,7 +13,7 @@ from src.main import time_step_blow_up
 
 model = torch.load(os.path.join("../model", f"model_sim"))
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test4.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_1_a_ad.csv')
 
 # Create dataset with prefixes
 # x_seq_final, x_stat_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 12)
@@ -209,7 +209,7 @@ for t in range(0, 12):
     for idx, value in enumerate(seq_features):
         if value == "CRP":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
-            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[2, 0:t+1, idx].reshape(-1, t+1, 1)).float())
+            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[0:1000, 0:t+1, idx].reshape(-1, t+1, 1)).float())
             print(out)
             # get last value
             x = x[:, -1, :]

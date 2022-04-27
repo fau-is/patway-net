@@ -41,9 +41,10 @@ for idx in range(0, num_cases):
     caseid = [idx] * length
 
     # Activity
-    acts = ['CRP', 'CRP', 'CRP', 'CRP', 'CRP', 'LacticAcid', 'LacticAcid', 'LacticAcid', 'IVA', 'IVA', 'IVL']
+    acts = ['LacticAcid', 'LacticAcid', 'LacticAcid', 'IVA', 'IVA', 'IVL']
     random.shuffle(acts)
-    acts = ['Start'] + acts
+    acts = ['Start', 'CRP', 'CRP', 'CRP', 'CRP', 'CRP'] + acts
+    #acts = ['Start'] + acts
 
     # Timestamp
     tmstmp = []
@@ -75,18 +76,48 @@ for idx in range(0, num_cases):
 
     # CRP with r as factor
     r = 0.03
+    #r = random.randrange(0, 20, 1) / 100
     crp = []
+    #for i in range(0, 5):
     rnd = random.randrange(5, 580, 1)
+    #    crp.append(rnd)
+
+    """
+    crp_mean = np.mean(crp)
+    if crp_mean > 270:
+        crp_fact = 1
+    else:
+        crp_fact = 0
+    """
+
+    # Check how strong the increase or decrease is --> for label creation
+    #if r > 0.1:
+    #    crp_fact = 1
+    #else:
+    #    crp_fact = 0
 
     # Determine whether do increase or decrease initial value with random number; a value of 1 implies an increase, while a value of 0 implies a decrease
-    crp_rnd = random.randint(0, 1)
+    crp_rnd = random.randint(0, 2)
 
     for i in range(0, 5):
-        if crp_rnd == 1:
+        if crp_rnd == 0:
             rnd = rnd * (1 + r)
-        else:
-            rnd = rnd / (1 + r)
+
+        elif crp_rnd == 1:
+            rnd = rnd * (1 - r)
+
+        elif crp_rnd == 2:
+            if i <= 3:
+                rnd = rnd * (1 + r)
+            else:
+                rnd = rnd * (1 - r)
         crp.append(rnd)
+
+    if crp_rnd == 0 or crp_rnd == 1:
+        crp_fact = 0
+    else:
+        crp_fact = 1
+
 
     # Place CRP values to correspondent activities
     crp_temp = [0] * length
@@ -154,7 +185,7 @@ for idx in range(0, num_cases):
     # label_init = weight * gender_rnd + (-2*(age_rnd - 0.5) ** 2 + weight)  #test
     # label_init = gender_rnd  #test2
     # label_init = crp_rnd  #test3
-    label_init = weight * gender_rnd + (-(4/3)*(age_rnd - 0.5) ** 2 + weight) + weight * crp_rnd  # test4
+    label_init = weight * gender_rnd + (-(4/3)*(age_rnd - 0.5) ** 2 + weight) + weight * crp_fact  # test4
     # label_init = weight * gender_rnd + (-(4 / 3) * (age_rnd - 0.5) ** 2 + weight) + weight * (1-crp_rnd)  # test5
 
     label = [label_init] * length
