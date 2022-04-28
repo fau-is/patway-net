@@ -126,6 +126,34 @@ for t in range(0, 10):
             plt.draw()
             # fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
 
+"""
+# (2) Print sequential features (local, history)
+effect_feature_values = []
+case = 10
+colors = ['blue', 'green', 'red', 'black', 'magenta']
+
+for idx, value in enumerate(seq_features):
+    effect_feature_values.append([])
+    for t in range(0, 10):
+        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, 0:t+1, idx].reshape(1, t+1, 1)).float())
+        # get last value
+        x = x[:, -1, :]
+        x = x.detach().numpy().squeeze()
+        out = out.detach().numpy()
+        effect_feature_values[-1].append(out[0][0])
+
+    plt.plot(list(range(1, 11)), effect_feature_values[idx], label=value, color=colors[idx])
+plt.xlabel("Time step")
+plt.ylabel("Feature effect on model output")
+plt.title(f"Change of sequential features for case: {case}")
+fig1 = plt.gcf()
+plt.legend()
+plt.xticks(np.arange(1, 11, 1))
+plt.show()
+plt.draw()
+fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
+"""
+
 
 # 5) Print sequential feature over time with value range (global, with history)
 cases = 0
@@ -160,3 +188,50 @@ for t in range(0, 10):
             plt.show()
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
+
+
+"""
+# (1) Sequential features (2 time steps, with history)
+def slope(x1,y1,x2,y2):
+    eps = 0.01
+    # x2 = 2; x1 = 1 --> +1 (fine)
+    # x2 = 2; x1 = 2 --> 0 (break)
+
+    x = (y2 - y1) / ((x2 - x1) + 1.0 + eps)
+    return x
+
+# Print seq features (t x to t y)
+t_x = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+t_y = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+import seaborn as sns
+import pandas as pd
+
+for t in range(0, len(t_x)):
+    for idx, feature in enumerate(seq_features):
+        x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, 0:t_x[t]+1, idx].reshape(-1, t_x[t]+1, 1)).float())
+
+        x_x = x_x[:, -1, :]
+        x_x = x_x.detach().numpy().squeeze()
+        out_x = out_x.detach().numpy()
+
+        x_y, out_y, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, 0:t_y[t]+1, idx].reshape(-1, t_y[t]+1, 1)).float())
+        x_y = x_y[:, -1, :]
+        x_y = x_y.detach().numpy().squeeze()
+        out_y = out_y.detach().numpy()
+
+        z = slope(x_x, out_x.squeeze(), x_y, out_y.squeeze())
+        # if sum(z) > 0:
+        print(f"Feature {feature} --- t_x ({t_x[t]}) to t_y ({t_y[t]}) --- found something!")
+
+        data = np.column_stack([x_x, x_y, z])
+        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma', )
+        plt.colorbar()
+        plt.xlabel(f"Feature value t {t_x[t]}")
+        plt.ylabel(f"Feature value t {t_y[t]}")
+        plt.title(f"Sequential feature:{seq_features[idx]}")
+        fig1 = plt.gcf()
+        plt.show()
+        plt.draw()
+        fig1.savefig(f'../plots/{feature}_{t_x[t]}-{t_y[t]}.png', dpi=100)
+"""

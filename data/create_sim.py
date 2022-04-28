@@ -75,7 +75,7 @@ for idx in range(0, num_cases):
     bmi = [bmi_rnd] * length
 
     # CRP with r as factor
-    r = 0.03
+    r = 0.3
     crp = []
     rnd = random.randrange(0, 100, 1) / 100
     # Determine whether do increase or decrease initial value with random number; a value of 1 implies an increase, while a value of 0 implies a decrease

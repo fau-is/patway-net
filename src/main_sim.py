@@ -9,7 +9,7 @@ import copy
 from src.main import time_step_blow_up
 
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6_.csv')
 
 # Create dataset without prefixes
 # x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 12)
