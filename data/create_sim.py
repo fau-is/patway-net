@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 # Define number and length of cases
 num_cases = 1000  # 50000
-length = 10
+length = 12
 num_events = num_cases * length
 
 # Variables for timestamp
@@ -41,7 +41,7 @@ for idx in range(0, num_cases):
     caseid = [idx] * length
 
     # Activity
-    acts = ['IVA', 'IVA', 'IVL']
+    acts = ['IVA', 'IVA', 'IVL', 'IVA', 'IVA']
     random.shuffle(acts)
     acts = ['Start', 'CRP', 'CRP', 'CRP', 'LacticAcid', 'LacticAcid', 'LacticAcid'] + acts
     #acts = ['Start'] + acts
@@ -123,8 +123,8 @@ for idx in range(0, num_cases):
             lacticacid_final.append(np.nan)
 
     # Check if certain patterns occur in instance    
-    pattern1 = ['IVA', 'IVA', 'IVL']
-    pattern2 = ['IVL', 'IVA', 'IVA']
+    pattern1 = ['IVA', 'IVA', 'IVA', 'IVA', 'IVL']
+    pattern2 = ['IVL', 'IVA', 'IVA', 'IVA', 'IVA']
 
 
     def contains_sublist(l1, l2):

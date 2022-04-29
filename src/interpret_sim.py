@@ -14,7 +14,7 @@ from src.main import time_step_blow_up
 
 model = torch.load(os.path.join("../model", f"model_sim"))
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6_.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6__.csv')
 
 # Create dataset without prefixes
 x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
@@ -34,11 +34,11 @@ def slope(x1, y1, x2, y2):
     return x
 
 # Print seq features (t x to t y)
-t_x = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-t_y = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+t_x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+t_y = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
 
-for t in range(0, 9):  # num of transmissions
+for t in range(0, 11):  # num of transmissions
     for idx, feature in enumerate(seq_features):
         x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, t_x[t], idx].reshape(-1, 1, 1)).float())
         x_x = x_x.detach().numpy().squeeze()
@@ -97,26 +97,26 @@ colors = ['blue', 'green', 'red', 'black', 'magenta']
 
 for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
-    for t in range(0, 10):
+    for t in range(0, 12):
         x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
         effect_feature_values[-1].append(out[0][0])
 
-    plt.plot(list(range(1, 11)), effect_feature_values[idx], label=value, color=colors[idx])
+    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, color=colors[idx])
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Change of sequential features for case: {case}")
 fig1 = plt.gcf()
 plt.legend()
-plt.xticks(np.arange(1, 11, 1))
+plt.xticks(np.arange(1, 13, 1))
 plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 
 
 # 4) Print sequential feature over time with value range (global)
-for t in range(0, 10):
+for t in range(0, 12):
     for idx, value in enumerate(seq_features):
         if value == "CRP":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
