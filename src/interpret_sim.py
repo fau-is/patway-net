@@ -6,6 +6,7 @@ import torch.optim as optim
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import matplotlib as matplotlib
 from sklearn.preprocessing import PowerTransformer
 import seaborn as sns
 import pandas as pd
@@ -23,14 +24,13 @@ for i, x in enumerate(x_seqs):
     x_stat_final[i, :] = np.array(x_statics[i])
 
 
-
 # (1) Sequential features (2 time steps, without history)
-def slope(x1,y1,x2,y2):
-    eps = 0.01
+def slope(x1, y1, x2, y2):
+    eps = 0.000000000000000000000000000000001
     # x2 = 2; x1 = 1 --> +1 (fine)
     # x2 = 2; x1 = 2 --> 0 (break)
 
-    x = (y2 - y1) / ((x2 - x1) + 1.0 + eps)
+    x = (y2 - y1) # / ((x2 - x1) + eps)
     return x
 
 # Print seq features (t x to t y)
@@ -38,7 +38,7 @@ t_x = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 t_y = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 
-for t in range(0, len(t_x)):
+for t in range(0, 9):  # num of transmissions
     for idx, feature in enumerate(seq_features):
         x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, t_x[t], idx].reshape(-1, 1, 1)).float())
         x_x = x_x.detach().numpy().squeeze()
@@ -53,7 +53,8 @@ for t in range(0, len(t_x)):
         print(f"Feature {feature} --- t_x ({t_x[t]}) to t_y ({t_y[t]}) --- found something!")
 
         data = np.column_stack([x_x, x_y, z])
-        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma', )
+        # normalize = matplotlib.colors.Normalize(vmin=-0.05, vmax=0.2)
+        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma') #  norm=normalize)
         plt.colorbar()
         plt.xlabel(f"Feature value t {t_x[t]}")
         plt.ylabel(f"Feature value t {t_y[t]}")
@@ -64,8 +65,6 @@ for t in range(0, len(t_x)):
         fig1.savefig(f'../plots/{feature}_{t_x[t]}-{t_y[t]}.png', dpi=100)
 
 
-
-"""
 # 3) Print static features (global)
 for idx, value in enumerate(static_features):
     # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
@@ -89,12 +88,11 @@ for idx, value in enumerate(static_features):
     plt.show()
     plt.draw()
     fig1.savefig(f'../plots/{value}.png', dpi=100)
-"""
 
-"""
+
 # (2) Print sequential features (local, no history)
 effect_feature_values = []
-case = 4
+case = 13
 colors = ['blue', 'green', 'red', 'black', 'magenta']
 
 for idx, value in enumerate(seq_features):
@@ -115,11 +113,10 @@ plt.xticks(np.arange(1, 11, 1))
 plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
-"""
 
-"""
+
 # 4) Print sequential feature over time with value range (global)
-for t in range(1, 10):
+for t in range(0, 10):
     for idx, value in enumerate(seq_features):
         if value == "CRP":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
@@ -146,4 +143,3 @@ for t in range(1, 10):
             plt.show()
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
-"""
