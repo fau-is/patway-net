@@ -38,7 +38,7 @@ for t in range(0, 11):  # num of transmissions
         x_y = x_y.detach().numpy().squeeze()
         out_y = out_y.detach().numpy()
 
-        z = delta(out_x.squeeze(), out_y.squeeze())
+        z = delta(out_y.squeeze(), out_x.squeeze())
         # if sum(z) > 0:
             # print(f"Feature {feature} --- t_x ({t_x[t]}) to t_y ({t_y[t]}) --- found something!")
 
@@ -46,9 +46,9 @@ for t in range(0, 11):  # num of transmissions
         # normalize = matplotlib.colors.Normalize(vmin=-0.05, vmax=0.2)
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma') #  norm=normalize)
         plt.colorbar()
-        plt.xlabel(f"Feature value t {t_x[t]}")
-        plt.ylabel(f"Feature value t {t_y[t]}")
-        plt.title(f"Sequential feature:{seq_features[idx]}")
+        plt.xlabel(f"Feature value $t_{t_x[t]}$")
+        plt.ylabel(f"Feature value $t_{t_y[t]}$")
+        plt.title(f"Sequential feature: {seq_features[idx]}")
         fig1 = plt.gcf()
         plt.show()
         plt.draw()
@@ -73,7 +73,7 @@ for idx, value in enumerate(static_features):
         plt.plot(x, out)
     plt.xlabel("Feature value")
     plt.ylabel("Feature effect on model output")
-    plt.title(f"Static feature:{static_features[idx]}")
+    plt.title(f"Static feature: {static_features[idx]}")
     fig1 = plt.gcf()
     plt.show()
     plt.draw()

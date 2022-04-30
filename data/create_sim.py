@@ -137,9 +137,9 @@ for idx in range(0, num_cases):
             return False
 
     if contains_sublist(acts, pattern1) == True:  # or contains_sublist(acts, pattern2)
-        pattern_occurance = 1
+        pattern_occurrance = 1
     else:
-        pattern_occurance = 0
+        pattern_occurrance = 0
 
     # Create label based on rules 
     # weight = 0.50  # if only static
@@ -152,7 +152,7 @@ for idx in range(0, num_cases):
     # label_init = crp_rnd  #test3
     # label_init = weight * gender_rnd + (-(4/3)*(age_rnd - 0.5) ** 2 + weight) + weight * crp_fact  # test4
     # label_init = weight * gender_rnd + (-(4 / 3) * (age_rnd - 0.5) ** 2 + weight) + weight * (1-crp_rnd)  # test5
-    label_init =  weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurance + (-0.8 * (crp[0] - 0.5) ** 2 + weight) + weight * crp_rnd  #test6
+    label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (-0.8 * (crp[0] - 0.5) ** 2 + weight) + weight * crp_rnd  #test6
 
     label = [label_init] * length
 
@@ -176,7 +176,7 @@ for idx in range(0, num_cases):
     bmi_list.append(bmi_rnd)
     crp_list.append(crp_rnd)
 
-    pattern_list.append(pattern_occurance)
+    pattern_list.append(pattern_occurrance)
 
 # Create label for classes
 threshold = np.median(label_list_short)
