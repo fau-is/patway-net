@@ -96,7 +96,7 @@ for idx, value in enumerate(seq_features):
     plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, color=colors[idx])
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
-plt.title(f"Change of sequential features for case: {case}")
+plt.title(f"Sequential feature effect over time of patient pathway: {case}")
 fig1 = plt.gcf()
 plt.legend()
 plt.xticks(np.arange(1, 13, 1))
@@ -121,14 +121,14 @@ for t in range(0, 12):
                 a, b = zip(set(x), set(np.squeeze(out)))
                 x = [list(a)[0], list(b)[0]]
                 out = [list(a)[1], list(b)[1]]
-                plt.bar(x, out)  # bar plot
+                plt.bar(x, out)
                 plt.xticks(x, x)
             else:
-                plt.plot(x, out)  # line plot
+                plt.plot(x, out)
 
             plt.xlabel("Feature value")
             plt.ylabel("Feature effect on model output")
-            plt.title(f"Sequential feature: {seq_features[idx]} - {t}")
+            plt.title(f"Sequential feature: {seq_features[idx]} ($t_{t}$)")
             fig1 = plt.gcf()
             plt.show()
             plt.draw()
