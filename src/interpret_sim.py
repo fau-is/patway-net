@@ -14,7 +14,7 @@ from src.main import time_step_blow_up
 
 model = torch.load(os.path.join("../model", f"model_sim"))
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6__.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6___.csv')
 
 # Create dataset without prefixes
 x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
@@ -23,7 +23,7 @@ for i, x in enumerate(x_seqs):
     x_seq_final[i, :len(x), :] = np.array(x)
     x_stat_final[i, :] = np.array(x_statics[i])
 
-
+"""
 # (1) Sequential features (2 time steps, without history)
 def slope(x1, y1, x2, y2):
     eps = 0.000000000000000000000000000000001
@@ -88,22 +88,25 @@ for idx, value in enumerate(static_features):
     plt.show()
     plt.draw()
     fig1.savefig(f'../plots/{value}.png', dpi=100)
-
+"""
 
 # (2) Print sequential features (local, no history)
 effect_feature_values = []
-case = 13
+case = 2
 colors = ['blue', 'green', 'red', 'black', 'magenta']
 
 for idx, value in enumerate(seq_features):
-    effect_feature_values.append([])
-    for t in range(0, 12):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
-        x = x.detach().numpy().squeeze()
-        out = out.detach().numpy()
-        effect_feature_values[-1].append(out[0][0])
 
-    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, color=colors[idx])
+    if value == "IVL":
+        effect_feature_values.append([])
+        for t in range(0, 12):
+            if t == 6:
+                x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
+                x = x.detach().numpy().squeeze()
+                out = out.detach().numpy()
+                effect_feature_values[-1].append(out[0][0])
+
+        plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, color=colors[idx])
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Change of sequential features for case: {case}")
@@ -114,7 +117,7 @@ plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 
-
+"""
 # 4) Print sequential feature over time with value range (global)
 for t in range(0, 12):
     for idx, value in enumerate(seq_features):
@@ -143,3 +146,30 @@ for t in range(0, 12):
             plt.show()
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
+
+# (2) Print sequential features (local, history)
+effect_feature_values = []
+case = 4
+colors = ['blue', 'green', 'red', 'black', 'magenta']
+
+for idx, value in enumerate(seq_features):
+    effect_feature_values.append([])
+    for t in range(0, 12):
+        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, 0:t+1, idx].reshape(1, t+1, 1)).float())
+        # get last value
+        x = x[:, -1, :]
+        x = x.detach().numpy().squeeze()
+        out = out.detach().numpy()
+        effect_feature_values[-1].append(out[0][0])
+
+    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, color=colors[idx])
+plt.xlabel("Time step")
+plt.ylabel("Feature effect on model output")
+plt.title(f"Change of sequential features for case: {case}")
+fig1 = plt.gcf()
+plt.legend()
+plt.xticks(np.arange(1, 13, 1))
+plt.show()
+plt.draw()
+fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
+"""

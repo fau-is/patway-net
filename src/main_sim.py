@@ -9,7 +9,7 @@ import copy
 from src.main import time_step_blow_up
 
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6__.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6___.csv')
 
 # Create dataset without prefixes
 # x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 12)
@@ -55,6 +55,7 @@ model = Net(input_sz_seq=len(seq_features),
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=lr)
 # optimizer = optim.RMSprop(model.parameters(), lr=lr)
+# optimizer = optim.NAdam(model.parameters(), lr=lr)
 
 idx = np.arange(x_seq_final.shape[0])
 model_best_es = copy.deepcopy(model)

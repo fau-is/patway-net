@@ -124,7 +124,7 @@ for idx in range(0, num_cases):
 
     # Check if certain patterns occur in instance    
     pattern1 = ['IVA', 'IVA', 'IVA', 'IVA', 'IVL']
-    pattern2 = ['IVL', 'IVA', 'IVA', 'IVA', 'IVA']
+    # pattern2 = ['IVL', 'IVA', 'IVA', 'IVA', 'IVA']
 
 
     def contains_sublist(l1, l2):
@@ -136,8 +136,7 @@ for idx in range(0, num_cases):
         else:
             return False
 
-
-    if contains_sublist(acts, pattern1) or contains_sublist(acts, pattern2) == True:
+    if contains_sublist(acts, pattern1) == True:  # or contains_sublist(acts, pattern2)
         pattern_occurance = 1
     else:
         pattern_occurance = 0
