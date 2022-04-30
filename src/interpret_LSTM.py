@@ -139,11 +139,10 @@ class NaiveCustomLSTM(nn.Module):
             if init_states is None:
                 h_t, c_t = (
                     torch.zeros(bs, self.hidden_size).to(x.device),
-                    0 # torch.zeros(bs, self.hidden_size).to(x.device),
+                    0  # torch.zeros(bs, self.hidden_size).to(x.device),
                 )
             else:
                 h_t, c_t = init_states
-
 
             # get interaction/feature specific parameters
             if interaction:

@@ -6,14 +6,8 @@ import torch.optim as optim
 import numpy as np
 import os
 import copy
-from src.main import time_step_blow_up
-
 
 x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6___.csv')
-
-# Create dataset without prefixes
-# x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 12)
-
 
 # Create dataset with prefixes
 x_seqs_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
