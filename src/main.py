@@ -429,31 +429,34 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
             for learning_rate in hpos["test"]["learning_rate"]:
                 for batch_size in hpos["test"]["batch_size"]:
-                    for feature_sz in hpos["test"]["feature_sz"]:
-                        for inter_seq_best in hpos["test"]["inter_seq_best"]:
-                            model = Net(input_sz_seq=num_features_seq,
-                                        hidden_per_seq_feat_sz=feature_sz,
-                                        interactions_seq=[],
-                                        interactions_seq_itr=100,
-                                        interactions_seq_best=inter_seq_best,
-                                        interactions_seq_auto=True,
-                                        input_sz_stat=num_features_stat,
-                                        output_sz=1,
-                                        only_static=False,
-                                        masking=True,
-                                        mlp_hidden_size=16,
-                                        x_seq=x_train_seq,
-                                        x_stat=x_train_stat,
-                                        y=y_train)
+                    for seq_feature_sz in hpos["test"]["seq_feature_sz"]:
+                        for stat_feature_sz in hpos["test"]["stat_feature_sz"]:
+                            for inter_seq_best in hpos["test"]["inter_seq_best"]:
+
+                                model = Net(input_sz_seq=num_features_seq,
+                                            hidden_per_seq_feat_sz=seq_feature_sz,
+                                            interactions_seq=[],
+                                            interactions_seq_itr=1000,
+                                            interactions_seq_best=inter_seq_best,
+                                            interactions_seq_auto=True,
+                                            input_sz_stat=num_features_stat,
+                                            output_sz=1,
+                                            only_static=False,
+                                            masking=True,
+                                            mlp_hidden_size=stat_feature_sz,
+                                            x_seq=x_train_seq,
+                                            x_stat=x_train_stat,
+                                            y=y_train)
 
                             criterion = nn.BCEWithLogitsLoss()
-                            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+                            optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
+                            # optimizer = optim.Adam(model.parameters(), lr=learning_rate)
                             idx = np.arange(len(x_train_seq))
 
                             import copy
                             best_val_loss = np.inf
-                            patience = 10
-                            epochs = 100
+                            patience = 40
+                            epochs = 1000
                             trigger_times = 0
                             model_best_es = copy.deepcopy(model)
                             flag_es = False
@@ -532,7 +535,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 if auc >= max(aucs):
                                     best_model = model_best_es
                                     best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
-                                                 "feature_sz": feature_sz, "inter_seq_best": inter_seq_best}
+                                                 "seq_feature_sz": seq_feature_sz, "inter_seq_best": inter_seq_best}
 
             f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
             f.write(str(best_hpos) + '\n')
@@ -1300,7 +1303,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     hpos = {
-        "test": {"feature_sz": [8], "learning_rate": [0.01], "batch_size": [64], "inter_seq_best": [2]},
+        "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [2]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
@@ -1317,7 +1320,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
 
-        for mode in ['lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for mode in ['test']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
 
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
