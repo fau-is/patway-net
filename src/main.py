@@ -19,7 +19,7 @@ from src.interpret_LSTM import Net, NaiveCustomLSTM
 
 data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
-max_len = 100  # mimic=84; sepsis=100
+max_len = 30  # mimic=84; sepsis=100
 min_len = 3
 min_size_prefix = 1
 seed = False
@@ -436,7 +436,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 model = Net(input_sz_seq=num_features_seq,
                                             hidden_per_seq_feat_sz=seq_feature_sz,
                                             interactions_seq=[],
-                                            interactions_seq_itr=1000,
+                                            interactions_seq_itr=200,
                                             interactions_seq_best=inter_seq_best,
                                             interactions_seq_auto=True,
                                             input_sz_stat=num_features_stat,
@@ -449,8 +449,9 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                             y=y_train)
 
                             criterion = nn.BCEWithLogitsLoss()
-                            optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
+                            # optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
                             # optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+                            optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
                             idx = np.arange(len(x_train_seq))
 
                             import copy
@@ -1303,7 +1304,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     hpos = {
-        "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [2]},
+        "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001], "batch_size": [64], "inter_seq_best": [10]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
