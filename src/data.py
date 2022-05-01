@@ -56,7 +56,7 @@ def get_sim_data(label, file):
 
 
 def get_sepsis_data(target_activity, max_len, min_len):
-    ds_path = '../data/Sepsis Cases - Event Log_sub.csv'
+    ds_path = '../data/Sepsis Cases - Event Log.csv'
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
@@ -107,8 +107,11 @@ def get_sepsis_data(target_activity, max_len, min_len):
 
         df_tmp = df[df['Case ID'] == case]
         df_tmp = df_tmp.sort_values(by='Complete Timestamp')
-
         idx = -1
+        current_leucocytes_value = 0
+        current_crp_value = 0
+        current_lacticacid_value = 0
+
         for _, x in df_tmp.iterrows():
             idx = idx + 1
             if x['Activity'] == 'ER Registration' and idx == 0:
@@ -121,7 +124,11 @@ def get_sepsis_data(target_activity, max_len, min_len):
                 found_target_flag = True
 
             if after_registration_flag:
-                x_seqs[-1].append(util.get_one_hot_of_activity_sepsis(x, max_leucocytes, max_lacticacid, max_crp))
+                one_hot, current_leucocytes_value, current_crp_value, current_lacticacid_value = \
+                    util.get_one_hot_of_activity_sepsis(x, max_leucocytes, max_crp, max_lacticacid,
+                                                        current_leucocytes_value, current_crp_value,
+                                                        current_lacticacid_value)
+                x_seqs[-1].append(one_hot)
                 x_time_vals[-1].append(x['Complete Timestamp'])
 
         if after_registration_flag:

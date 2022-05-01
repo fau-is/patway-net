@@ -62,10 +62,6 @@ def get_one_hot_of_activity_mimic(x):
     return one_hot
 
 
-def get_one_hot_of_activity_sim_test(x):
-    pass
-
-
 def get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, current_lacticacid_value):
     if x['Activity'] == 'Start':
         ret = [0, 1]  # No additional information, so normal one hot
@@ -85,16 +81,18 @@ def get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, c
     one_hot = np.zeros(5, dtype=np.float32)
     one_hot[ret[0]] = ret[1]
 
-    if np.isnan(x['CRP']):  # test
+    # Set last value of seq features
+    if np.isnan(x['CRP']):
         one_hot[3] = current_crp_value
-
-    if np.isnan(x['LacticAcid']):  # test
+    if np.isnan(x['LacticAcid']):
         one_hot[4] = current_lacticacid_value
 
     return one_hot, one_hot[3], one_hot[4]
 
 
-def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_lacticacid, max_crp):
+def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_crp, max_lacticacid, current_leucocytes_value,
+                                   current_crp_value, current_lacticacid_value):
+
     if x['Activity'] == 'Leucocytes':
         ret = [0, min(x['Leucocytes'], max_leucocytes) / max_leucocytes]
         if np.isnan(ret[1]):
@@ -137,4 +135,12 @@ def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_lacticacid, max_crp):
     one_hot = np.zeros(16, dtype=np.float32)
     one_hot[ret[0]] = ret[1]
 
-    return one_hot
+    # Set last value of seq features
+    if np.isnan(x['Leucocytes']):
+        one_hot[0] = current_leucocytes_value
+    if np.isnan(x['CRP']):
+        one_hot[1] = current_crp_value
+    if np.isnan(x['LacticAcid']):
+        one_hot[2] = current_lacticacid_value
+
+    return one_hot, one_hot[0], one_hot[1], one_hot[2]
