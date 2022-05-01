@@ -16,6 +16,7 @@ for i, x in enumerate(x_seqs):
     x_stat_final[i, :] = np.array(x_statics[i])
 
 
+"""
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
     return y2 - y1
@@ -80,30 +81,6 @@ for idx, value in enumerate(static_features):
     fig1.savefig(f'../plots/{value}.png', dpi=100)
 
 
-# (2) Print sequential features (local, no history)
-effect_feature_values = []
-case = 2
-colors = ['blue', 'green', 'red', 'black', 'magenta']
-
-for idx, value in enumerate(seq_features):
-    effect_feature_values.append([])
-    for t in range(0, 12):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
-        x = x.detach().numpy().squeeze()
-        out = out.detach().numpy()
-        effect_feature_values[-1].append(out[0][0])
-
-    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, color=colors[idx])
-plt.xlabel("Time step")
-plt.ylabel("Feature effect on model output")
-plt.title(f"Sequential feature effect over time of patient pathway: {case}")
-fig1 = plt.gcf()
-plt.legend()
-plt.xticks(np.arange(1, 13, 1))
-plt.show()
-plt.draw()
-fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
-
 
 # 4) Print sequential feature over time with value range (global)
 for t in range(0, 12):
@@ -133,3 +110,28 @@ for t in range(0, 12):
             plt.show()
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
+"""
+
+# (2) Print sequential features (local, no history)
+effect_feature_values = []
+case = 2
+colors = ['blue', 'green', 'red', 'black', 'magenta']
+
+for idx, value in enumerate(seq_features):
+    effect_feature_values.append([])
+    for t in range(0, 12):
+        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
+        x = x.detach().numpy().squeeze()
+        out = out.detach().numpy()
+        effect_feature_values[-1].append(out[0][0])
+
+    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, color=colors[idx])
+plt.xlabel("Time step")
+plt.ylabel("Feature effect on model output")
+plt.title(f"Sequential feature effect over time of patient pathway: {case}")
+fig1 = plt.gcf()
+plt.legend()
+plt.xticks(np.arange(1, 13, 1))
+plt.show()
+plt.draw()
+fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)

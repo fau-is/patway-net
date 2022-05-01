@@ -17,7 +17,6 @@ for i, x in enumerate(x_seqs):
     x_statics_final[i, :] = np.array(x_statics[i])
 y_final = np.array(y)
 
-
 x_seq_final = torch.from_numpy(x_seqs_final)
 x_stat_final = torch.from_numpy(x_statics_final)
 
@@ -26,7 +25,7 @@ y_final = torch.from_numpy(y_final).reshape(-1)
 epochs = 1000
 batch_size = 32
 lr = 0.001
-patience = 50
+patience = 40
 
 last_loss_all = np.inf
 trigger_times = 0
@@ -47,8 +46,8 @@ model = Net(input_sz_seq=len(seq_features),
             y=y_final)
 
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=lr)
-# optimizer = optim.RMSprop(model.parameters(), lr=lr)
+# optimizer = optim.Adam(model.parameters(), lr=lr)
+optimizer = optim.RMSprop(model.parameters(), lr=lr)
 # optimizer = optim.NAdam(model.parameters(), lr=lr)
 
 idx = np.arange(x_seq_final.shape[0])
