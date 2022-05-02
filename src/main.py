@@ -463,6 +463,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 flag_es = False
 
                                 for epoch in range(epochs):
+                                    print(f"Epoch: {epoch}")
                                     np.random.shuffle(idx)
                                     x_train_seq = x_train_seq[idx]
                                     x_train_stat = x_train_stat[idx]
