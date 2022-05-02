@@ -436,7 +436,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 model = Net(input_sz_seq=num_features_seq,
                                             hidden_per_seq_feat_sz=seq_feature_sz,
                                             interactions_seq=[],
-                                            interactions_seq_itr=200,
+                                            interactions_seq_itr=20,
                                             interactions_seq_best=inter_seq_best,
                                             interactions_seq_auto=True,
                                             input_sz_stat=num_features_stat,
@@ -448,95 +448,98 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                             x_stat=x_train_stat,
                                             y=y_train)
 
-                            criterion = nn.BCEWithLogitsLoss()
-                            # optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
-                            # optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-                            optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
-                            idx = np.arange(len(x_train_seq))
+                                criterion = nn.BCEWithLogitsLoss()
+                                # optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
+                                # optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+                                optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
+                                idx = np.arange(len(x_train_seq))
 
-                            import copy
-                            best_val_loss = np.inf
-                            patience = 40
-                            epochs = 1000
-                            trigger_times = 0
-                            model_best_es = copy.deepcopy(model)
-                            flag_es = False
+                                import copy
+                                best_val_loss = np.inf
+                                patience = 40
+                                epochs = 1
+                                trigger_times = 0
+                                model_best_es = copy.deepcopy(model)
+                                flag_es = False
 
-                            for epoch in range(epochs):
-                                np.random.shuffle(idx)
-                                x_train_seq = x_train_seq[idx]
-                                x_train_stat = x_train_stat[idx]
-                                y_train = y_train[idx]
-                                number_batches = x_train_seq.shape[0] // batch_size
+                                for epoch in range(epochs):
+                                    np.random.shuffle(idx)
+                                    x_train_seq = x_train_seq[idx]
+                                    x_train_stat = x_train_stat[idx]
+                                    y_train = y_train[idx]
+                                    number_batches = x_train_seq.shape[0] // batch_size
 
-                                for i in range(number_batches):
+                                    for i in range(number_batches):
 
-                                    optimizer.zero_grad()  # a clean up step for PyTorch
-                                    out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
-                                                x_train_stat[i * batch_size:(i + 1) * batch_size])
-                                    loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
-                                    loss.backward()  # compute updates for each parameter
-                                    optimizer.step()  # make the updates for each parameter
+                                        optimizer.zero_grad()  # a clean up step for PyTorch
+                                        out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
+                                                    x_train_stat[i * batch_size:(i + 1) * batch_size])
+                                        loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
+                                        loss.backward()  # compute updates for each parameter
+                                        optimizer.step()  # make the updates for each parameter
 
-                                    # train loss per batch
-                                    # print('[{}/{} {}/{}] train loss: {:.8}'.format(epoch, epochs, i+1, number_batches, loss.item()))
+                                        # train loss per batch
+                                        # print('[{}/{} {}/{}] train loss: {:.8}'.format(epoch, epochs, i+1, number_batches, loss.item()))
 
-                                # Early stopping
-                                def validation(model, x_val_seq, x_val_stat, y_val, loss_function):
+                                    # Early stopping
+                                    def validation(model, x_val_seq, x_val_stat, y_val, loss_function):
 
-                                    x_val_stat = torch.from_numpy(x_val_stat)
-                                    x_val_seq = torch.from_numpy(x_val_seq)
-                                    y_val = torch.from_numpy(y_val)
+                                        # if not torch.is_tensor(x_val_stat):
+                                        x_val_stat = torch.from_numpy(x_val_stat)
+                                        x_val_seq = torch.from_numpy(x_val_seq)
+                                        y_val = torch.from_numpy(y_val)
 
-                                    model.eval()
-                                    loss_total = 0
-                                    number_batches = x_val_seq.shape[0] // batch_size
+                                        model.eval()
+                                        loss_total = 0
+                                        number_batches = x_val_seq.shape[0] // batch_size
 
-                                    with torch.no_grad():
-                                        for i in range(number_batches):
-                                            out = model(x_val_seq[i * batch_size: (i + 1) * batch_size],
-                                                        x_val_stat[i * batch_size: (i + 1) * batch_size])
-                                            loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
-                                            loss_total += loss.item()
-                                    return loss_total / number_batches
+                                        with torch.no_grad():
+                                            for i in range(number_batches):
+                                                out = model(x_val_seq[i * batch_size: (i + 1) * batch_size],
+                                                            x_val_stat[i * batch_size: (i + 1) * batch_size])
+                                                loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
+                                                loss_total += loss.item()
+                                        return loss_total / number_batches
 
-                                current_val_loss = validation(model, x_val_seq, x_val_stat, y_val, criterion)
-                                print('Validation loss:', current_val_loss)
+                                    current_val_loss = validation(model, x_val_seq, x_val_stat, y_val, criterion)
+                                    print('Validation loss:', current_val_loss)
 
-                                if current_val_loss > best_val_loss:
-                                    trigger_times += 1
-                                    print('trigger times:', trigger_times)
+                                    if current_val_loss > best_val_loss:
+                                        trigger_times += 1
+                                        print('trigger times:', trigger_times)
 
-                                    if trigger_times >= patience:
-                                        print('Early stopping!\nStart to test process.')
-                                        flag_es = True
+                                        if trigger_times >= patience:
+                                            print('Early stopping!\nStart to test process.')
+                                            flag_es = True
+                                            break
+                                    else:
+                                        print('trigger times: 0')
+                                        trigger_times = 0
+                                        model_best_es = copy.deepcopy(model)
+                                        best_val_loss = current_val_loss
+
+                                    if flag_es:
                                         break
-                                else:
-                                    print('trigger times: 0')
-                                    trigger_times = 0
-                                    model_best_es = copy.deepcopy(model)
-                                    best_val_loss = current_val_loss
 
-                                if flag_es:
-                                    break
+                                # Select model based on val auc
+                                model.eval()
+                                with torch.no_grad():
 
-                            # Select model based on val auc
-                            model.eval()
-                            with torch.no_grad():
+                                    x_val_stat_ = torch.from_numpy(x_val_stat)
+                                    x_val_seq_ = torch.from_numpy(x_val_seq)
 
-                                x_val_stat = torch.from_numpy(x_val_stat)
-                                x_val_seq = torch.from_numpy(x_val_seq)
+                                    preds_proba = torch.sigmoid(model_best_es(x_val_seq_, x_val_stat_))
+                                    preds_proba = [pred_proba[0] for pred_proba in preds_proba]
 
-                                preds_proba = torch.sigmoid(model_best_es(x_val_seq, x_val_stat))
-                                preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+                                    auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                                    aucs.append(auc)
 
-                                auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
-                                aucs.append(auc)
-
-                                if auc >= max(aucs):
-                                    best_model = model_best_es
-                                    best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
-                                                 "seq_feature_sz": seq_feature_sz, "inter_seq_best": inter_seq_best}
+                                    if auc >= max(aucs):
+                                        best_model = model_best_es
+                                        best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
+                                                     "seq_feature_sz": seq_feature_sz,
+                                                     "stat_feature_sz": stat_feature_sz,
+                                                     "inter_seq_best": inter_seq_best}
 
             f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
             f.write(str(best_hpos) + '\n')
@@ -1304,7 +1307,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     hpos = {
-        "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001], "batch_size": [64], "inter_seq_best": [10]},
+        "test": {"seq_feature_sz": [16, 8], "stat_feature_sz": [16, 8], "learning_rate": [0.001], "batch_size": [64], "inter_seq_best": [10]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
