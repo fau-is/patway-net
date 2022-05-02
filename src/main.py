@@ -23,7 +23,7 @@ max_len = 30  # mimic=84; sepsis=100
 min_len = 3
 min_size_prefix = 1
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "test"
 val_size = 0.2
 train_size = 0.8
@@ -436,7 +436,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 model = Net(input_sz_seq=num_features_seq,
                                             hidden_per_seq_feat_sz=seq_feature_sz,
                                             interactions_seq=[],
-                                            interactions_seq_itr=20,
+                                            interactions_seq_itr=200,
                                             interactions_seq_best=inter_seq_best,
                                             interactions_seq_auto=True,
                                             input_sz_stat=num_features_stat,
@@ -457,7 +457,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 import copy
                                 best_val_loss = np.inf
                                 patience = 40
-                                epochs = 1
+                                epochs = 1000
                                 trigger_times = 0
                                 model_best_es = copy.deepcopy(model)
                                 flag_es = False

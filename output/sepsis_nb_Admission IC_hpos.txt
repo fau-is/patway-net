@@ -1,40 +1,40 @@
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
 {'var_smoothing': 1.0}
-Validation aucs,0.8252219866654377
-Avg,0.8252219866654377
+Validation aucs,0.797878157772832
+Avg,0.797878157772832
 Std,nan
