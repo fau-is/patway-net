@@ -46,14 +46,14 @@ for t in range(0, 11):  # num of transmissions
         # normalize = matplotlib.colors.Normalize(vmin=-0.05, vmax=0.2)
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma') #  norm=normalize)
         plt.colorbar()
-        plt.xlabel(f"Feature value $t_{t_x[t]}$")
-        plt.ylabel(f"Feature value $t_{t_y[t]}$")
+        plt.xlabel(f"Feature value $t_{t_x[t]+1}$")
+        plt.ylabel(f"Feature value $t_{t_y[t]+1}$")
         plt.title(f"Sequential feature: {seq_features[idx]}")
         fig1 = plt.gcf()
         plt.show()
         plt.draw()
-        fig1.savefig(f'../plots/{feature}_{t_x[t]}-{t_y[t]}.png', dpi=100)
-
+        fig1.savefig(f'../plots/{feature}_{t_x[t]+1}-{t_y[t]+1}.png', dpi=100)
+        plt.close(fig1)
 
 # 3) Print static features (global)
 for idx, value in enumerate(static_features):
@@ -62,15 +62,16 @@ for idx, value in enumerate(static_features):
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
     if value == "Age" or value == "BMI":
-        plt.scatter(x, out)
+        plt.scatter(x, out, color = 'steelblue')
+        plt.ylim(0.19, 0.41)
     elif value == "Gender" or value == "Foreigner":
         a, b = zip(set(x), set(np.squeeze(out)))
         x = [list(a)[0], list(b)[0]]
         out = [list(a)[1], list(b)[1]]
-        plt.bar(x, out)
+        plt.bar(x, out, color = 'steelblue')
         plt.xticks(x, x)
     else:
-        plt.plot(x, out)
+        plt.plot(x, out, color = 'steelblue')
     plt.xlabel("Feature value")
     plt.ylabel("Feature effect on model output")
     plt.title(f"Static feature: {static_features[idx]}")
@@ -78,8 +79,66 @@ for idx, value in enumerate(static_features):
     plt.show()
     plt.draw()
     fig1.savefig(f'../plots/{value}.png', dpi=100)
+    plt.close(fig1)
 
 
+# 4) Print sequential feature over time with value range (global)
+for t in range(0, 12):
+    for idx, value in enumerate(seq_features):
+        if value == "CRP":
+            # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
+            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
+            x = x.detach().numpy().squeeze()
+            out = out.detach().numpy()
+
+            if value == "CRP" or value == "LacticAcid" or value == "Start":
+                plt.scatter(x, out, color = 'steelblue')  # scatter plot
+            elif value == "IVA" or value == "IVL":
+                # todo: check bar plot
+                a, b = zip(set(x), set(np.squeeze(out)))
+                x = [list(a)[0], list(b)[0]]
+                out = [list(a)[1], list(b)[1]]
+                plt.bar(x, out, color = 'steelblue')
+                plt.xticks(x, x)
+            else:
+                plt.plot(x, out, color = 'steelblue')
+
+            plt.xlabel("Feature value")
+            plt.ylabel("Feature effect on model output")
+            plt.title(f"Sequential feature: {seq_features[idx]} ($t_{t+1}$)")
+            fig1 = plt.gcf()
+            plt.show()
+            plt.draw()
+            fig1.savefig(f'../plots/{value}_t{t+1}.png', dpi=100)
+            plt.close(fig1)
+
+# (2) Print sequential features (local, no history)
+effect_feature_values = []
+case = 2
+colors = ['olivedrab', 'lightskyblue', 'steelblue', 'crimson', 'orange']
+plt.gca().set_prop_cycle(color=colors)
+
+
+for idx, value in enumerate(seq_features):
+    effect_feature_values.append([])
+    for t in range(0, 12):
+        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
+        x = x.detach().numpy().squeeze()
+        out = out.detach().numpy()
+        effect_feature_values[-1].append(out[0][0])
+
+    plt.ylim(-0.11, 0.21)
+    plt.plot(list(range(1, 13)), effect_feature_values[idx], label = value, linestyle = 'dashed', marker = 'o', markersize = 4)
+plt.xlabel("Time step")
+plt.ylabel("Feature effect on model output")
+plt.title(f"Feature effect over time of patient pathway {case}")
+fig1 = plt.gcf()
+plt.legend(loc='upper right', title = 'Sequential Feature') #adjust based on plot
+plt.xticks(np.arange(1, 13, 1))
+plt.show()
+plt.draw()
+fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
+plt.close(fig1)
 
 # 4) Print sequential feature over time with value range (global)
 for t in range(0, 12):
