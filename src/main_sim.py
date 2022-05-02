@@ -7,7 +7,7 @@ import numpy as np
 import os
 import copy
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test.csv')
 
 # Create dataset with prefixes
 x_seqs_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))

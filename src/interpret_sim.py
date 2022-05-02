@@ -16,7 +16,6 @@ for i, x in enumerate(x_seqs):
     x_stat_final[i, :] = np.array(x_statics[i])
 
 
-"""
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
     return y2 - y1
@@ -110,7 +109,6 @@ for t in range(0, 12):
             plt.show()
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
-"""
 
 # (2) Print sequential features (local, no history)
 effect_feature_values = []
