@@ -49,6 +49,21 @@ for t in range(0, 11):  # num of transmissions
 
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma')
         plt.colorbar()
+        if feature == 'CRP' and t==0:
+            plt.clim(0, 0.175)
+        elif feature == 'CRP' and t>0:
+            plt.clim(-0.03, 0.035)
+        elif feature == 'LacticAcid':
+            plt.clim(-0.03, 0.03)
+        elif feature == 'IVL':
+            plt.clim(-0.2, 0.2)
+        elif feature == 'IVA':
+            plt.clim (-0.2, 0.2)
+        elif feature == 'Start':
+            plt.clim(-0.03, 0.03)
+        else:
+            plt.clim(-0.5,0.5)
+
         plt.xlabel("Feature value $t_{%s}$" % str(t_x[t]+1))
         plt.ylabel("Feature value $t_{%s}$" % str(t_y[t]+1))
         plt.title(f"Sequential feature: {seq_features[idx]}")
@@ -118,7 +133,7 @@ for t in range(0, 12):
 
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
-case = 2
+case = 459
 colors = ['olivedrab', 'lightskyblue', 'steelblue', 'crimson', 'orange']
 plt.gca().set_prop_cycle(color=colors)
 
@@ -137,7 +152,7 @@ plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Feature effect over time of patient pathway {case}")
 fig1 = plt.gcf()
-plt.legend(loc='upper right', title = 'Sequential Feature') #adjust based on plot
+plt.legend(loc='upper right', title = 'Sequential feature') #adjust based on plot
 plt.xticks(np.arange(1, 13, 1))
 plt.show()
 plt.draw()
