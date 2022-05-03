@@ -31,6 +31,8 @@ t_y = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
 for t in range(0, 11):  # num of transmissions
     for idx, feature in enumerate(seq_features):
+
+
         x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, t_x[t], idx].reshape(-1, 1, 1)).float())
         x_x = x_x.detach().numpy().squeeze()
         out_x = out_x.detach().numpy()
@@ -44,12 +46,11 @@ for t in range(0, 11):  # num of transmissions
             # print(f"Feature {feature} --- t_x ({t_x[t]}) to t_y ({t_y[t]}) --- found something!")
 
         data = np.column_stack([x_x, x_y, z])
-        #normalize = matplotlib.colors.Normalize(vmin=-0.016, vmax=0.005)
 
-        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma')#, norm=normalize)
+        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma')
         plt.colorbar()
         plt.xlabel("Feature value $t_{%s}$" % str(t_x[t]+1))
-        plt.ylabel("Feature value $t_{%s}$" % str(t_y[t]+1))  # %s ($t_{%s}$)" % (seq_features[idx], t+1))
+        plt.ylabel("Feature value $t_{%s}$" % str(t_y[t]+1))
         plt.title(f"Sequential feature: {seq_features[idx]}")
         fig1 = plt.gcf()
         plt.show()
@@ -58,7 +59,7 @@ for t in range(0, 11):  # num of transmissions
         plt.close(fig1)
 
 
-# 3) Print static features (global)
+# (2) Print static features (global)
 for idx, value in enumerate(static_features):
     # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
     x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_stat_final[:, idx].reshape(-1, 1)).float())
@@ -85,7 +86,7 @@ for idx, value in enumerate(static_features):
     plt.close(fig1)
 
 
-# 4) Print sequential feature over time with value range (global)
+# (3) Print sequential feature over time with value range (global)
 for t in range(0, 12):
     for idx, value in enumerate(seq_features):
         if value == "CRP":
@@ -115,7 +116,7 @@ for t in range(0, 12):
             fig1.savefig(f'../plots/{value}_t{t+1}.png', dpi=100)
             plt.close(fig1)
 
-# (2) Print sequential features (local, no history)
+# (4) Print sequential features (local, no history)
 effect_feature_values = []
 case = 2
 colors = ['olivedrab', 'lightskyblue', 'steelblue', 'crimson', 'orange']
@@ -143,55 +144,5 @@ plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 plt.close(fig1)
 
-# 4) Print sequential feature over time with value range (global)
-for t in range(0, 12):
-    for idx, value in enumerate(seq_features):
-        if value == "CRP":
-            # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
-            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
-            x = x.detach().numpy().squeeze()
-            out = out.detach().numpy()
 
-            if value == "CRP" or value == "LacticAcid" or value == "Start":
-                plt.scatter(x, out)  # scatter plot
-            elif value == "IVA" or value == "IVL":
-                # todo: check bar plot
-                a, b = zip(set(x), set(np.squeeze(out)))
-                x = [list(a)[0], list(b)[0]]
-                out = [list(a)[1], list(b)[1]]
-                plt.bar(x, out)
-                plt.xticks(x, x)
-            else:
-                plt.plot(x, out)
 
-            plt.xlabel("Feature value")
-            plt.ylabel("Feature effect on model output")
-            plt.title(f"Sequential feature: {seq_features[idx]} ($t_{t}$)")
-            fig1 = plt.gcf()
-            plt.show()
-            plt.draw()
-            fig1.savefig(f'../plots/{value}_t{t}.png', dpi=100)
-
-# (2) Print sequential features (local, no history)
-effect_feature_values = []
-case = 2
-colors = ['blue', 'green', 'red', 'black', 'magenta']
-
-for idx, value in enumerate(seq_features):
-    effect_feature_values.append([])
-    for t in range(0, 12):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
-        x = x.detach().numpy().squeeze()
-        out = out.detach().numpy()
-        effect_feature_values[-1].append(out[0][0])
-
-    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, color=colors[idx])
-plt.xlabel("Time step")
-plt.ylabel("Feature effect on model output")
-plt.title(f"Sequential feature effect over time of patient pathway: {case}")
-fig1 = plt.gcf()
-plt.legend()
-plt.xticks(np.arange(1, 13, 1))
-plt.show()
-plt.draw()
-fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
