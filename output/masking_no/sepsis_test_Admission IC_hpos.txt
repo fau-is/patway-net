@@ -1,8 +1,0 @@
-{'learning_rate': 0.02, 'batch_size': 64}
-Validation aucs,0.8748530970596369
-Avg,0.8748530970596369
-Std,nan
-{'learning_rate': 0.02, 'batch_size': 64}
-Validation aucs,0.7773143454081789
-Avg,0.7773143454081789
-Std,nan

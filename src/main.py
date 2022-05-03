@@ -1308,7 +1308,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     hpos = {
-        "test": {"seq_feature_sz": [16, 8], "stat_feature_sz": [16, 8], "learning_rate": [0.001], "batch_size": [64], "inter_seq_best": [10]},
+        "test": {"seq_feature_sz": [16, 8], "stat_feature_sz": [16, 8], "learning_rate": [0.001], "batch_size": [32,128], "inter_seq_best": [10]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},

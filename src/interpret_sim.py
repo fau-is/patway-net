@@ -47,8 +47,8 @@ for t in range(0, 11):  # num of transmissions
 
         data = np.column_stack([x_x, x_y, z])
 
-        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma')
-        plt.colorbar()
+        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
+        plt.colorbar(label='$\Delta$ Feature effect')
         if feature == 'CRP' and t==0:
             plt.clim(0, 0.175)
         elif feature == 'CRP' and t>0:
