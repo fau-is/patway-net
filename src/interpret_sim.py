@@ -122,6 +122,8 @@ for t in range(0, 12):
             else:
                 plt.plot(x, out, color = 'steelblue')
 
+            plt.xlim(-0.02, 1.02)
+            plt.ylim(-0.05, 0.23)
             plt.xlabel("Feature value")
             plt.ylabel("Feature effect on model output")
             plt.title("Sequential feature: %s ($t_{%s}$)" % (str(seq_features[idx]), str(t+1)))
