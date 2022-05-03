@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import matplotlib as matplotlib
 
 model = torch.load(os.path.join("../model", f"model_sim"))
 
@@ -43,17 +44,19 @@ for t in range(0, 11):  # num of transmissions
             # print(f"Feature {feature} --- t_x ({t_x[t]}) to t_y ({t_y[t]}) --- found something!")
 
         data = np.column_stack([x_x, x_y, z])
-        # normalize = matplotlib.colors.Normalize(vmin=-0.05, vmax=0.2)
-        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma') #  norm=normalize)
+        #normalize = matplotlib.colors.Normalize(vmin=-0.016, vmax=0.005)
+
+        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='magma')#, norm=normalize)
         plt.colorbar()
-        plt.xlabel(f"Feature value $t_{t_x[t]+1}$")
-        plt.ylabel(f"Feature value $t_{t_y[t]+1}$")
+        plt.xlabel("Feature value $t_{%s}$" % str(t_x[t]+1))
+        plt.ylabel("Feature value $t_{%s}$" % str(t_y[t]+1))  # %s ($t_{%s}$)" % (seq_features[idx], t+1))
         plt.title(f"Sequential feature: {seq_features[idx]}")
         fig1 = plt.gcf()
         plt.show()
         plt.draw()
         fig1.savefig(f'../plots/{feature}_{t_x[t]+1}-{t_y[t]+1}.png', dpi=100)
         plt.close(fig1)
+
 
 # 3) Print static features (global)
 for idx, value in enumerate(static_features):
@@ -105,7 +108,7 @@ for t in range(0, 12):
 
             plt.xlabel("Feature value")
             plt.ylabel("Feature effect on model output")
-            plt.title(f"Sequential feature: {seq_features[idx]} ($t_{t+1}$)")
+            plt.title("Sequential feature: %s ($t_{%s}$)" % (str(seq_features[idx]), str(t+1)))
             fig1 = plt.gcf()
             plt.show()
             plt.draw()
