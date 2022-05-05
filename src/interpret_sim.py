@@ -63,7 +63,9 @@ for t in range(0, 11):  # num of transmissions
             plt.clim(-0.03, 0.03)
         else:
             plt.clim(-0.5,0.5)
-
+        plt.xlim(-0.05, 1.05)
+        plt.ylim(-0.05, 1.05)
+        plt.plot([-0.5, 1.5], [-0.5, 1.5], color='grey', linewidth=0.6)
         plt.xlabel("Feature value $t_{%s}$" % str(t_x[t]+1))
         plt.ylabel("Feature value $t_{%s}$" % str(t_y[t]+1))
         plt.title(f"Sequential feature: {seq_features[idx]}")
@@ -150,6 +152,7 @@ for idx, value in enumerate(seq_features):
 
     plt.ylim(-0.11, 0.21)
     plt.plot(list(range(1, 13)), effect_feature_values[idx], label = value, linestyle = 'dashed', marker = 'o', markersize = 4)
+plt.axhline(y=0, color='grey', linewidth = 0.6)
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Feature effect over time of patient pathway {case}")
