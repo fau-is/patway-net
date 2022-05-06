@@ -80,7 +80,6 @@ for idx, value in enumerate(static_features):
     x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
-    plt.scatter(x, out, color='steelblue')
     if value == "Age" or value == "Diagnose":
         plt.scatter(x, out, color='steelblue')
         # plt.ylim(0.19, 0.41)
