@@ -3,7 +3,6 @@ import torch
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import matplotlib as matplotlib
 
 model = torch.load(os.path.join("../model", f"model_sim"))
 
@@ -108,9 +107,8 @@ for t in range(0, 12):
             out = out.detach().numpy()
 
             if value == "CRP" or value == "LacticAcid" or value == "Start":
-                plt.scatter(x, out, color='steelblue')  # scatter plot
+                plt.scatter(x, out, color='steelblue')
             elif value == "IVA" or value == "IVL":
-                # todo: check bar plot
                 a, b = zip(set(x), set(np.squeeze(out)))
                 x = [list(a)[0], list(b)[0]]
                 out = [list(a)[1], list(b)[1]]

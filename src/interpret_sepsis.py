@@ -14,6 +14,8 @@ x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.ge
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 30)
 
 
+#Todo: update of scaling!
+"""
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
     return y2 - y1
@@ -42,7 +44,7 @@ for t in range(0, 11):  # num of transmissions
 
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
         plt.colorbar(label='$\Delta$ Feature effect')
-        """
+        
         if feature == 'CRP' and t == 0:
             plt.clim(0, 0.175)
         elif feature == 'CRP' and t > 0:
@@ -59,7 +61,7 @@ for t in range(0, 11):  # num of transmissions
             plt.clim(-0.5, 0.5)
         plt.xlim(-0.05, 1.05)
         plt.ylim(-0.05, 1.05)
-        """
+        
         plt.plot([-0.5, 1.5], [-0.5, 1.5], color='grey', linewidth=0.6)
         plt.xlabel("Feature value $t_{%s}$" % str(t_x[t] + 1))
         plt.ylabel("Feature value $t_{%s}$" % str(t_y[t] + 1))
@@ -69,3 +71,31 @@ for t in range(0, 11):  # num of transmissions
         plt.draw()
         fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.png', dpi=100)
         plt.close(fig1)
+"""
+
+# Todo: update of scaling!
+# (2) Print static features (global)
+for idx, value in enumerate(static_features):
+    # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
+    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
+    x = x.detach().numpy().squeeze()
+    out = out.detach().numpy()
+    plt.scatter(x, out, color='steelblue')
+    if value == "Age" or value == "Diagnose":
+        plt.scatter(x, out, color='steelblue')
+        # plt.ylim(0.19, 0.41)
+    else:
+        a, b = zip(set(x), set(np.squeeze(out)))
+        x = [list(a)[0], list(b)[0]]
+        out = [list(a)[1], list(b)[1]]
+        plt.bar(x, out, color='steelblue')
+        plt.xticks(x, x)
+
+    plt.xlabel("Feature value")
+    plt.ylabel("Feature effect on model output")
+    plt.title(f"Static feature: {static_features[idx]}")
+    fig1 = plt.gcf()
+    plt.show()
+    plt.draw()
+    fig1.savefig(f'../plots/{value}.png', dpi=100)
+    plt.close(fig1)

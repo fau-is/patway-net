@@ -42,7 +42,6 @@ for t in range(0, 11):  # num of transmissions
 
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
         plt.colorbar(label='$\Delta$ Feature effect')
-        """
         if feature == 'CRP' and t == 0:
             plt.clim(0, 0.175)
         elif feature == 'CRP' and t > 0:
@@ -59,7 +58,6 @@ for t in range(0, 11):  # num of transmissions
             plt.clim(-0.5, 0.5)
         plt.xlim(-0.05, 1.05)
         plt.ylim(-0.05, 1.05)
-        """
         plt.plot([-0.5, 1.5], [-0.5, 1.5], color='grey', linewidth=0.6)
         plt.xlabel("Feature value $t_{%s}$" % str(t_x[t] + 1))
         plt.ylabel("Feature value $t_{%s}$" % str(t_y[t] + 1))
@@ -74,11 +72,10 @@ for t in range(0, 11):  # num of transmissions
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
     # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
-    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_stat_final[:, idx].reshape(-1, 1)).float())
+    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
     plt.scatter(x, out, color='steelblue')
-    """
     if value == "Age" or value == "BMI":
         plt.scatter(x, out, color='steelblue')
         plt.ylim(0.19, 0.41)
@@ -90,7 +87,6 @@ for idx, value in enumerate(static_features):
         plt.xticks(x, x)
     else:
         plt.plot(x, out, color='steelblue')
-    """
     plt.xlabel("Feature value")
     plt.ylabel("Feature effect on model output")
     plt.title(f"Static feature: {static_features[idx]}")
