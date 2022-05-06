@@ -1,20 +1,17 @@
-from src.data import get_sim_data
 import torch
-import numpy as np
 import os
 import matplotlib.pyplot as plt
-import matplotlib as matplotlib
+import src.data as data
+from src.main import time_step_blow_up
+import numpy as np
 
-model = torch.load(os.path.join("../model", f"model_sim"))
+repetition = 0
+model = torch.load(os.path.join("../model", f"model_{repetition}"))
+interactions_seq = model.get_number_interactions_seq()
+number_interactions_seq = len(interactions_seq)
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k.csv')
-
-# Create dataset without prefixes
-x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
-x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
-for i, x in enumerate(x_seqs):
-    x_seq_final[i, :len(x), :] = np.array(x)
-    x_stat_final[i, :] = np.array(x_statics[i])
+x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 30, 3)
+x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 30)
 
 
 # (1) Sequential features (2 time steps, without history)
@@ -30,12 +27,12 @@ for t in range(0, 11):  # num of transmissions
     for idx, feature in enumerate(seq_features):
 
         x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(
-            x_seq_final[:, t_x[t], idx].reshape(-1, 1, 1)).float())
+            x_seqs_final[:, t_x[t], idx].reshape(-1, 1, 1)).float())
         x_x = x_x.detach().numpy().squeeze()
         out_x = out_x.detach().numpy()
 
         x_y, out_y, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(
-            x_seq_final[:, t_y[t], idx].reshape(-1, 1, 1)).float())
+            x_seqs_final[:, t_y[t], idx].reshape(-1, 1, 1)).float())
         x_y = x_y.detach().numpy().squeeze()
         out_y = out_y.detach().numpy()
 
@@ -45,6 +42,7 @@ for t in range(0, 11):  # num of transmissions
 
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
         plt.colorbar(label='$\Delta$ Feature effect')
+        """
         if feature == 'CRP' and t == 0:
             plt.clim(0, 0.175)
         elif feature == 'CRP' and t > 0:
@@ -61,6 +59,7 @@ for t in range(0, 11):  # num of transmissions
             plt.clim(-0.5, 0.5)
         plt.xlim(-0.05, 1.05)
         plt.ylim(-0.05, 1.05)
+        """
         plt.plot([-0.5, 1.5], [-0.5, 1.5], color='grey', linewidth=0.6)
         plt.xlabel("Feature value $t_{%s}$" % str(t_x[t] + 1))
         plt.ylabel("Feature value $t_{%s}$" % str(t_y[t] + 1))
@@ -71,12 +70,15 @@ for t in range(0, 11):  # num of transmissions
         fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.png', dpi=100)
         plt.close(fig1)
 
+"""
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
     # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
     x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_stat_final[:, idx].reshape(-1, 1)).float())
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
+    plt.scatter(x, out, color='steelblue')
+    """
     if value == "Age" or value == "BMI":
         plt.scatter(x, out, color='steelblue')
         plt.ylim(0.19, 0.41)
@@ -88,6 +90,7 @@ for idx, value in enumerate(static_features):
         plt.xticks(x, x)
     else:
         plt.plot(x, out, color='steelblue')
+    """
     plt.xlabel("Feature value")
     plt.ylabel("Feature effect on model output")
     plt.title(f"Static feature: {static_features[idx]}")
@@ -103,7 +106,7 @@ for t in range(0, 12):
         if value == "CRP":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
             x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
-                x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
+                x_seqs_final[:, t, idx].reshape(-1, 1, 1)).float())
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
 
@@ -140,7 +143,7 @@ for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
     for t in range(0, 12):
         x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
-            x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
+            x_seqs_final[case, t, idx].reshape(1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
         effect_feature_values[-1].append(out[0][0])
@@ -158,3 +161,33 @@ plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 plt.close(fig1)
+
+
+# Print seq interaction features (first time step
+t = 7
+if number_interactions_seq > 0:
+    for idx in range(0, number_interactions_seq):
+
+        a = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][0]].reshape(-1, 1, 1))
+        b = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][1]].reshape(-1, 1, 1))
+        x = torch.cat((a, b), dim=2)
+
+        X_seq, out = model.plot_feat_seq_effect_inter(idx, x)
+        X_seq = X_seq.detach().numpy().squeeze()
+        out = out.detach().numpy()
+
+        max_size = int(np.sqrt(len(X_seq))) ** 2
+        out = out[0:max_size]
+        # a_vals = len(set(X_seq[:,0]))
+        # b_vals = len(set(X_seq[:,1]))
+        # im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+        # todo:
+        im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+                        # vmin=0, vmax=1)
+        cbar = plt.colorbar(im)
+        # cbar.set_label("")
+        plt.title(f"Interaction:{seq_features[interactions_seq[idx][0]]} x {seq_features[interactions_seq[idx][1]]}")
+        plt.xlabel(f"{seq_features[interactions_seq[idx][0]]}")
+        plt.ylabel(f"{seq_features[interactions_seq[idx][1]]}")
+        plt.show()
+"""
