@@ -120,16 +120,16 @@ for t in range(0, 29):
             plt.close(fig1)
 """
 
-
+# todo: show only relevant features?
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
 case = 10
-colors = ['olivedrab', 'lightskyblue', 'steelblue', 'crimson', 'orange']
-plt.gca().set_prop_cycle(color=colors)
+#colors = ['olivedrab', 'lightskyblue', 'steelblue', 'crimson', 'orange']
+#plt.gca().set_prop_cycle(color=colors)
 
 for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
-    for t in range(0, 29):
+    for t in range(0, 30):
         x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
             x_seqs_final[case, t, idx].reshape(1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
@@ -137,14 +137,14 @@ for idx, value in enumerate(seq_features):
         effect_feature_values[-1].append(out[0][0])
 
     # plt.ylim(-0.11, 0.21)
-    plt.plot(list(range(1, 30)), effect_feature_values[idx], label=value, linestyle='dashed', marker='o', markersize=4)
+    plt.plot(list(range(1, 31)), effect_feature_values[idx], label=value, linestyle='dashed', marker='o', markersize=4)
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Feature effect over time of patient pathway {case}")
 fig1 = plt.gcf()
 plt.legend(loc='upper right', title='Sequential feature')  # adjust based on plot
-plt.xticks(np.arange(1, 30, 1))
+plt.xticks(np.arange(1, 31, 1))
 plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
