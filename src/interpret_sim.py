@@ -21,9 +21,6 @@ for i, x in enumerate(x_seqs):
 def delta(y2, y1):
     return y2 - y1
 
-def slope(x1, y1, x2, y2):
-    eps = 0.000000000000000000000000000000001
-    return (y2 - y1) / ((x2 - x1) + eps)
 
 # Print seq features (t x to t y)
 t_x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -42,8 +39,6 @@ for t in range(0, 11):  # num of transmissions
         out_y = out_y.detach().numpy()
 
         z = delta(out_y.squeeze(), out_x.squeeze())
-        # if sum(z) > 0:
-            # print(f"Feature {feature} --- t_x ({t_x[t]}) to t_y ({t_y[t]}) --- found something!")
 
         data = np.column_stack([x_x, x_y, z])
 
@@ -124,8 +119,8 @@ for t in range(0, 12):
             else:
                 plt.plot(x, out, color = 'steelblue')
 
-            plt.xlim(-0.02, 1.02)
-            plt.ylim(-0.05, 0.23)
+            #plt.xlim(-0.02, 1.02)
+            #plt.ylim(-0.05, 0.23)
             plt.xlabel("Feature value")
             plt.ylabel("Feature effect on model output")
             plt.title("Sequential feature: %s ($t_{%s}$)" % (str(seq_features[idx]), str(t+1)))

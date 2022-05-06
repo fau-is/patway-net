@@ -152,7 +152,8 @@ for idx in range(0, num_cases):
     # label_init = crp_rnd  #test3
     # label_init = weight * gender_rnd + (-(4/3)*(age_rnd - 0.5) ** 2 + weight) + weight * crp_fact  # test4
     # label_init = weight * gender_rnd + (-(4 / 3) * (age_rnd - 0.5) ** 2 + weight) + weight * (1-crp_rnd)  # test5
-    label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (-0.8 * (crp[0] - 0.5) ** 2 + weight) + weight * crp_rnd  #test6
+    label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (-0.8 * (crp[0] - 0.5) ** 2 + weight) + weight * crp_rnd  # test6
+    # label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (0.33 * (-0.8 * (crp[0] - 0.5) ** 2 + weight) + 0.33 * (-0.8 * (crp[1] - 0.5) ** 2 + weight) + 0.33 * (-0.8 * (crp[2] - 0.5) ** 2 + weight)) + weight * crp_rnd  #test7
 
     label = [label_init] * length
 
