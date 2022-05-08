@@ -37,7 +37,10 @@ class NaiveCustomLSTM(nn.Module):
         self.interactions = interactions
         self.input_size = input_sz + 2 * len(interactions)
         self.hidden_per_feat_sz = hidden_per_feat_sz
-        self.hidden_size = (input_sz + len(interactions)) * hidden_per_feat_sz
+        if masking:
+            self.hidden_size = (input_sz + len(interactions)) * hidden_per_feat_sz
+        else:
+            self.hidden_size = hidden_per_feat_sz
         hidden_sz = self.hidden_size
 
         # i_t

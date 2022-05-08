@@ -442,7 +442,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                             input_sz_stat=num_features_stat,
                                             output_sz=1,
                                             only_static=False,
-                                            masking=True,
+                                            masking=False,
                                             mlp_hidden_size=stat_feature_sz,
                                             x_seq=x_train_seq,
                                             x_stat=x_train_stat,
@@ -1325,7 +1325,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
 
-        for mode in ['knn']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for mode in ['test']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
 
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
