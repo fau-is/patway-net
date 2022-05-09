@@ -23,7 +23,7 @@ max_len = 30  # mimic=84; sepsis=100
 min_len = 3
 min_size_prefix = 1
 seed = False
-num_repetitions = 10
+num_repetitions = 1
 mode = "test"
 val_size = 0.2
 train_size = 0.8
@@ -438,11 +438,11 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                             interactions_seq=[],
                                             interactions_seq_itr=200,
                                             interactions_seq_best=inter_seq_best,
-                                            interactions_seq_auto=False,
+                                            interactions_seq_auto=True,
                                             input_sz_stat=num_features_stat,
                                             output_sz=1,
                                             only_static=False,
-                                            masking=False,
+                                            masking=True,
                                             mlp_hidden_size=stat_feature_sz,
                                             x_seq=x_train_seq,
                                             x_stat=x_train_stat,
@@ -450,14 +450,14 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
                                 criterion = nn.BCEWithLogitsLoss()
                                 # optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
-                                # optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-                                optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
+                                optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+                                # optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
                                 idx = np.arange(len(x_train_seq))
 
                                 import copy
                                 best_val_loss = np.inf
-                                patience = 40
-                                epochs = 1000
+                                patience = 10
+                                epochs = 100
                                 trigger_times = 0
                                 model_best_es = copy.deepcopy(model)
                                 flag_es = False
@@ -1308,7 +1308,8 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     hpos = {
-        "test": {"seq_feature_sz": [16, 8, 4], "stat_feature_sz": [16, 8, 4], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [8]},
+        "test": {"seq_feature_sz": [4], "stat_feature_sz": [8], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [1]},
+        # "test": {"seq_feature_sz": [16, 8, 4], "stat_feature_sz": [16, 8, 4], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},

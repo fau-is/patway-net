@@ -3,7 +3,7 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.nn.utils import weight_norm as wn
+
 
 class MLP(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -11,19 +11,13 @@ class MLP(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.fc1 = torch.nn.Linear(self.input_size, self.hidden_size)
-        self.act1 = torch.nn.Tanh()  # torch.nn.Tanh()
-        # self.fc2 = torch.nn.Linear(self.hidden_size, self.hidden_size)
-        # self.relu = torch.nn.ReLU()
-        # self.act2 = torch.nn.ReLU() # torch.nn.Tanh()
-
+        self.act1 = torch.nn.Tanh()
         self.fc3 = torch.nn.Linear(self.hidden_size, 1)
         self.act3 = torch.nn.Sigmoid()
 
     def forward(self, x):
         hidden = self.fc1(x)
         act1 = self.act1(hidden)
-        # output = self.fc2(act1)
-        # act2 = self.act2(hidden)
         output = self.fc3(act1)
         output = self.act3(output)
         return output
@@ -35,7 +29,7 @@ class NaiveCustomLSTM(nn.Module):
         self.input_sz = input_sz
         self.masking = masking
         self.interactions = interactions
-        self.input_size = input_sz + 2 * len(interactions)
+        self.input_size = input_sz + 2 * len(interactions)  # num features
         self.hidden_per_feat_sz = hidden_per_feat_sz
         if masking:
             self.hidden_size = (input_sz + len(interactions)) * hidden_per_feat_sz
@@ -69,6 +63,7 @@ class NaiveCustomLSTM(nn.Module):
             # Create masking to avoid interactions between features
             self.U_mask = torch.zeros(self.U_i.size())
 
+            # U_mask
             for i in range(input_sz):
                 self.U_mask[i, i * hidden_per_feat_sz:(i + 1) * hidden_per_feat_sz] = 1
 
@@ -76,6 +71,7 @@ class NaiveCustomLSTM(nn.Module):
                 self.U_mask[i + input_sz, i * hidden_per_feat_sz:(i + 1) * hidden_per_feat_sz] = 1
                 self.U_mask[i + input_sz + 1, i * hidden_per_feat_sz:(i + 1) * hidden_per_feat_sz] = 1
 
+            # V_mask
             v_mask_single = torch.ones((hidden_per_feat_sz, hidden_per_feat_sz))
             self.V_mask = torch.block_diag(*[v_mask_single for _ in range(input_sz + len(interactions))])
 
@@ -131,11 +127,11 @@ class NaiveCustomLSTM(nn.Module):
         return hidden_seq, (h_t, c_t)
 
     def single_forward(self, x, feat_id, interaction=False, init_states=None):
-        # todo: interactions
 
         history = False
 
         if history:
+            # todo: check interactions
             bs, seq_sz, feat = x.size()
             hidden_seq = []
 
@@ -226,7 +222,6 @@ class NaiveCustomLSTM(nn.Module):
         else:
 
             # We start with no history (h_t = 0, c_t = 0)
-            # Todo: question - only last time step; no recurrence?
             bs, seq_sz, _ = x.size()
             hidden_seq = []
 
@@ -283,7 +278,7 @@ class Net(nn.Module):
 
         super().__init__()
         self.input_sz_seq = input_sz_seq
-        self.hidden_per_feat_sz = hidden_per_seq_feat_sz
+        self.hidden_per_seq_feat_sz = hidden_per_seq_feat_sz
         self.interactions_seq = interactions_seq
         self.interactions_seq_best = interactions_seq_best
         self.interactions_seq_auto = interactions_seq_auto
@@ -298,7 +293,7 @@ class Net(nn.Module):
         self.mlps = nn.ModuleList([MLP(1, mlp_hidden_size) for i in range(input_sz_stat)])
 
         if only_static:
-            self.output_coef = nn.Parameter(torch.randn(input_sz_stat, output_sz))  # only stat
+            self.output_coef = nn.Parameter(torch.randn(input_sz_stat, output_sz))
         else:
             self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
 
@@ -356,7 +351,7 @@ class Net(nn.Module):
                                                                                                                     x_seq_sample.shape[
                                                                                                                         2]),
                                                                                       y,
-                                                                                      train_size=0.7, shuffle=False)
+                                                                                      train_size=0.8, shuffle=False)
             c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
 
             for param in c:
@@ -397,7 +392,7 @@ class Net(nn.Module):
                     out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
                     out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
 
-            out = torch.cat((h_t, out_mlp), dim=1) @  self.output_coef.float() + self.output_bias
+            out = torch.cat((h_t, out_mlp), dim=1) @ self.output_coef.float() + self.output_bias
 
         else:
             out_mlp = []
@@ -418,31 +413,31 @@ class Net(nn.Module):
         x = torch.linspace(min_v, max_v).reshape(-1, 1, 1)
 
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, feat_id)
-        out = h_t @ self.output_coef[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+        out = h_t @ self.output_coef[feat_id * self.hidden_per_seq_feat_sz: (feat_id + 1) * self.hidden_per_seq_feat_sz]
 
         return x, out
 
     def plot_feat_seq_effect(self, feat_id, x):
 
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, feat_id)
-        out = h_t @ self.output_coef[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+        out = h_t @ self.output_coef[feat_id * self.hidden_per_seq_feat_sz: (feat_id + 1) * self.hidden_per_seq_feat_sz]
 
-        return x, out, h_t, self.output_coef[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
+        return x, out, h_t, self.output_coef[feat_id * self.hidden_per_seq_feat_sz: (feat_id + 1) * self.hidden_per_seq_feat_sz]
 
     def plot_feat_seq_effect_inter_custom(self, inter_id, min_f1, max_f1, min_f2, max_f2):
         x = [[x1, x2] for x1 in np.linspace(min_f1, max_f1) for x2 in np.linspace(max_f2, min_f2)]
         x = torch.Tensor(x).unsqueeze(1)
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
-        out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
-                                                    self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
+        out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_seq_feat_sz: (
+                                                    self.input_sz_seq + inter_id + 1) * self.hidden_per_seq_feat_sz]
         return x, out
 
     def plot_feat_seq_effect_inter(self, inter_id, x):
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
-        out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
-                                                    self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
+        out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_seq_feat_sz: (
+                                                    self.input_sz_seq + inter_id + 1) * self.hidden_per_seq_feat_sz]
         return x, out
 
     def plot_feat_stat_effect_custom(self, feat_id, min_v, max_v):
