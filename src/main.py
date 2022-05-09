@@ -19,7 +19,7 @@ from src.interpret_LSTM import Net, NaiveCustomLSTM
 
 data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
-max_len = 30  # mimic=84; sepsis=100
+max_len = 50  # mimic=84; sepsis=100
 min_len = 3
 min_size_prefix = 1
 seed = False
@@ -1308,7 +1308,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     hpos = {
-        "test": {"seq_feature_sz": [4], "stat_feature_sz": [8], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [1]},
+        "test": {"seq_feature_sz": [4,8,16], "stat_feature_sz": [4,8,16], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         # "test": {"seq_feature_sz": [16, 8, 4], "stat_feature_sz": [16, 8, 4], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},

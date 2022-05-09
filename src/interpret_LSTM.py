@@ -1,4 +1,3 @@
-
 import math
 import numpy as np
 import torch
@@ -156,13 +155,13 @@ class NaiveCustomLSTM(nn.Module):
                 V_o = (self.V_o * self.V_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
 
                 b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                    self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
                 b_f = self.b_f[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                    self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
                 b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                    self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
                 b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                    self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
 
             else:
                 U_i = (self.U_i * self.U_mask)[feat_id, :].unsqueeze(0)
@@ -191,23 +190,27 @@ class NaiveCustomLSTM(nn.Module):
 
                 i_t = torch.sigmoid(
                     (x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] +
-                    (check_h_t(t, h_t) @ torch.transpose(V_i[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz], 1, 0)) +
+                    (check_h_t(t, h_t) @ torch.transpose(
+                        V_i[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz], 1, 0)) +
                     b_i)
 
                 f_t = torch.sigmoid(
                     (x_t @ U_f)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] +
-                    (check_h_t(t, h_t) @ torch.transpose(V_f[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz],
-                    1, 0)) + b_f)
+                    (check_h_t(t, h_t) @ torch.transpose(
+                        V_f[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz],
+                        1, 0)) + b_f)
 
                 g_t = torch.tanh(
                     (x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] +
-                    (check_h_t(t, h_t) @ torch.transpose(V_c[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz],
-                    1, 0)) + b_c)
+                    (check_h_t(t, h_t) @ torch.transpose(
+                        V_c[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz],
+                        1, 0)) + b_c)
 
                 o_t = torch.sigmoid(
                     (x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] +
-                    (check_h_t(t, h_t) @ torch.transpose(V_o[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz],
-                    1, 0)) + b_o)
+                    (check_h_t(t, h_t) @ torch.transpose(
+                        V_o[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz],
+                        1, 0)) + b_o)
 
                 c_t = f_t * c_t + i_t * g_t
                 h_t = o_t * torch.tanh(c_t)
@@ -232,11 +235,11 @@ class NaiveCustomLSTM(nn.Module):
                 U_o = (self.U_o * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
 
                 b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
                 b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
                 b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
 
             else:
                 U_i = (self.U_i * self.U_mask)[feat_id, :].unsqueeze(0)
@@ -249,9 +252,12 @@ class NaiveCustomLSTM(nn.Module):
 
             for t in range(seq_sz):
                 x_t = x[:, t]
-                i_t = torch.sigmoid((x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] + b_i)
-                g_t = torch.tanh((x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_c)
-                o_t = torch.sigmoid((x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_o)
+                i_t = torch.sigmoid(
+                    (x_t @ U_i)[:, feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz] + b_i)
+                g_t = torch.tanh(
+                    (x_t @ U_c)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_c)
+                o_t = torch.sigmoid(
+                    (x_t @ U_o)[:, feat_id * self.hidden_per_feat_sz:(feat_id + 1) * self.hidden_per_feat_sz] + b_o)
                 c_t = i_t * g_t
                 h_t = o_t * torch.tanh(c_t)
 
@@ -345,17 +351,14 @@ class Net(nn.Module):
             max_measure = 0
 
             # Learn and apply linear model
-            x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(x_seq_sample[:, :, :].reshape(-1,
-                                                                                                                    x_seq_sample.shape[
-                                                                                                                        1] *
-                                                                                                                    x_seq_sample.shape[
-                                                                                                                        2]),
-                                                                                      y,
-                                                                                      train_size=0.8, shuffle=False)
+            x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(
+                x_seq_sample[:, :, :].reshape(-1, x_seq_sample.shape[1] * x_seq_sample.shape[2]),
+                y,
+                train_size=0.8, shuffle=False)
             c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
 
             for param in c:
-                model = LogisticRegression(penalty='l2', solver='lbfgs', C=param)
+                model = LogisticRegression(penalty='l2', solver='lbfgs', C=param)  # l2; lbfgs
                 model.fit(x_seq_sample_train, np.ravel(y_train))
                 preds_proba = model.predict_proba(x_seq_sample_test)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
@@ -422,7 +425,8 @@ class Net(nn.Module):
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, feat_id)
         out = h_t @ self.output_coef[feat_id * self.hidden_per_seq_feat_sz: (feat_id + 1) * self.hidden_per_seq_feat_sz]
 
-        return x, out, h_t, self.output_coef[feat_id * self.hidden_per_seq_feat_sz: (feat_id + 1) * self.hidden_per_seq_feat_sz]
+        return x, out, h_t, self.output_coef[
+                            feat_id * self.hidden_per_seq_feat_sz: (feat_id + 1) * self.hidden_per_seq_feat_sz]
 
     def plot_feat_seq_effect_inter_custom(self, inter_id, min_f1, max_f1, min_f2, max_f2):
         x = [[x1, x2] for x1 in np.linspace(min_f1, max_f1) for x2 in np.linspace(max_f2, min_f2)]
@@ -430,14 +434,14 @@ class Net(nn.Module):
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
         out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_seq_feat_sz: (
-                                                    self.input_sz_seq + inter_id + 1) * self.hidden_per_seq_feat_sz]
+                                                                                                           self.input_sz_seq + inter_id + 1) * self.hidden_per_seq_feat_sz]
         return x, out
 
     def plot_feat_seq_effect_inter(self, inter_id, x):
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
         out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_seq_feat_sz: (
-                                                    self.input_sz_seq + inter_id + 1) * self.hidden_per_seq_feat_sz]
+                                                                                                           self.input_sz_seq + inter_id + 1) * self.hidden_per_seq_feat_sz]
         return x, out
 
     def plot_feat_stat_effect_custom(self, feat_id, min_v, max_v):
