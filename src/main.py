@@ -23,7 +23,7 @@ max_len = 50  # mimic=84; sepsis=100
 min_len = 3
 min_size_prefix = 1
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "test"
 val_size = 0.2
 train_size = 0.8
@@ -1319,14 +1319,14 @@ if __name__ == "__main__":
         # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
         "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
         "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
-        "nb": {"var_smoothing": [pow(1, -9)]},
+        "nb": {"var_smoothing": [pow(1, -7), pow(1, -8), pow(1, -9), pow(1, -10), pow(1, -11)]},
         "dt": {"max_depth": [5, 10, 15], "min_samples_split": [1, 3, 5, 10]},
         "knn": {"n_neighbors": [3, 5, 10, 15]}
     }
 
     if data_set == "sepsis":
 
-        for mode in ['test']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for mode in ['knn', 'lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
 
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
