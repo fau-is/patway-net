@@ -284,7 +284,7 @@ class Net(nn.Module):
 
         super().__init__()
         self.input_sz_seq = input_sz_seq
-        self.hidden_per_seq_feat_sz = hidden_per_seq_feat_sz
+        self.hidden_per_feat_sz = hidden_per_seq_feat_sz
         self.interactions_seq = interactions_seq
         self.interactions_seq_best = interactions_seq_best
         self.interactions_seq_auto = interactions_seq_auto
@@ -416,32 +416,32 @@ class Net(nn.Module):
         x = torch.linspace(min_v, max_v).reshape(-1, 1, 1)
 
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, feat_id)
-        out = h_t @ self.output_coef[feat_id * self.hidden_per_seq_feat_sz: (feat_id + 1) * self.hidden_per_seq_feat_sz]
+        out = h_t @ self.output_coef[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
 
         return x, out
 
     def plot_feat_seq_effect(self, feat_id, x):
 
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, feat_id)
-        out = h_t @ self.output_coef[feat_id * self.hidden_per_seq_feat_sz: (feat_id + 1) * self.hidden_per_seq_feat_sz]
+        out = h_t @ self.output_coef[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
 
         return x, out, h_t, self.output_coef[
-                            feat_id * self.hidden_per_seq_feat_sz: (feat_id + 1) * self.hidden_per_seq_feat_sz]
+                            feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
 
     def plot_feat_seq_effect_inter_custom(self, inter_id, min_f1, max_f1, min_f2, max_f2):
         x = [[x1, x2] for x1 in np.linspace(min_f1, max_f1) for x2 in np.linspace(max_f2, min_f2)]
         x = torch.Tensor(x).unsqueeze(1)
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
-        out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_seq_feat_sz: (
-                                                                                                           self.input_sz_seq + inter_id + 1) * self.hidden_per_seq_feat_sz]
+        out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
+                                                                                                           self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
         return x, out
 
     def plot_feat_seq_effect_inter(self, inter_id, x):
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
-        out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_seq_feat_sz: (
-                                                                                                           self.input_sz_seq + inter_id + 1) * self.hidden_per_seq_feat_sz]
+        out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
+                                                                                                           self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
         return x, out
 
     def plot_feat_stat_effect_custom(self, feat_id, min_v, max_v):
