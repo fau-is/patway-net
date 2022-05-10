@@ -17,6 +17,8 @@ for i, x in enumerate(x_seqs):
     x_seq_final[i, :len(x), :] = np.array(x)
     x_stat_final[i, :] = np.array(x_statics[i])
 
+plt.rc('font', size=13)
+
 
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
@@ -83,10 +85,12 @@ for idx, value in enumerate(static_features):
     if value == "Age":
         plt.scatter(x, out - 0.77, color='steelblue')
         plt.ylim(-0.02, 0.22)
+        # plt.xlim(-0.02, 1.02)
 
     elif value == "BMI":
         plt.scatter(x, out, color='steelblue')
         plt.ylim(-0.02, 0.22)
+        # plt.xlim(-0.02, 1.02)
 
     elif value == "Gender":
         a, b = zip(set(x), set(np.squeeze(out)))
@@ -183,4 +187,3 @@ plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.pdf', dpi=100)
 plt.close(fig1)
-
