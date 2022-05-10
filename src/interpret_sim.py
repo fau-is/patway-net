@@ -4,6 +4,8 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
 model = torch.load(os.path.join("../model", f"model_sim"))
 
 x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
