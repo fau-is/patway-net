@@ -1218,26 +1218,43 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         except:
             pass
 
-    # Save all results
-    f = open(f'../output/{data_set}_{mode}_{target_activity}_summary.txt', 'w')
-    results_ = results
-    del results_['preds'], results_['preds_proba'], results_['gts'], results_['ts']
-    f.write(str(results_))
-    f.close()
+        # Save all results
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_summary.txt', 'w')
+        results_ = results
+        del results_['preds'], results_['preds_proba'], results_['gts'], results_['ts']
+        f.write(str(results_))
+        f.close()
 
-    # print metrics
-    metrics_ = ["auc", "precision", "recall", "f1-score", "support", "accuracy"]
-    labels = ["0", "1"]
+        # print metrics
+        metrics_ = ["auc", "precision", "recall", "f1-score", "support", "accuracy"]
+        labels = ["0", "1"]
 
-    for metric_ in metrics_:
-        vals = []
-        if metric_ == "auc":
-            try:
+        for metric_ in metrics_:
+            vals = []
+            if metric_ == "auc":
+                try:
+                    f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+                    f.write(metric_ + '\n')
+                    print(metric_)
+                    for idx_ in range(0, repetition + 1):
+                        vals.append(results['all']['auc'][idx_])
+                        f.write(f'{idx_},{vals[-1]}\n')
+                        print(f'{idx_},{vals[-1]}')
+                    f.write(f'Avg,{sum(vals) / len(vals)}\n')
+                    f.write(f'Std,{np.std(vals, ddof=1)}\n')
+                    print(f'Avg,{sum(vals) / len(vals)}')
+                    print(f'Std,{np.std(vals, ddof=1)}\n')
+                    f.close()
+
+                except:
+                    pass
+
+            elif metric_ == "accuracy":
                 f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
                 f.write(metric_ + '\n')
                 print(metric_)
-                for idx_ in range(0, num_repetitions):
-                    vals.append(results['all']['auc'][idx_])
+                for idx_ in range(0, repetition + 1):
+                    vals.append(results['all']['rep'][idx_][metric_])
                     f.write(f'{idx_},{vals[-1]}\n')
                     print(f'{idx_},{vals[-1]}')
                 f.write(f'Avg,{sum(vals) / len(vals)}\n')
@@ -1245,41 +1262,24 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                 print(f'Avg,{sum(vals) / len(vals)}')
                 print(f'Std,{np.std(vals, ddof=1)}\n')
                 f.close()
-
-            except:
-                pass
-
-        elif metric_ == "accuracy":
-            f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
-            f.write(metric_ + '\n')
-            print(metric_)
-            for idx_ in range(0, num_repetitions):
-                vals.append(results['all']['rep'][idx_][metric_])
-                f.write(f'{idx_},{vals[-1]}\n')
-                print(f'{idx_},{vals[-1]}')
-            f.write(f'Avg,{sum(vals) / len(vals)}\n')
-            f.write(f'Std,{np.std(vals, ddof=1)}\n')
-            print(f'Avg,{sum(vals) / len(vals)}')
-            print(f'Std,{np.std(vals, ddof=1)}\n')
-            f.close()
-        else:
-            for label in labels:
-                try:
-                    f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
-                    f.write(metric_ + f' ({label})\n')
-                    print(metric_ + f' ({label})')
-                    vals = []
-                    for idx_ in range(0, num_repetitions):
-                        vals.append(results['all']['rep'][idx_][label][metric_])
-                        f.write(f'{idx_},{vals[-1]}\n')
-                        print(f'{idx_},{vals[-1]}')
-                    f.write(f'Avg,{sum(vals) / len(vals)}\n')
-                    f.write(f'Std,{np.std(vals, ddof=1)}\n')
-                    print(f'Avg,{sum(vals) / len(vals)}')
-                    print(f'Std,{np.std(vals, ddof=1)}')
-                    f.close()
-                except:
-                    pass
+            else:
+                for label in labels:
+                    try:
+                        f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+                        f.write(metric_ + f' ({label})\n')
+                        print(metric_ + f' ({label})')
+                        vals = []
+                        for idx_ in range(0, repetition + 1):
+                            vals.append(results['all']['rep'][idx_][label][metric_])
+                            f.write(f'{idx_},{vals[-1]}\n')
+                            print(f'{idx_},{vals[-1]}')
+                        f.write(f'Avg,{sum(vals) / len(vals)}\n')
+                        f.write(f'Std,{np.std(vals, ddof=1)}\n')
+                        print(f'Avg,{sum(vals) / len(vals)}')
+                        print(f'Std,{np.std(vals, ddof=1)}')
+                        f.close()
+                    except:
+                        pass
 
     return X_train_seq, X_train_stat, y_train, X_val_seq, X_val_stat, y_val, best_hpos_repetitions
 
@@ -1326,7 +1326,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
 
-        for mode in ['knn', 'lr']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for mode in ['dt']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
 
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(

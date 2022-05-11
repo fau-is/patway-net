@@ -1,4 +1,0 @@
-{'learning_rate': 0.001, 'batch_size': 32, 'seq_feature_sz': 16, 'stat_feature_sz': 16, 'inter_seq_best': 4}
-Validation aucs,0.8954595641376619
-Avg,0.8954595641376619
-Std,nan
