@@ -6,7 +6,8 @@ from src.main import time_step_blow_up
 import numpy as np
 
 repetition = 0
-model = torch.load(os.path.join("../model", f"model_{repetition}"))
+# map location param is required as the model was trained on gpu
+model = torch.load(os.path.join("../model", f"model_{repetition}"), map_location=torch.device('cpu'))
 interactions_seq = model.get_number_interactions_seq()
 number_interactions_seq = len(interactions_seq)
 
@@ -15,7 +16,6 @@ x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y,
 
 
 #Todo: update of scaling!
-"""
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
     return y2 - y1
@@ -65,7 +65,7 @@ for t in range(0, 29):  # num of transmissions
         plt.draw()
         fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.png', dpi=100)
         plt.close(fig1)
-"""
+
 
 # Todo: maybe correct intercept/ bias!
 """
@@ -152,7 +152,7 @@ fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 plt.close(fig1)
 """
 
-
+"""
 # Print seq interaction features (first time step
 t = 7
 if number_interactions_seq > 0:
@@ -180,3 +180,4 @@ if number_interactions_seq > 0:
         plt.xlabel(f"{seq_features[interactions_seq[idx][0]]}")
         plt.ylabel(f"{seq_features[interactions_seq[idx][1]]}")
         plt.show()
+"""
