@@ -11,8 +11,8 @@ model = torch.load(os.path.join("../model", f"model_{repetition}"), map_location
 interactions_seq = model.get_number_interactions_seq()
 number_interactions_seq = len(interactions_seq)
 
-x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 30, 3)
-x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 30)
+x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
+x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
 
 #Todo: update of scaling!
@@ -22,10 +22,10 @@ def delta(y2, y1):
 
 
 # Print seq features (t x to t y)
-t_x = list(range(0, 29))
-t_y = list(range(1, 30))
+t_x = list(range(0, 11))
+t_y = list(range(1, 12))
 
-for t in range(0, 29):  # num of transmissions
+for t in range(0, 11):  # num of transmissions
     for idx, feature in enumerate(seq_features):
 
         x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(
@@ -68,7 +68,6 @@ for t in range(0, 29):  # num of transmissions
 
 
 # Todo: maybe correct intercept/ bias!
-"""
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
     # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
@@ -93,12 +92,10 @@ for idx, value in enumerate(static_features):
     plt.draw()
     fig1.savefig(f'../plots/{value}.png', dpi=100)
     plt.close(fig1)
-"""
 
 
 #Todo: update of scaling!
-"""
-for t in range(0, 29):
+for t in range(0, 11):
     for idx, value in enumerate(seq_features):
         if value == "CRP" or value == "Leucocytes" or value == "LacticAcid":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
@@ -118,19 +115,15 @@ for t in range(0, 29):
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t + 1}.png', dpi=100)
             plt.close(fig1)
-"""
 
 # todo: show only relevant features?
-"""
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
 case = 10
-#colors = ['olivedrab', 'lightskyblue', 'steelblue', 'crimson', 'orange']
-#plt.gca().set_prop_cycle(color=colors)
 
 for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
-    for t in range(0, 30):
+    for t in range(0, 12):
         x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
             x_seqs_final[case, t, idx].reshape(1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
@@ -138,19 +131,21 @@ for idx, value in enumerate(seq_features):
         effect_feature_values[-1].append(out[0][0])
 
     # plt.ylim(-0.11, 0.21)
-    plt.plot(list(range(1, 31)), effect_feature_values[idx], label=value, linestyle='dashed', marker='o', markersize=4)
+    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, linestyle='dashed', marker='o', markersize=4)
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Feature effect over time of patient pathway {case}")
 fig1 = plt.gcf()
 plt.legend(loc='upper right', title='Sequential feature')  # adjust based on plot
-plt.xticks(np.arange(1, 31, 1))
+plt.xticks(np.arange(1, 13, 1))
 plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 plt.close(fig1)
-"""
+
+
+# test = model.get_number_interactions_seq()
 
 """
 # Print seq interaction features (first time step

@@ -76,6 +76,8 @@ for t in range(0, 11):  # num of transmissions
         fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.pdf', dpi=100)
         plt.close(fig1)
 
+
+"""
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
     # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
@@ -117,7 +119,10 @@ for idx, value in enumerate(static_features):
     plt.draw()
     fig1.savefig(f'../plots/{value}.pdf', dpi=100)
     plt.close(fig1)
+"""
 
+
+"""
 # (3) Print sequential feature over time with value range (global)
 for t in range(0, 12):
     for idx, value in enumerate(seq_features):
@@ -187,3 +192,4 @@ plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.pdf', dpi=100)
 plt.close(fig1)
+"""
