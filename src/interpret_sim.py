@@ -17,8 +17,6 @@ for i, x in enumerate(x_seqs):
     x_seq_final[i, :len(x), :] = np.array(x)
     x_stat_final[i, :] = np.array(x_statics[i])
 
-plt.rc('font', size=13)
-
 
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
@@ -30,6 +28,7 @@ t_x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 t_y = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
 for t in range(0, 11):  # num of transmissions
+    plt.rcParams["figure.figsize"] = (7, 4)
     for idx, feature in enumerate(seq_features):
 
         x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(
@@ -46,40 +45,51 @@ for t in range(0, 11):  # num of transmissions
 
         data = np.column_stack([x_x, x_y, z])
 
+        plt.rc('font', size=13)
+
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
         plt.colorbar(label='$\Delta$ Feature effect')
 
         if feature == 'CRP' and t == 0:
             plt.clim(0, 0.13)
+            plt.title(f"Sequential feature: {seq_features[idx]}")
         elif feature == 'CRP' and t > 0:
             plt.clim(-0.09, 0.015)
+            plt.title(f"Sequential feature: {seq_features[idx]}")
         elif feature == 'LacticAcid':
             plt.clim(-0.09, 0.015)
+            plt.title(f"Sequential feature: {seq_features[idx]}")
         elif feature == 'IVL':
             plt.clim(-0.15, 0.15)
+            plt.title(f"Sequential feature: IV Liquid")
         elif feature == 'IVA':
             plt.clim(-0.15, 0.15)
+            plt.title(f"Sequential feature: IV Antibiotics")
         elif feature == 'Start':
             plt.clim(-0.09, 0.015)
+            plt.title(f"Sequential feature: {seq_features[idx]}")
         else:
             plt.clim(-0.5, 0.5)
+            plt.title(f"Sequential feature: {seq_features[idx]}")
 
         plt.xlim(-0.05, 1.05)
         plt.ylim(-0.05, 1.05)
         plt.plot([-0.5, 1.5], [-0.5, 1.5], color='grey', linewidth=0.6)
         plt.xlabel("Feature value $t_{%s}$" % str(t_x[t] + 1))
         plt.ylabel("Feature value $t_{%s}$" % str(t_y[t] + 1))
-        plt.title(f"Sequential feature: {seq_features[idx]}")
+        # plt.title(f"Sequential feature: {seq_features[idx]}")
         fig1 = plt.gcf()
         plt.show()
         plt.draw()
         fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.pdf', dpi=100)
         plt.close(fig1)
 
-
-"""
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
+
+    plt.rcParams["figure.figsize"] = (7.5, 5)
+    plt.rc('font', size=13)
+
     # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
     x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_stat_final[:, idx].reshape(-1, 1)).float())
     x = x.detach().numpy().squeeze()
@@ -119,13 +129,14 @@ for idx, value in enumerate(static_features):
     plt.draw()
     fig1.savefig(f'../plots/{value}.pdf', dpi=100)
     plt.close(fig1)
-"""
 
-
-"""
 # (3) Print sequential feature over time with value range (global)
-for t in range(0, 12):
+for t in range(0, 10):
     for idx, value in enumerate(seq_features):
+
+        plt.rcParams["figure.figsize"] = (7.5, 5)
+        plt.rc('font', size=13)
+
         if value == "CRP":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
             x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
@@ -158,38 +169,41 @@ for t in range(0, 12):
 
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
-case = 200
+case = 3
 colors = ['olivedrab', 'lightskyblue', 'steelblue', 'crimson', 'orange']
 plt.gca().set_prop_cycle(color=colors)
 
+plt.rcParams["figure.figsize"] = (8.5, 5)
+plt.rc('font', size=10)
+
 for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
+    correction_value = 0
     for t in range(0, 12):
         x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
             x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
-        effect_feature_values[-1].append(out[0][0])
 
-        if idx == 1:
-            y_values = [z + 0.05 for z in effect_feature_values[idx]]
-        elif idx == 2:
-            y_values = [z - 0.15 for z in effect_feature_values[idx]]
-        else:
-            y_values = effect_feature_values[idx]
+        if t == 0:
+            correction_value = 0 - out[0][0]
+
+        out_correction = out[0][0] + correction_value
+
+        effect_feature_values[-1].append(out_correction)
 
     plt.ylim(-0.17, 0.17)
 
-    plt.plot(list(range(1, 13)), y_values, label=value, linestyle='dashed', marker='o', markersize=4)
+    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, linestyle='dashed', marker='o', markersize=4)
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Feature effect over time of patient pathway {case}")
 fig1 = plt.gcf()
-plt.legend(loc='lower left', title='Sequential feature')  # adjust based on plot
+plt.legend(['ER Registration', 'IV Liquid', 'IV Antibiotics', 'CRP', 'LacticAcid'], loc='lower left',
+           title='Sequential feature')  # adjust based on plot
 plt.xticks(np.arange(1, 13, 1))
 plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.pdf', dpi=100)
 plt.close(fig1)
-"""
