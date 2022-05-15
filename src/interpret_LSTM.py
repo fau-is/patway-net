@@ -235,11 +235,11 @@ class NaiveCustomLSTM(nn.Module):
                 U_o = (self.U_o * self.U_mask)[self.input_sz + 2 * feat_id: self.input_sz + 2 * feat_id + 2, :]
 
                 b_i = self.b_i[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
                 b_c = self.b_c[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
                 b_o = self.b_o[(self.input_sz + feat_id) * self.hidden_per_feat_sz: (
-                                                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
+                                                            self.input_sz + feat_id + 1) * self.hidden_per_feat_sz]
 
             else:
                 U_i = (self.U_i * self.U_mask)[feat_id, :].unsqueeze(0)
@@ -441,7 +441,7 @@ class Net(nn.Module):
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
         out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
-                                                                                                           self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
+                                            self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
         return x, out
 
     def plot_feat_stat_effect_custom(self, feat_id, min_v, max_v):
