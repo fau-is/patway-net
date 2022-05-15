@@ -441,7 +441,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                             interactions_seq_auto=True,
                                             input_sz_stat=num_features_stat,
                                             output_sz=1,
-                                            only_static=True,
+                                            only_static=False,
                                             masking=True,
                                             mlp_hidden_size=stat_feature_sz,
                                             x_seq=x_train_seq,
@@ -1308,8 +1308,8 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     hpos = {
-        # "test": {"seq_feature_sz": [4,8,16], "stat_feature_sz": [4,8,16], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        "test": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.001], "batch_size": [128], "inter_seq_best": [4]},
+        # "test": {"seq_feature_sz": [4,8,16], "stat_feature_sz": [4,8,16], "learning_rate": [0.001, 0.01], "batch_size": [32], "inter_seq_best": [1]},
+        "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [4]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
