@@ -190,7 +190,9 @@ for t in range(0, 11):
 
             X_seq, out = model.plot_feat_seq_effect_inter(idx, x)
             X_seq = X_seq.detach().numpy().squeeze()
-            out = out.detach().numpy().reshape(-1, 1, 1)
+            out = out.detach().numpy()
+            a.reshape(-1, 1)
+            b.reshape(-1, 1)
 
             # max_size = int(np.sqrt(len(X_seq))) ** 2
             # out = out[0:max_size]
@@ -200,7 +202,7 @@ for t in range(0, 11):
             # im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose()) # vmin=0, vmax=1)
             # cbar = plt.colorbar(im)  # cbar.set_label("")
 
-            data = np.column_stack([a, b, out])
+            data = np.concatenate((a, b, out), axis=1)
 
             plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
             plt.colorbar(label='Feature effect')
