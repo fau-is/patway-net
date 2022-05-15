@@ -14,7 +14,7 @@ number_interactions_seq = len(interactions_seq)
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
-
+"""
 #Todo: update of scaling!
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
@@ -95,6 +95,7 @@ for idx, value in enumerate(static_features):
 
 
 #Todo: update of scaling!
+# (3) Print sequential feature over time with value range (global)
 for t in range(0, 11):
     for idx, value in enumerate(seq_features):
         if value == "CRP" or value == "Leucocytes" or value == "LacticAcid":
@@ -143,36 +144,32 @@ plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 plt.close(fig1)
-
-
-# test = model.get_number_interactions_seq()
-
 """
-# Print seq interaction features (first time step
-t = 7
-if number_interactions_seq > 0:
-    for idx in range(0, number_interactions_seq):
 
-        a = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][0]].reshape(-1, 1, 1))
-        b = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][1]].reshape(-1, 1, 1))
-        x = torch.cat((a, b), dim=2)
+# (5) Print sequential feature interactions (global, no history)
+for t in range(0, 11):
+    if number_interactions_seq > 0:
+        for idx in range(0, number_interactions_seq):
 
-        X_seq, out = model.plot_feat_seq_effect_inter(idx, x)
-        X_seq = X_seq.detach().numpy().squeeze()
-        out = out.detach().numpy()
+            a = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][0]].reshape(-1, 1, 1))
+            b = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][1]].reshape(-1, 1, 1))
+            x = torch.cat((a, b), dim=2)
 
-        max_size = int(np.sqrt(len(X_seq))) ** 2
-        out = out[0:max_size]
-        # a_vals = len(set(X_seq[:,0]))
-        # b_vals = len(set(X_seq[:,1]))
-        # im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
-        # todo:
-        im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
-                        # vmin=0, vmax=1)
-        cbar = plt.colorbar(im)
-        # cbar.set_label("")
-        plt.title(f"Interaction:{seq_features[interactions_seq[idx][0]]} x {seq_features[interactions_seq[idx][1]]}")
-        plt.xlabel(f"{seq_features[interactions_seq[idx][0]]}")
-        plt.ylabel(f"{seq_features[interactions_seq[idx][1]]}")
-        plt.show()
-"""
+            X_seq, out = model.plot_feat_seq_effect_inter(idx, x)
+            X_seq = X_seq.detach().numpy().squeeze()
+            out = out.detach().numpy()
+
+            max_size = int(np.sqrt(len(X_seq))) ** 2
+            out = out[0:max_size]
+            # a_vals = len(set(X_seq[:,0]))
+            # b_vals = len(set(X_seq[:,1]))
+            # im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+            # todo:
+            im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
+                            # vmin=0, vmax=1)
+            cbar = plt.colorbar(im)
+            # cbar.set_label("")
+            plt.title(f"Interaction:{seq_features[interactions_seq[idx][0]]} x {seq_features[interactions_seq[idx][1]]}")
+            plt.xlabel(f"{seq_features[interactions_seq[idx][0]]}")
+            plt.ylabel(f"{seq_features[interactions_seq[idx][1]]}")
+            plt.show()
