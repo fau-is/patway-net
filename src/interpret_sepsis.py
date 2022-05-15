@@ -180,7 +180,7 @@ for t in range(0, 11):
 """
 
 # (5) Print sequential feature interactions (global, no history)
-for t in range(0, 11):
+for t in range(0, 49):
     if number_interactions_seq > 0:
         for idx in range(0, number_interactions_seq):
 
@@ -191,24 +191,15 @@ for t in range(0, 11):
             X_seq, out = model.plot_feat_seq_effect_inter(idx, x)
             X_seq = X_seq.detach().numpy().squeeze()
             out = out.detach().numpy()
-            a.reshape(-1, 1)
-            b.reshape(-1, 1)
-
-            # max_size = int(np.sqrt(len(X_seq))) ** 2
-            # out = out[0:max_size]
-            # a_vals = len(set(X_seq[:,0]))
-            # b_vals = len(set(X_seq[:,1]))
-            # im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose())
-            # im = plt.imshow(out.reshape(int(np.sqrt(len(X_seq))), int(np.sqrt(len(X_seq)))).transpose()) # vmin=0, vmax=1)
-            # cbar = plt.colorbar(im)  # cbar.set_label("")
+            a = a.reshape(-1, 1)
+            b = b.reshape(-1, 1)
 
             data = np.concatenate((a, b, out), axis=1)
-
             plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
             plt.colorbar(label='Feature effect')
 
-            plt.xlabel(f"{seq_features[interactions_seq[idx][0]]}")
-            plt.ylabel(f"{seq_features[interactions_seq[idx][1]]}")
+            plt.xlabel(f"Feature value {seq_features[interactions_seq[idx][0]]}")
+            plt.ylabel(f"Feature value {seq_features[interactions_seq[idx][1]]}")
             plt.title("Interaction: %s x %s ($t_{%s}$)" % (str(seq_features[interactions_seq[idx][0]]),
                                                            str(seq_features[interactions_seq[idx][1]]), str(t+1)))
             fig1 = plt.gcf()

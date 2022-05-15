@@ -332,7 +332,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         for max_depth in hpos["dt"]["max_depth"]:
             for min_samples_split in hpos["dt"]["min_samples_split"]:
 
-                model = DecisionTreeClassifier(max_depth=max_depth)
+                model = DecisionTreeClassifier(max_depth=max_depth, min_samples_split=min_samples_split)
                 model.fit(x_concat_train, np.ravel(y_train))
                 preds_proba = model.predict_proba(x_concat_val)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
@@ -438,7 +438,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                             interactions_seq=[],
                                             interactions_seq_itr=200,
                                             interactions_seq_best=inter_seq_best,
-                                            interactions_seq_auto=False,
+                                            interactions_seq_auto=True,
                                             input_sz_stat=num_features_stat,
                                             output_sz=1,
                                             only_static=True,
@@ -1308,8 +1308,8 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     hpos = {
-        "test": {"seq_feature_sz": [4,8,16], "stat_feature_sz": [4,8,16], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        # "test": {"seq_feature_sz": [16, 8, 4], "stat_feature_sz": [16, 8, 4], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        # "test": {"seq_feature_sz": [4,8,16], "stat_feature_sz": [4,8,16], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        "test": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.001], "batch_size": [128], "inter_seq_best": [4]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},

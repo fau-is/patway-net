@@ -355,10 +355,17 @@ class Net(nn.Module):
                 x_seq_sample[:, :, :].reshape(-1, x_seq_sample.shape[1] * x_seq_sample.shape[2]),
                 y,
                 train_size=0.8, shuffle=False)
+
             c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
 
             for param in c:
+                # from sklearn.tree import DecisionTreeClassifier
+                # from sklearn.ensemble import RandomForestClassifier
+                # model = DecisionTreeClassifier()
+                # model = RandomForestClassifier()
+
                 model = LogisticRegression(penalty='l2', solver='lbfgs', C=param)  # l2; lbfgs
+
                 model.fit(x_seq_sample_train, np.ravel(y_train))
                 preds_proba = model.predict_proba(x_seq_sample_test)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
@@ -370,8 +377,8 @@ class Net(nn.Module):
                 except:
                     pass
 
-            # Save result
-            results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
+                # Save result
+                results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
 
         # Retrieve best interactions
         results = results.nlargest(n=num_best_inters, columns=['Measure'])
