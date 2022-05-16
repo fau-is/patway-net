@@ -1320,13 +1320,13 @@ if __name__ == "__main__":
         "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
         "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
         "nb": {"var_smoothing": [pow(1, -7), pow(1, -8), pow(1, -9), pow(1, -10), pow(1, -11)]},
-        "dt": {"max_depth": [5, 10, 15], "min_samples_split": [1, 3, 5, 10]},
+        "dt": {"max_depth": [2, 4, 8, 16], "min_samples_split": [2, 4, 8, 16]},
         "knn": {"n_neighbors": [3, 5, 10, 15]}
     }
 
     if data_set == "sepsis":
 
-        for mode in ['test']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for mode in ['dt']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
 
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
