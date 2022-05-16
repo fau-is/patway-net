@@ -1319,7 +1319,7 @@ if __name__ == "__main__":
         # "svm": {"kern_fkt": ["linear", "rbf"], "cost": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
         "gb": {"n_estimators": [100, 200, 500], "learning_rate": [0.01, 0.05, 0.1]},
         "ada": {"n_estimators": [50, 100, 200], "learning_rate": [0.1, 0.5, 1.0]},
-        "nb": {"var_smoothing": [pow(10, -7), pow(10, -8), pow(10, -9), pow(10, -10), pow(10, -11)]},
+        "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
         "dt": {"max_depth": [2, 4, 8, 16], "min_samples_split": [2, 4, 8, 16]},
         "knn": {"n_neighbors": [3, 5, 10]}
     }
