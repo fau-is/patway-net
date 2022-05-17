@@ -11,7 +11,7 @@ import seaborn as sns
 import pandas as pd
 from src.main import time_step_blow_up
 
-model = torch.load(os.path.join("../model", f"model_sim"))
+model = torch.load(os.path.join("../model_0", f"model_sim"))
 
 x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1k_test6.csv')
 
@@ -32,7 +32,7 @@ for i, x in enumerate(x_seqs):
 effect_feature_values = []
 for t in range(0, 12):
     for idx, value in enumerate(seq_features):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[0, t, idx].reshape(1, 1, 1)).float())
+        x, out, h_t, out_coef = model_0.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[0, t, idx].reshape(1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
         h_t_list = [torch.mean(h_t[i,:]).item() for i in range (0, h_t.shape[0])]
@@ -50,14 +50,14 @@ colors = ['blue', 'green', 'red', 'black', 'magenta']
 for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
     for t in range(0, 10):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
+        x, out, h_t, out_coef = model_0.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, t, idx].reshape(1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
         effect_feature_values[-1].append(out[0][0])
 
     plt.plot(list(range(1, 11)), effect_feature_values[idx], label=value, color=colors[idx])
 plt.xlabel("Time step")
-plt.ylabel("Feature effect on model output")
+plt.ylabel("Feature effect on model_0 output")
 plt.title(f"Change of sequential features for case: {case}")
 fig1 = plt.gcf()
 plt.legend()
@@ -76,7 +76,7 @@ feature_names = []
 for idx, value in enumerate(seq_features):
 
     for t in range(0, 10):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[0:cases, t, idx].reshape(-1, 1, 1)).float())
+        x, out, h_t, out_coef = model_0.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[0:cases, t, idx].reshape(-1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
         effect_feature_values = effect_feature_values + list(out.squeeze())
@@ -87,7 +87,7 @@ df = pd.DataFrame(list(zip(effect_feature_values, t_values, feature_names)), col
 
 sns.stripplot(x="t", y="effect", hue="feature", data=df)
 plt.xlabel("Time step")
-plt.ylabel("Feature effect on model output")
+plt.ylabel("Feature effect on model_0 output")
 plt.title(f"Change of sequential features for cases: {cases}")
 fig1 = plt.gcf()
 plt.legend()
@@ -101,7 +101,7 @@ fig1.savefig(f'../plots/seq_features_case_{cases}.png', dpi=100)
 for t in range(0, 10):
     for idx, value in enumerate(seq_features):
         if value == "CRP":
-            # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
+            # x, out = model_0.plot_feat_seq_effect_custom(idx, -2, 2)
             x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
@@ -119,7 +119,7 @@ for t in range(0, 10):
                 plt.plot(x, out)  # line plot
 
             plt.xlabel("Feature value")
-            plt.ylabel("Feature effect on model output")
+            plt.ylabel("Feature effect on model_0 output")
             plt.title(f"Sequential feature: {seq_features[idx]} - {t}")
             fig1 = plt.gcf()
             plt.show()
@@ -135,7 +135,7 @@ colors = ['blue', 'green', 'red', 'black', 'magenta']
 for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
     for t in range(0, 10):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, 0:t+1, idx].reshape(1, t+1, 1)).float())
+        x, out, h_t, out_coef = model_0.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[case, 0:t+1, idx].reshape(1, t+1, 1)).float())
         # get last value
         x = x[:, -1, :]
         x = x.detach().numpy().squeeze()
@@ -144,7 +144,7 @@ for idx, value in enumerate(seq_features):
 
     plt.plot(list(range(1, 11)), effect_feature_values[idx], label=value, color=colors[idx])
 plt.xlabel("Time step")
-plt.ylabel("Feature effect on model output")
+plt.ylabel("Feature effect on model_0 output")
 plt.title(f"Change of sequential features for case: {case}")
 fig1 = plt.gcf()
 plt.legend()
@@ -160,7 +160,7 @@ cases = 0
 for t in range(0, 10):
     for idx, value in enumerate(seq_features):
         if value == "CRP":
-            # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
+            # x, out = model_0.plot_feat_seq_effect_custom(idx, -2, 2)
             x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, 0:t+1, idx].reshape(-1, t+1, 1)).float())
             print(out)
             # get last value
@@ -182,7 +182,7 @@ for t in range(0, 10):
                 plt.plot(x, out)  # line plot
 
             plt.xlabel("Feature value")
-            plt.ylabel("Feature effect on model output")
+            plt.ylabel("Feature effect on model_0 output")
             plt.title(f"Sequential feature:{seq_features[idx]}")
             fig1 = plt.gcf()
             plt.show()
@@ -209,13 +209,13 @@ import pandas as pd
 
 for t in range(0, len(t_x)):
     for idx, feature in enumerate(seq_features):
-        x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, 0:t_x[t]+1, idx].reshape(-1, t_x[t]+1, 1)).float())
+        x_x, out_x, _, _ = model_0.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, 0:t_x[t]+1, idx].reshape(-1, t_x[t]+1, 1)).float())
 
         x_x = x_x[:, -1, :]
         x_x = x_x.detach().numpy().squeeze()
         out_x = out_x.detach().numpy()
 
-        x_y, out_y, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, 0:t_y[t]+1, idx].reshape(-1, t_y[t]+1, 1)).float())
+        x_y, out_y, _, _ = model_0.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, 0:t_y[t]+1, idx].reshape(-1, t_y[t]+1, 1)).float())
         x_y = x_y[:, -1, :]
         x_y = x_y.detach().numpy().squeeze()
         out_y = out_y.detach().numpy()

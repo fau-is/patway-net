@@ -46,8 +46,8 @@ model = Net(input_sz_seq=len(seq_features),
             y=y_final)
 
 criterion = nn.MSELoss()
-# optimizer = optim.Adam(model.parameters(), lr=lr)
-# optimizer = optim.RMSprop(model.parameters(), lr=lr)
+# optimizer = optim.Adam(model_0.parameters(), lr=lr)
+# optimizer = optim.RMSprop(model_0.parameters(), lr=lr)
 optimizer = optim.NAdam(model.parameters(), lr=lr)
 
 idx = np.arange(x_seq_final.shape[0])

@@ -350,30 +350,30 @@ class Net(nn.Module):
             measure = 0
             max_measure = 0
 
-            # Learn and apply linear model
+            # Learn and apply linear model_0
             x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(
                 x_seq_sample[:, :, :].reshape(-1, x_seq_sample.shape[1] * x_seq_sample.shape[2]),
                 y,
                 train_size=0.8, shuffle=False)
 
-            c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
+            # c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
 
-            for param in c:
-                # from sklearn.tree import DecisionTreeClassifier
-                # from sklearn.ensemble import RandomForestClassifier
-                # model = DecisionTreeClassifier()
-                # model = RandomForestClassifier(n_estimators=100)
-                model = LogisticRegression(penalty='l2', solver='lbfgs', C=param)  # l2; lbfgs
-                model.fit(x_seq_sample_train, np.ravel(y_train))
-                preds_proba = model.predict_proba(x_seq_sample_test)
-                preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+            # for param in c:
+            # from sklearn.tree import DecisionTreeClassifier
+            from sklearn.ensemble import RandomForestClassifier
+            # model_0 = DecisionTreeClassifier()
+            model = RandomForestClassifier(n_estimators=100)
+            # model_0 = LogisticRegression(penalty='l2', solver='lbfgs', C=param)  # l2; lbfgs
+            model.fit(x_seq_sample_train, np.ravel(y_train))
+            preds_proba = model.predict_proba(x_seq_sample_test)
+            preds_proba = [pred_proba[1] for pred_proba in preds_proba]
 
-                try:
-                    measure = roc_auc_score(y_true=y_test, y_score=preds_proba)
-                    if measure > max_measure:
-                        max_measure = measure
-                except:
-                    pass
+            try:
+                measure = roc_auc_score(y_true=y_test, y_score=preds_proba)
+                if measure > max_measure:
+                    max_measure = measure
+            except:
+                pass
 
             # Save result
             results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)

@@ -56,7 +56,7 @@ def get_sim_data(label, file):
 
 
 def get_sepsis_data(target_activity, max_len, min_len):
-    ds_path = '../data/Sepsis Cases - Event Log.csv'
+    ds_path = '../data/Sepsis Cases - Event Log_end.csv'
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
@@ -124,12 +124,13 @@ def get_sepsis_data(target_activity, max_len, min_len):
                 found_target_flag = True
 
             if after_registration_flag:
-                one_hot, current_leucocytes_value, current_crp_value, current_lacticacid_value = \
-                    util.get_one_hot_of_activity_sepsis(x, max_leucocytes, max_crp, max_lacticacid,
-                                                        current_leucocytes_value, current_crp_value,
-                                                        current_lacticacid_value)
-                x_seqs[-1].append(one_hot)
-                x_time_vals[-1].append(x['Complete Timestamp'])
+                if not found_target_flag:
+                    one_hot, current_leucocytes_value, current_crp_value, current_lacticacid_value = \
+                        util.get_one_hot_of_activity_sepsis(x, max_leucocytes, max_crp, max_lacticacid,
+                                                            current_leucocytes_value, current_crp_value,
+                                                            current_lacticacid_value)
+                    x_seqs[-1].append(one_hot)
+                    x_time_vals[-1].append(x['Complete Timestamp'])
 
         if after_registration_flag:
             if found_target_flag:

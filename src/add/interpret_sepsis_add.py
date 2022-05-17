@@ -6,7 +6,7 @@ from src.main import time_step_blow_up
 import numpy as np
 
 repetition = 0
-model = torch.load(os.path.join("../model", f"model_{repetition}"))
+model = torch.load(os.path.join("../model_0", f"model_{repetition}"))
 interactions_seq = model.get_number_interactions_seq()
 number_interactions_seq = len(interactions_seq)
 
@@ -71,8 +71,8 @@ for t in range(0, 11):  # num of transmissions
 """
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
-    # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
-    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
+    # x, out = model_0.plot_feat_stat_effect_custom(idx, 0, 1)
+    x, out = model_0.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
     plt.scatter(x, out, color='steelblue')
@@ -88,7 +88,7 @@ for idx, value in enumerate(static_features):
     else:
         plt.plot(x, out, color='steelblue')
     plt.xlabel("Feature value")
-    plt.ylabel("Feature effect on model output")
+    plt.ylabel("Feature effect on model_0 output")
     plt.title(f"Static feature: {static_features[idx]}")
     fig1 = plt.gcf()
     plt.show()
@@ -100,8 +100,8 @@ for idx, value in enumerate(static_features):
 for t in range(0, 12):
     for idx, value in enumerate(seq_features):
         if value == "CRP":
-            # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
-            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
+            # x, out = model_0.plot_feat_seq_effect_custom(idx, -2, 2)
+            x, out, h_t, out_coef = model_0.plot_feat_seq_effect(idx, torch.from_numpy(
                 x_seqs_final[:, t, idx].reshape(-1, 1, 1)).float())
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
@@ -121,7 +121,7 @@ for t in range(0, 12):
             # plt.xlim(-0.02, 1.02)
             # plt.ylim(-0.05, 0.23)
             plt.xlabel("Feature value")
-            plt.ylabel("Feature effect on model output")
+            plt.ylabel("Feature effect on model_0 output")
             plt.title("Sequential feature: %s ($t_{%s}$)" % (str(seq_features[idx]), str(t + 1)))
             fig1 = plt.gcf()
             plt.show()
@@ -138,7 +138,7 @@ plt.gca().set_prop_cycle(color=colors)
 for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
     for t in range(0, 12):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
+        x, out, h_t, out_coef = model_0.plot_feat_seq_effect(idx, torch.from_numpy(
             x_seqs_final[case, t, idx].reshape(1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
@@ -148,7 +148,7 @@ for idx, value in enumerate(seq_features):
     plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, linestyle='dashed', marker='o', markersize=4)
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
-plt.ylabel("Feature effect on model output")
+plt.ylabel("Feature effect on model_0 output")
 plt.title(f"Feature effect over time of patient pathway {case}")
 fig1 = plt.gcf()
 plt.legend(loc='upper right', title='Sequential feature')  # adjust based on plot
@@ -168,7 +168,7 @@ if number_interactions_seq > 0:
         b = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][1]].reshape(-1, 1, 1))
         x = torch.cat((a, b), dim=2)
 
-        X_seq, out = model.plot_feat_seq_effect_inter(idx, x)
+        X_seq, out = model_0.plot_feat_seq_effect_inter(idx, x)
         X_seq = X_seq.detach().numpy().squeeze()
         out = out.detach().numpy()
 

@@ -55,8 +55,8 @@ def plot_box_plots(coefs_1):
     fig.text(0.5, -0.03, 'Value of corresponding coefficient', ha='center')
 
     my_palplot(sns.color_palette("viridis"), ax=ax2)
-    ax2.text(-5.2, 6.0, 'Strong negative\nimpact on model\noutput')
-    ax2.text(-5.2, -0.6, 'Strong positive\nimpact on model\noutput')
+    ax2.text(-5.2, 6.0, 'Strong negative\nimpact on model_0\noutput')
+    ax2.text(-5.2, -0.6, 'Strong positive\nimpact on model_0\noutput')
     ax2.set_yticks([])
     ax2.set_xticks([])
     ax2.set_xticklabels([])

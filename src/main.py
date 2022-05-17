@@ -436,7 +436,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 model = Net(input_sz_seq=num_features_seq,
                                             hidden_per_seq_feat_sz=seq_feature_sz,
                                             interactions_seq=[],
-                                            interactions_seq_itr=200,
+                                            interactions_seq_itr=100,
                                             interactions_seq_best=inter_seq_best,
                                             interactions_seq_auto=True,
                                             input_sz_stat=num_features_stat,
@@ -449,9 +449,9 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                             y=y_train)
 
                                 criterion = nn.BCEWithLogitsLoss()
-                                # optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
+                                # optimizer = optim.RMSprop(model_0.parameters(), lr=learning_rate)
                                 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-                                # optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
+                                # optimizer = optim.NAdam(model_0.parameters(), lr=learning_rate)
                                 idx = np.arange(len(x_train_seq))
 
                                 import copy
@@ -522,7 +522,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                     if flag_es:
                                         break
 
-                                # Select model based on val auc
+                                # Select model_0 based on val auc
                                 model.eval()
                                 with torch.no_grad():
 
@@ -587,7 +587,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                       optimizer=opt,
                                       metrics=['accuracy'])
                         early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-                        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model_0.ckpt',
                                                                               monitor='val_loss',
                                                                               verbose=0,
                                                                               save_best_only=True,
@@ -652,7 +652,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                           optimizer=opt,
                           metrics=['accuracy'])
             early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-            model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+            model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model_0.ckpt',
                                                                   monitor='val_loss',
                                                                   verbose=0,
                                                                   save_best_only=True,
@@ -703,7 +703,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                   optimizer=opt,
                                   metrics=['accuracy'])
                     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-                    model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                    model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model_0.ckpt',
                                                                           monitor='val_loss',
                                                                           verbose=0,
                                                                           save_best_only=True,
@@ -761,7 +761,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                           optimizer=opt,
                           metrics=['accuracy'])
             early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-            model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+            model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model_0.ckpt',
                                                                   monitor='val_loss',
                                                                   verbose=0,
                                                                   save_best_only=True,
@@ -819,7 +819,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                       metrics=['accuracy'])
 
                         early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-                        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+                        model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model_0.ckpt',
                                                                               monitor='val_loss',
                                                                               verbose=0,
                                                                               save_best_only=True,
@@ -882,7 +882,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                           optimizer=opt,
                           metrics=['accuracy'])
             early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
-            model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model.ckpt',
+            model_checkpoint = tf.keras.callbacks.ModelCheckpoint('../model/model_0.ckpt',
                                                                   monitor='val_loss',
                                                                   verbose=0,
                                                                   save_best_only=True,
@@ -1104,7 +1104,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "rf":
             model, best_hpos = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model_0.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -1112,7 +1112,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "lr":
             model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model_0.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -1120,7 +1120,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "svm":
             model, best_hpos = train_svm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                          y_val.reshape(-1, 1), hpos, hpo)
-            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model_0.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -1128,7 +1128,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "gb":
             model, best_hpos = train_gb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model_0.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -1136,7 +1136,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "ada":
             model, best_hpos = train_ada(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                          y_val.reshape(-1, 1), hpos, hpo)
-            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model_0.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -1144,7 +1144,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "nb":
             model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model_0.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -1152,7 +1152,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "dt":
             model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
-            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model_0.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -1160,7 +1160,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "knn":
             model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                          y_val.reshape(-1, 1), hpos, hpo)
-            # preds_proba = model.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
+            # preds_proba = model_0.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
@@ -1204,7 +1204,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         results['all']['rep'].append(
             metrics.classification_report(y_true=results_temp['gts'], y_pred=results_temp['preds'], output_dict=True))
 
-        # Save model
+        # Save model_0
         if mode == 'test':
             torch.save(model, os.path.join("../model", f"model_{repetition}"))
 
@@ -1308,8 +1308,8 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     hpos = {
-        # "test": {"seq_feature_sz": [4,8,16], "stat_feature_sz": [4,8,16], "learning_rate": [0.001, 0.01], "batch_size": [32], "inter_seq_best": [1]},
-        "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [4]},
+        # "test": {"seq_feature_sz": [4,8,16], "stat_feature_sz": [4,8,16], "learning_rate": [0.001, 0.01], "batch_size": [32], "inter_seq_best": [4]},
+        "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001], "batch_size": [128], "inter_seq_best": [2]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
@@ -1326,7 +1326,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
 
-        for mode in ['nb']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for mode in ['test']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
 
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
@@ -1339,7 +1339,7 @@ if __name__ == "__main__":
 
 
                 if mode == "complete":
-                    # Train model and plot linear coeff --> Figure 2
+                    # Train model_0 and plot linear coeff --> Figure 2
                     model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
                                             target_activity, static_features, best_hpos_repetitions)
 
@@ -1373,7 +1373,7 @@ if __name__ == "__main__":
                     data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=static_vals_corr)
 
                 if mode == "complete":
-                    # Train model and plot linear coeff
+                    # Train model_0 and plot linear coeff
                     model = run_coefficient(x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val,
                                             target_activity, static_features, best_hpos_repetitions)
 
