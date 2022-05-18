@@ -19,11 +19,11 @@ from src.interpret_LSTM import Net, NaiveCustomLSTM
 
 data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
-max_len = 50  # mimic=84; sepsis=100
+max_len = 30  # mimic=84; sepsis=100
 min_len = 3
 min_size_prefix = 1
 seed = False
-num_repetitions = 10
+num_repetitions = 1
 mode = "test"
 val_size = 0.2
 train_size = 0.8
@@ -451,7 +451,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 criterion = nn.BCEWithLogitsLoss()
                                 # optimizer = optim.RMSprop(model_0.parameters(), lr=learning_rate)
                                 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-                                # optimizer = optim.NAdam(model_0.parameters(), lr=learning_rate)
+                                # optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
                                 idx = np.arange(len(x_train_seq))
 
                                 import copy
@@ -1229,6 +1229,37 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         metrics_ = ["auc", "precision", "recall", "f1-score", "support", "accuracy"]
         labels = ["0", "1"]
 
+
+        def calculate_corrected_metric(metric, pos_class, support):
+            fpr, tpr, thresholds = metrics.roc_curve(y_true=results_temp['gts'], y_score=results_temp['preds_proba'])
+            J = tpr - fpr
+            ix = np.argmax(J)
+
+            def to_labels(pos_probs, threshold):
+                return (pos_probs >= threshold).astype('int')
+
+            best_thresh = thresholds[ix]
+            # print("Best Threshold=%.3f" % (thresholds[ix]))
+
+            if pos_class == "0":
+                if metric == "precision":
+                    return [metrics.precision_score(results_temp['gts'], to_labels(results_temp['preds_proba'], t), average="binary", pos_label=0) for t in thresholds][ix]
+                elif metric == "recall":
+                    return [metrics.recall_score(results_temp['gts'], to_labels(results_temp['preds_proba'], t), average="binary", pos_label=0) for t in thresholds][ix]
+                elif metric == "f1-score":
+                    return [metrics.f1_score(results_temp['gts'], to_labels(results_temp['preds_proba'], t), average="binary", pos_label=0) for t in thresholds][ix]
+                elif metric == "support":
+                    return support
+            else:
+                if metric == "precision":
+                    return [metrics.precision_score(results_temp['gts'], to_labels(results_temp['preds_proba'], t), average="binary", pos_label=1) for t in thresholds][ix]
+                elif metric == "recall":
+                    return [metrics.recall_score(results_temp['gts'], to_labels(results_temp['preds_proba'], t), average="binary", pos_label=1) for t in thresholds][ix]
+                elif metric == "f1-score":
+                    return [metrics.f1_score(results_temp['gts'], to_labels(results_temp['preds_proba'], t), average="binary", pos_label=1) for t in thresholds][ix]
+                elif metric == "support":
+                    return support
+
         for metric_ in metrics_:
             vals = []
             if metric_ == "auc":
@@ -1270,7 +1301,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                         print(metric_ + f' ({label})')
                         vals = []
                         for idx_ in range(0, repetition + 1):
-                            vals.append(results['all']['rep'][idx_][label][metric_])
+                            # vals.append(results['all']['rep'][idx_][label][metric_])
+                            vals.append(calculate_corrected_metric(metric_, label, results['all']['rep'][idx_][label][metric_]))
                             f.write(f'{idx_},{vals[-1]}\n')
                             print(f'{idx_},{vals[-1]}')
                         f.write(f'Avg,{sum(vals) / len(vals)}\n')
@@ -1280,6 +1312,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                         f.close()
                     except:
                         pass
+
+
 
     return X_train_seq, X_train_stat, y_train, X_val_seq, X_val_stat, y_val, best_hpos_repetitions
 
@@ -1309,7 +1343,7 @@ if __name__ == "__main__":
 
     hpos = {
         # "test": {"seq_feature_sz": [4,8,16], "stat_feature_sz": [4,8,16], "learning_rate": [0.001, 0.01], "batch_size": [32], "inter_seq_best": [4]},
-        "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001], "batch_size": [128], "inter_seq_best": [2]},
+        "test": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [1]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
@@ -1326,7 +1360,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
 
-        for mode in ['test']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
+        for mode in ['dt']:  # 'complete', 'static', 'sequential', 'lr', 'rf', 'gb', 'ada', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
 
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
