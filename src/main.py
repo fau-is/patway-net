@@ -19,11 +19,11 @@ from src.interpret_LSTM import Net, NaiveCustomLSTM
 
 data_set = "sepsis"  # sepsis; mimic
 n_hidden = 8
-max_len = 30  # mimic=84; sepsis=100
-min_len = 3
+max_len = 50  # mimic=84; sepsis=100
+min_len = 5
 min_size_prefix = 1
 seed = False
-num_repetitions = 1
+num_repetitions = 10
 mode = "test"
 val_size = 0.2
 train_size = 0.8
