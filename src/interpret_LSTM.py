@@ -361,9 +361,9 @@ class Net(nn.Module):
             # for param in c:
             # from sklearn.tree import DecisionTreeClassifier
             from sklearn.ensemble import RandomForestClassifier
-            # model_0 = DecisionTreeClassifier()
+            # model = DecisionTreeClassifier()
             model = RandomForestClassifier(n_estimators=100)
-            # model_0 = LogisticRegression(penalty='l2', solver='lbfgs', C=param)  # l2; lbfgs
+            # model = LogisticRegression(penalty='l2', solver='lbfgs', C=param)  # l2; lbfgs
             model.fit(x_seq_sample_train, np.ravel(y_train))
             preds_proba = model.predict_proba(x_seq_sample_test)
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]

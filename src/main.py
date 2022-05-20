@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import sklearn.tree
 import tensorflow as tf
 
 tf.compat.v1.disable_v2_behavior()
@@ -23,7 +24,7 @@ max_len = 50  # mimic=84; sepsis=100
 min_len = 5
 min_size_prefix = 1
 seed = False
-num_repetitions = 10
+num_repetitions = 1
 mode = "test"
 val_size = 0.2
 train_size = 0.8
@@ -927,20 +928,24 @@ def correct_static(seq, seqs_time, idx_sample, idx_time):
 
 def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_time_vals=None,
                       x_statics_vals_corr=None):
+
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
 
     for idx_seq in range(0, len(X_seq)):
         for idx_ts in range(min_size_prefix, len(X_seq[idx_seq]) + 1):
             X_seq_prefix.append(X_seq[idx_seq][0:idx_ts])
+
             if data_set == "mimic":
                 X_stat_prefix.append(correct_static(X_stat[idx_seq], x_statics_vals_corr, idx_seq, idx_ts - 1))
             else:
                 X_stat_prefix.append(X_stat[idx_seq])
+
             y_prefix.append(y[idx_seq])
             if x_time is not None:
                 x_time_vals_prefix.append(x_time_vals[idx_seq][0:idx_ts])
             ts.append(idx_ts)
 
+    # remove temporal overlap
     if data_set is not "mimic":
         # Remove prefixes with future event from training set
         if x_time is not None:
@@ -969,9 +974,15 @@ def time_step_blow_up(X_seq, X_stat, y, max_len, ts_info=False, x_time=None, x_t
         return X_seq_final, X_stat_final, y_final
 
 
-def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, x_time=None,
+def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, x_time=None,
                     x_statics_vals_corr=None):
+
     data_index = list(range(0, len(y)))
+
+    # import random
+    # random.shuffle(data_index)
+
+    train_index = data_index[0: int(train_size * (1 - val_size) * len(y))]
     val_index = data_index[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))]
     test_index = data_index[int(train_size * len(y)):]
 
@@ -986,80 +997,33 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
     for repetition in range(0, num_repetitions):
 
-        # Timestamp exists
-        if x_time is not None:
-            if x_statics_vals_corr is not None:
-                X_train_seq, X_train_stat, y_train = time_step_blow_up(
-                    x_seqs[0: int(train_size * (1 - val_size) * len(y))],
-                    x_statics[0: int(train_size * (1 - val_size) * len(y))],
-                    y[0: int(train_size * (1 - val_size) * len(y))],
-                    max_len,
-                    ts_info=False,
-                    x_time=time_start_val,
-                    x_time_vals=x_time_train,
-                    x_statics_vals_corr=x_statics_vals_corr[0: int(train_size * (1 - val_size) * len(y))])
+        X_train_seq, X_train_stat, y_train = time_step_blow_up(
+            [x_seqs[x] for x in train_index],
+            [x_statics[x] for x in train_index],
+            [y[x] for x in train_index],
+            max_len,
+            ts_info=False,
+            x_time=time_start_val,
+            x_time_vals=x_time_train,
+            x_statics_vals_corr=None)
 
-                X_val_seq, X_val_stat, y_val = time_step_blow_up(
-                    x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                    x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                    y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                    max_len,
-                    ts_info=False,
-                    x_time=time_start_test,
-                    x_time_vals=x_time_val,
-                    x_statics_vals_corr=x_statics_vals_corr[
-                                        int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))])
+        X_val_seq, X_val_stat, y_val = time_step_blow_up(
+            [x_seqs[x] for x in val_index],
+            [x_statics[x] for x in val_index],
+            [y[x] for x in val_index],
+            max_len,
+            ts_info=False,
+            x_time=time_start_test,
+            x_time_vals=x_time_val,
+            x_statics_vals_corr=None)
 
-            else:
-                X_train_seq, X_train_stat, y_train = time_step_blow_up(
-                    x_seqs[0: int(train_size * (1 - val_size) * len(y))],
-                    x_statics[0: int(train_size * (1 - val_size) * len(y))],
-                    y[0: int(train_size * (1 - val_size) * len(y))],
-                    max_len,
-                    ts_info=False,
-                    x_time=time_start_val,
-                    x_time_vals=x_time_train,
-                    x_statics_vals_corr=None)
+        X_test_seq, X_test_stat, y_test, ts = time_step_blow_up([x_seqs[x] for x in test_index],
+                                                                [x_statics[x] for x in test_index],
+                                                                [y[x] for x in test_index],
+                                                                max_len,
+                                                                ts_info=True,
+                                                                x_statics_vals_corr=None)
 
-                X_val_seq, X_val_stat, y_val = time_step_blow_up(
-                    x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                    x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                    y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                    max_len,
-                    ts_info=False,
-                    x_time=time_start_test,
-                    x_time_vals=x_time_val,
-                    x_statics_vals_corr=None)
-
-        # No timestamp exists
-        else:
-            X_train_seq, X_train_stat, y_train = time_step_blow_up(x_seqs[0: int(train_size * (1 - val_size) * len(y))],
-                                                                   x_statics[
-                                                                   0: int(train_size * (1 - val_size) * len(y))],
-                                                                   y[0: int(train_size * (1 - val_size) * len(y))],
-                                                                   max_len)
-
-            X_val_seq, X_val_stat, y_val = time_step_blow_up(
-                x_seqs[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                x_statics[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                y[int(train_size * (1 - val_size) * len(y)): int(train_size * len(y))],
-                max_len)
-
-        if x_statics_vals_corr is not None:
-            X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
-                                                                    x_statics[int(train_size * len(y)):],
-                                                                    y[int(train_size * len(y)):],
-                                                                    max_len,
-                                                                    ts_info=True,
-                                                                    x_statics_vals_corr=x_statics_vals_corr[
-                                                                                        int(train_size * len(y)):])
-        else:
-            X_test_seq, X_test_stat, y_test, ts = time_step_blow_up(x_seqs[int(train_size * len(y)):],
-                                                                    x_statics[int(train_size * len(y)):],
-                                                                    y[int(train_size * len(y)):],
-                                                                    max_len,
-                                                                    ts_info=True,
-                                                                    x_statics_vals_corr=None)
 
         if mode == "test":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -1152,6 +1116,15 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "dt":
             model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
+
+            from matplotlib import pyplot as plt
+            fig = plt.figure(figsize=(100, 100))
+            _ = sklearn.tree.plot_tree(model, feature_names=static_features, filled=True)
+            fig.savefig("decision_tree_train.png")
+            print("Taining")
+            print(static_features)
+            print(model.feature_importances_)
+
             # preds_proba = model_0.predict_proba(concatenate_tensor_matrix(X_test_seq, X_test_stat))
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
@@ -1164,6 +1137,19 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             preds_proba = model.predict_proba(X_test_stat)
             results['preds'] = [np.argmax(pred_proba) for pred_proba in preds_proba]
             results['preds_proba'] = [pred_proba[1] for pred_proba in preds_proba]
+
+        model = DecisionTreeClassifier(max_depth=8, min_samples_split=4)
+        model.fit(X_test_stat, y_test)
+
+        from matplotlib import pyplot as plt
+        fig = plt.figure(figsize=(100, 100))
+        _ = sklearn.tree.plot_tree(model, feature_names=static_features, filled=True)
+        fig.savefig("decision_tree_test.png")
+        print("Test")
+        print(static_features)
+        print(model.feature_importances_)
+
+
 
         results['gts'] = [int(y) for y in y_test]
         results['ts'] = ts
@@ -1343,7 +1329,7 @@ if __name__ == "__main__":
 
     hpos = {
         # "test": {"seq_feature_sz": [4,8,16], "stat_feature_sz": [4,8,16], "learning_rate": [0.001, 0.01], "batch_size": [32], "inter_seq_best": [4]},
-        "test": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [1]},
+        "test": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.001], "batch_size": [128], "inter_seq_best": [1]},
         "complete": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "sequential": {"size": [4, 8, 32, 64], "learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
         "static": {"learning_rate": [0.001, 0.01, 0.05], "batch_size": [32, 128]},
@@ -1369,7 +1355,7 @@ if __name__ == "__main__":
                 # Run eval on cuts to plot results --> Figure 1
                 x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val, best_hpos_repetitions = evaluate_on_cut(
                     x_seqs, x_statics, y, mode, target_activity,
-                    data_set, hpos, hpo, x_time=x_time_vals_final, x_statics_vals_corr=None)
+                    data_set, hpos, hpo, static_features, x_time=x_time_vals_final, x_statics_vals_corr=None)
 
 
                 if mode == "complete":
