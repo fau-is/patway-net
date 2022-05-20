@@ -54,7 +54,6 @@ def get_sim_data(label, file):
     return x_seqs, x_statics, y, x_time_vals, seq_features, static_features
 
 
-
 def get_sepsis_data(target_activity, max_len, min_len):
     ds_path = '../data/Sepsis Cases - Event Log_end.csv'
 
