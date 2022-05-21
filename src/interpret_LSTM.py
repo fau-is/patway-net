@@ -318,9 +318,8 @@ class Net(nn.Module):
 
         import random
         import pandas as pd
-        from sklearn.linear_model import LogisticRegression
         from sklearn.model_selection import train_test_split
-        from sklearn.metrics import roc_auc_score
+        from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
 
         x_seq_features = list(range(x_seq.shape[2]))
 
@@ -350,26 +349,22 @@ class Net(nn.Module):
             measure = 0
             max_measure = 0
 
-            # Learn and apply linear model_0
             x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(
                 x_seq_sample[:, :, :].reshape(-1, x_seq_sample.shape[1] * x_seq_sample.shape[2]),
-                y,
-                train_size=0.8, shuffle=False)
+                y, train_size=0.8, shuffle=False)
 
-            # c = [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]
-
-            # for param in c:
-            # from sklearn.tree import DecisionTreeClassifier
             from sklearn.ensemble import RandomForestClassifier
-            # model = DecisionTreeClassifier()
             model = RandomForestClassifier(n_estimators=100)
-            # model = LogisticRegression(penalty='l2', solver='lbfgs', C=param)  # l2; lbfgs
             model.fit(x_seq_sample_train, np.ravel(y_train))
             preds_proba = model.predict_proba(x_seq_sample_test)
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
 
             try:
-                measure = roc_auc_score(y_true=y_test, y_score=preds_proba)
+                precision, recall, thresholds = precision_recall_curve(y_true=y_test, probas_pred=preds_proba)
+                measure = auc(recall, precision)
+                if np.isnan(measure):
+                    measure = 0
+
                 if measure > max_measure:
                     max_measure = measure
             except:
@@ -439,7 +434,7 @@ class Net(nn.Module):
         hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, inter_id, interaction=True)
 
         out = h_t @ self.output_coef[(self.input_sz_seq + inter_id) * self.hidden_per_feat_sz: (
-                                                                                                           self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
+           self.input_sz_seq + inter_id + 1) * self.hidden_per_feat_sz]
         return x, out
 
     def plot_feat_seq_effect_inter(self, inter_id, x):

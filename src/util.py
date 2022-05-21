@@ -1,67 +1,6 @@
 import numpy as np
 
 
-def get_one_hot_of_activity_mimic(x):
-    if x['Activity'] == 'PHYS REFERRAL/NORMAL DELI':
-        ret = [0, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'HOME':
-        ret = [1, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'EMERGENCY ROOM ADMIT':
-        ret = [2, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'SNF':
-        ret = [3, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'HOME WITH HOME IV PROVIDR':
-        ret = [4, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'HOME HEALTH CARE':
-        ret = [5, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'DEAD/EXPIRED':
-        ret = [6, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'SHORT TERM HOSPITAL':
-        ret = [7, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'TRANSFER FROM HOSPEXTRAM':
-        ret = [8, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'REHABDISTINCT PART HOSP':
-        ret = [9, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'DISC-TRAN CANCER/CHLDRN H':
-        ret = [10, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'CLINIC REFERRAL/PREMATURE':
-        ret = [11, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'LONG TERM CARE HOSPITAL':
-        ret = [12, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'DISC-TRAN TO FEDERAL HC':
-        ret = [13, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'HOSPICE-MEDICAL FACILITY':
-        ret = [14, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'LEFT AGAINST MEDICAL ADVI':
-        ret = [15, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'HOSPICE-HOME':
-        ret = [16, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'TRANSFER FROM OTHER HEALT':
-        ret = [17, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'DISCH-TRAN TO PSYCH HOSP':
-        ret = [18, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'TRANSFER FROM SKILLED NUR':
-        ret = [19, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'HMO REFERRAL/SICK':
-        ret = [20, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == '** INFO NOT AVAILABLE **':
-        ret = [21, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'OTHER FACILITY':
-        ret = [22, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'ICF':
-        ret = [23, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'SNF-MEDICAID ONLY CERTIF':  # todo??
-        ret = [24, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'TRSF WITHIN THIS FACILITY':
-        ret = [25, 1]  # No additional information, so normal one hot
-
-    one_hot = np.zeros(26, dtype=np.float32)
-
-    one_hot[ret[0]] = ret[1]
-
-    return one_hot
-
-
 def get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, current_lacticacid_value):
     if x['Activity'] == 'Start':
         ret = [0, 1]  # No additional information, so normal one hot

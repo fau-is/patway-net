@@ -1,6 +1,7 @@
 import pandas as pd
 import src.util as util
 import numpy as np
+from sklearn import tree
 
 
 def get_sim_data(label, file):
@@ -84,9 +85,56 @@ def get_sepsis_data(target_activity, max_len, min_len):
     df = df.sort_values(['Case ID', 'Complete Timestamp'])
     df = df.reset_index()
 
+    # todo: Diagnose Feature
+    """
+    def map_diagnose_to_bin_features(df, feature):
+
+        df_one_hot = pd.get_dummies(df[feature], prefix=feature, dummy_na=False)
+
+        # get label and data
+        x_statics = []
+        y = []
+
+        for case in df['Case ID'].unique():
+
+            df_tmp = df[df['Case ID'] == case]
+            df_tmp = df_tmp.sort_values(by='Complete Timestamp')
+            idx = -1
+
+            for _, x in df_tmp.iterrows():
+                idx = idx + 1
+                if x['Activity'] == 'ER Registration' and idx == 0 and min_len <= len(df_tmp) <= max_len:
+                    x_statics.append(x[feature])
+
+                    if target_activity in df_tmp["Activity"].unique():
+                        y.append(1)
+                    else:
+                        y.append(0)
+
+        df_data = pd.DataFrame(x_statics, columns=["Diagnose"])
+        df_data = pd.get_dummies(df_data, dummy_na=False)
+        X = df_data.to_numpy()
+
+        clf = tree.DecisionTreeClassifier()
+        clf.fit(X, y)
+        fi = clf.feature_importances_
+
+        print(0)
+
+
+
+
+
+        return 0
+
+    map_diagnose_to_bin_features(df, "Diagnose")
+    """
+
     diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))  # ordinal encoding
     df['Diagnose'] = df['Diagnose'].apply(lambda x: diagnose_mapping[x])
     df['Diagnose'] = df['Diagnose'].apply(lambda x: x / max(df['Diagnose']))  # normalise ordinal encoding
+
+
     df['Age'] = df['Age'].fillna(-1)
     df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
 
