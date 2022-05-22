@@ -1,7 +1,7 @@
 import pandas as pd
 import src.util as util
 import numpy as np
-from sklearn import tree
+from sklearn import ensemble
 
 
 def get_sim_data(label, file):
@@ -64,7 +64,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                        'DiagnosticIC', 'DiagnosticSputum', 'DiagnosticLiquor',
                        'DiagnosticOther', 'SIRSCriteria2OrMore', 'DiagnosticXthorax',
                        'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos',
-                       'Oligurie', 'DiagnosticLacticAcid', 'Diagnose', 'Hypoxie',
+                       'Oligurie', 'DiagnosticLacticAcid', 'Hypoxie',   # 'Diagnose'
                        'DiagnosticUrinarySediment', 'DiagnosticECG']
 
     seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
@@ -85,55 +85,64 @@ def get_sepsis_data(target_activity, max_len, min_len):
     df = df.sort_values(['Case ID', 'Complete Timestamp'])
     df = df.reset_index()
 
-    # todo: Diagnose Feature
     """
-    def map_diagnose_to_bin_features(df, feature):
+    def map_diagnose_to_bin_features(df, feature, static_features):
 
-        df_one_hot = pd.get_dummies(df[feature], prefix=feature, dummy_na=False)
+        min_vals = 3
+        most_important_features = 5
+        df_one_hot_all = pd.get_dummies(df[feature], prefix=feature, dummy_na=False)
+        df_one_hot = df_one_hot_all
+
+        # get bin features with min_vals
+        for col in df_one_hot.columns:
+            if df_one_hot[col].value_counts().tolist()[1] < min_vals:
+                df_one_hot.drop(col, inplace=True, axis=1)
+
+        col_values = [v.replace("Diagnose_", "") for v in df_one_hot.columns.tolist()]
 
         # get label and data
         x_statics = []
         y = []
-
         for case in df['Case ID'].unique():
-
             df_tmp = df[df['Case ID'] == case]
             df_tmp = df_tmp.sort_values(by='Complete Timestamp')
             idx = -1
-
             for _, x in df_tmp.iterrows():
                 idx = idx + 1
                 if x['Activity'] == 'ER Registration' and idx == 0 and min_len <= len(df_tmp) <= max_len:
-                    x_statics.append(x[feature])
 
-                    if target_activity in df_tmp["Activity"].unique():
-                        y.append(1)
-                    else:
-                        y.append(0)
+                    if x[feature] in col_values:
+                        x_statics.append(x[feature])
+                        if target_activity in df_tmp["Activity"].unique():
+                            y.append(1)
+                        else:
+                            y.append(0)
 
         df_data = pd.DataFrame(x_statics, columns=["Diagnose"])
         df_data = pd.get_dummies(df_data, dummy_na=False)
         X = df_data.to_numpy()
 
-        clf = tree.DecisionTreeClassifier()
+        clf = ensemble.RandomForestClassifier()
         clf.fit(X, y)
         fi = clf.feature_importances_
 
-        print(0)
+        fi_df = pd.DataFrame(fi, columns=['Importances'])
+        fi_df["Feature_Names"] = df_one_hot.columns
+        fi_df = fi_df.nlargest(n=most_important_features, columns=['Importances'])
+        fi = fi_df["Feature_Names"].tolist()
 
+        # update df
+        df.drop(feature, inplace=True, axis=1)
+        df = pd.concat([df, df_one_hot_all[fi]], axis=1)
 
+        # update static features
+        static_features.remove("Diagnose")
+        static_features = static_features + fi
 
+        return df, static_features
 
-
-        return 0
-
-    map_diagnose_to_bin_features(df, "Diagnose")
+    df, static_features = map_diagnose_to_bin_features(df, "Diagnose", static_features)
     """
-
-    diagnose_mapping = dict(zip(df['Diagnose'].unique(), np.arange(len(df['Diagnose'].unique()))))  # ordinal encoding
-    df['Diagnose'] = df['Diagnose'].apply(lambda x: diagnose_mapping[x])
-    df['Diagnose'] = df['Diagnose'].apply(lambda x: x / max(df['Diagnose']))  # normalise ordinal encoding
-
 
     df['Age'] = df['Age'].fillna(-1)
     df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))

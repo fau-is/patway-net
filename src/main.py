@@ -401,6 +401,13 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         if mode == "test":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                           y_val.reshape(-1, 1), hpos, hpo, mode)
+
+            X_train_seq = torch.from_numpy(X_train_seq)
+            X_train_stat = torch.from_numpy(X_train_stat)
+
+            X_val_seq = torch.from_numpy(X_val_seq)
+            X_val_stat = torch.from_numpy(X_val_stat)
+
             X_test_seq = torch.from_numpy(X_test_seq)
             X_test_stat = torch.from_numpy(X_test_stat)
 
@@ -434,6 +441,17 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         elif mode == "dt":
             model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo)
+
+            """
+            from matplotlib import pyplot as plt
+            import sklearn.tree
+            fig = plt.figure(figsize=(100, 100))
+            _ = sklearn.tree.plot_tree(model, feature_names=static_features, filled=True)
+            fig.savefig("decision_tree_train.png")
+            print("Training")
+            print(static_features)
+            print(model.feature_importances_)
+            """
 
         elif mode == "knn":
             model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -598,16 +616,16 @@ if __name__ == "__main__":
 
     hpos = {
         # "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001, 0.01], "batch_size": [32], "inter_seq_best": [4]},
-        "test": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.001], "batch_size": [128], "inter_seq_best": [1]},
+        "test": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128], "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
-        "dt": {"max_depth": [2, 3, 4], "min_samples_split": [2, 3, 4]},
+        "dt": {"max_depth": [2, 3, 4], "min_samples_split": [2]},
         "knn": {"n_neighbors": [3, 5, 10]}
     }
 
     if data_set == "sepsis":
 
-        for mode in ['lr']:  # 'test', 'lr', 'dt', 'knn', 'nb'
+        for mode in ['test']:  # 'test', 'lr', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
 
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
