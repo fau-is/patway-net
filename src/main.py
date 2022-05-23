@@ -253,7 +253,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 import copy
                                 best_val_loss = np.inf
                                 patience = 10
-                                epochs = 100
+                                epochs = 1000
                                 trigger_times = 0
                                 model_best_es = copy.deepcopy(model)
                                 flag_es = False
@@ -370,6 +370,19 @@ def time_step_blow_up(X_seq, X_stat, y, max_len):
 
     return X_seq_final, X_stat_final, y_final
 
+"""
+def vectorize(X_seq, X_stat, y, max_len):
+
+    X_stat_final = np.zeros((len(X_stat), len(X_stat[0])))
+    
+    for i, x in enumerate(X_stat):
+        X_stat_final[i, :] = np.array(X_stat[i])
+    y_final = np.array(y).astype(np.int32)
+
+    X_seq_final = X_stat_final
+
+    return X_seq_final, X_stat_final, y_final
+"""
 
 def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features):
 
@@ -384,7 +397,9 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         train_index = train_index_[0: int(len(train_index_)*(1-val_size))]
         val_index = train_index_[int(len(train_index_)*(1-val_size)):]
 
-        X_train_seq, X_train_stat, y_train = time_step_blow_up([x_seqs[x] for x in train_index],
+        # if mode == "test":
+        X_train_seq, X_train_stat, y_train = time_step_blow_up(
+            [x_seqs[x] for x in train_index],
             [x_statics[x] for x in train_index],
             [y[x] for x in train_index], max_len)
 
@@ -397,6 +412,24 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             [x_seqs[x] for x in test_index],
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
+
+        """
+        else:
+            X_train_seq, X_train_stat, y_train = vectorize(
+                [x_seqs[x] for x in train_index],
+                [x_statics[x] for x in train_index],
+                [y[x] for x in train_index], max_len)
+
+            X_val_seq, X_val_stat, y_val = vectorize(
+                [x_seqs[x] for x in val_index],
+                [x_statics[x] for x in val_index],
+                [y[x] for x in val_index], max_len)
+
+            X_test_seq, X_test_stat, y_test = vectorize(
+                [x_seqs[x] for x in test_index],
+                [x_statics[x] for x in test_index],
+                [y[x] for x in test_index], max_len)
+        """
 
         if mode == "test":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
