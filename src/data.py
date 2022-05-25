@@ -64,7 +64,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                        'DiagnosticIC', 'DiagnosticSputum', 'DiagnosticLiquor',
                        'DiagnosticOther', 'SIRSCriteria2OrMore', 'DiagnosticXthorax',
                        'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos',
-                       'Oligurie', 'DiagnosticLacticAcid', 'Hypoxie',   # 'Diagnose'
+                       'Oligurie', 'DiagnosticLacticAcid', 'Hypoxie',   #'Diagnose'
                        'DiagnosticUrinarySediment', 'DiagnosticECG']
 
     seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',

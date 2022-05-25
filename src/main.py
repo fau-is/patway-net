@@ -236,7 +236,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                             interactions_seq=[],
                                             interactions_seq_itr=100,
                                             interactions_seq_best=inter_seq_best,
-                                            interactions_seq_auto=True,
+                                            interactions_seq_auto=False,
                                             input_sz_stat=num_features_stat,
                                             output_sz=1,
                                             only_static=False,
@@ -376,7 +376,16 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
     results = {}
     id = -1
 
-    skfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=1)
+    """
+    data_index = np.arange(len(x_seqs))
+    np.random.shuffle(data_index)
+
+    x_seqs = [x_seqs[x] for x in data_index]
+    x_statics = [x_statics[x] for x in data_index]
+    y = [y[x] for x in data_index]
+    """
+
+    skfold = StratifiedKFold(n_splits=k, shuffle=False, random_state=1)
     for train_index_, test_index in skfold.split(X=x_statics, y=y):
 
         id += 1
@@ -616,8 +625,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 if __name__ == "__main__":
 
     hpos = {
-        # "test": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001, 0.01], "batch_size": [32], "inter_seq_best": [4]},
-        "test": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128], "inter_seq_best": [1]},
+        "test": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        # "test": {"seq_feature_sz": [32], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128], "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
         "dt": {"max_depth": [2, 3, 4], "min_samples_split": [2]},
