@@ -458,7 +458,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             import sklearn.tree
             fig = plt.figure(figsize=(100, 100))
             _ = sklearn.tree.plot_tree(model, feature_names=static_features, filled=True)
-            fig.savefig("decision_tree_train.png")
+            fig.savefig("../plots/decision_tree_train")
             print("Training")
             print(static_features)
             print(model.feature_importances_)

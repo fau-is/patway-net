@@ -13,16 +13,14 @@ model = torch.load(os.path.join("../model", f"model_{repetition}"), map_location
 interactions_seq = model.get_number_interactions_seq()
 number_interactions_seq = len(interactions_seq)
 
-# Note: static features include diagnosis feature or not
+# Note: static features include binary features created from the diagnosis feature or not
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
-
 
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
     return y2 - y1
 
-# Print seq features (t x to t y)
 t_x = list(range(0, 11))
 t_y = list(range(1, 12))
 
@@ -67,7 +65,6 @@ for t in range(0, 11):  # num of transmissions
         plt.draw()
         fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.pdf', dpi=100)
         plt.close(fig1)
-
 
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
@@ -206,5 +203,5 @@ for t in range(0, 12):
             fig1 = plt.gcf()
             plt.show()
             plt.draw()
-            fig1.savefig(f'../plots/interaction_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}_{t}.png', dpi=100)
+            fig1.savefig(f'../plots/interaction_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}_{t}.pdf', dpi=100)
             plt.close(fig1)

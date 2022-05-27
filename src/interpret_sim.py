@@ -22,8 +22,6 @@ for i, x in enumerate(x_seqs):
 def delta(y2, y1):
     return y2 - y1
 
-
-# Print seq features (t x to t y)
 t_x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 t_y = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
