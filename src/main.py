@@ -12,11 +12,11 @@ import os
 import src.data as data
 import torch
 from src.interpret_LSTM import Net
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 
-data_set = "sepsis"  # sepsis
+data_set = "sepsis"
 n_hidden = 8
-max_len = 50  # sepsis=100
+max_len = 50
 min_len = 3
 min_size_prefix = 1
 seed = False
@@ -369,6 +369,7 @@ def time_step_blow_up(X_seq, X_stat, y, max_len):
     y_final = np.array(y_prefix).astype(np.int32)
 
     return X_seq_final, X_stat_final, y_final
+
 
 def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features):
 
