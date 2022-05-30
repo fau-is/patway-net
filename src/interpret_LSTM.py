@@ -463,3 +463,6 @@ class Net(nn.Module):
             # out = x @ self.output_coef[feat_id: (feat_id + 1)]  # test regression
 
         return x, out
+
+    def plot_feat_importance(self):
+        return self.output_coef + self.output_bias
