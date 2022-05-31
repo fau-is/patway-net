@@ -24,13 +24,13 @@ foreigner_list = []
 age_list = []
 bmi_list = []
 gender_list = []
-crp_list = []
-lacticacid_list = []
+hr_list = []
+bp_list = []
 pattern_list = []
 
 # Basic structure of data frame
 df_main = pd.DataFrame(
-    columns=['Case ID', 'Activity', 'Timestamp', 'Gender', 'Foreigner', 'Age', 'BMI', 'CRP', 'LacticAcid', 'Label'])
+    columns=['Case ID', 'Activity', 'Timestamp', 'Gender', 'Foreigner', 'Age', 'BMI', 'HeartRate', 'BloodPressure', 'Label'])
 
 # Create one instance
 for idx in range(0, num_cases):
@@ -41,10 +41,10 @@ for idx in range(0, num_cases):
     caseid = [idx] * length
 
     # Activity
-    acts = ['IVA', 'IVA', 'IVL', 'IVA', 'IVA']
+    acts = ['MedicationA', 'MedicationA', 'MedicationB', 'MedicationA', 'MedicationA']
     random.shuffle(acts)
-    acts = ['Start', 'CRP', 'CRP', 'CRP', 'LacticAcid', 'LacticAcid', 'LacticAcid'] + acts
-    #acts = ['Start'] + acts
+    acts = ['ERRegistration', 'HeartRate', 'HeartRate', 'HeartRate', 'BloodPressure', 'BloodPressure', 'BloodPressure'] + acts
+    #acts = ['ERRegistration'] + acts
 
     # Timestamp
     tmstmp = []
@@ -74,57 +74,57 @@ for idx in range(0, num_cases):
     bmi_rnd = random.randrange(15, 50, 1)
     bmi = [bmi_rnd] * length
 
-    # CRP with r as factor
+    # hr with r as factor
     r = 0.3
-    crp = []
+    hr = []
     rnd = random.randrange(0, 100, 1) / 100
     # Determine whether do increase or decrease initial value with random number; a value of 1 implies an increase, while a value of 0 implies a decrease
-    crp_rnd = random.randint(0, 1)
+    hr_rnd = random.randint(0, 1)
     for i in range(0, 3):
-        if crp_rnd == 1:
+        if hr_rnd == 1:
             rnd = rnd * (1 + r)
         else:
             rnd = rnd / (1 + r)
-        crp.append(rnd)
+        hr.append(rnd)
 
-    # Place CRP values to correspondent activities
-    crp_temp = [0] * length
-    crp_final = []
+    # Place hr values to correspondent activities
+    hr_temp = [0] * length
+    hr_final = []
     for i in range(0, length):
-        if acts[i] == 'CRP':
-            crp_temp[i] = 1
+        if acts[i] == 'HeartRate':
+            hr_temp[i] = 1
     idx = 0
     for i in range(0, length):
-        if crp_temp[i] == 1:
-            crp_final.append(crp[idx])
+        if hr_temp[i] == 1:
+            hr_final.append(hr[idx])
             idx = idx + 1
         else:
-            crp_final.append(np.nan)
+            hr_final.append(np.nan)
 
 
-    # LacticAcid
-    lacticacid = [random.randrange(2, 45, 1) / 10.0 for p in range(0, 3)]
+    # bp
+    bp = [random.randrange(2, 45, 1) / 10.0 for p in range(0, 3)]
 
-    # Place LacticAcid values to correspondent activities 
-    lacticacid_temp = [0] * length
-    lacticacid_final = []
+    # Place bp values to correspondent activities 
+    bp_temp = [0] * length
+    bp_final = []
 
     for i in range(0, length):
-        if acts[i] == 'LacticAcid':
-            lacticacid_temp[i] = 1
+        if acts[i] == 'BloodPressure':
+            bp_temp[i] = 1
 
     idx = 0
 
     for i in range(0, length):
-        if lacticacid_temp[i] == 1:
-            lacticacid_final.append(lacticacid[idx])
+        if bp_temp[i] == 1:
+            bp_final.append(bp[idx])
             idx = idx + 1
         else:
-            lacticacid_final.append(np.nan)
+            bp_final.append(np.nan)
 
     # Check if certain patterns occur in instance    
-    pattern1 = ['IVA', 'IVA', 'IVA', 'IVA', 'IVL']
-    # pattern2 = ['IVL', 'IVA', 'IVA', 'IVA', 'IVA']
+    pattern1 = ['MedicationA', 'MedicationA', 'MedicationA', 'MedicationA', 'MedicationB']
+    # pattern2 = ['MedicationB', 'MedicationA', 'MedicationA', 'MedicationA', 'MedicationA']
 
 
     def contains_sublist(l1, l2):
@@ -146,25 +146,25 @@ for idx in range(0, num_cases):
     # weight = 0.25  # normal
     weight = 0.2
 
-    # label_init = weight * gender_rnd + (-(age_rnd - 0.5) ** 2 + weight) + weight * crp_rnd + weight * pattern_occurance  #normal
+    # label_init = weight * gender_rnd + (-(age_rnd - 0.5) ** 2 + weight) + weight * hr_rnd + weight * pattern_occurance  #normal
     # label_init = weight * gender_rnd + (-2*(age_rnd - 0.5) ** 2 + weight)  #test
     # label_init = gender_rnd  #test2
-    # label_init = crp_rnd  #test3
-    # label_init = weight * gender_rnd + (-(4/3)*(age_rnd - 0.5) ** 2 + weight) + weight * crp_fact  # test4
-    # label_init = weight * gender_rnd + (-(4 / 3) * (age_rnd - 0.5) ** 2 + weight) + weight * (1-crp_rnd)  # test5
-    label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (-0.8 * (crp[0] - 0.5) ** 2 + weight) + weight * crp_rnd  # test6
-    # label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (0.33 * (-0.8 * (crp[0] - 0.5) ** 2 + weight) + 0.33 * (-0.8 * (crp[1] - 0.5) ** 2 + weight) + 0.33 * (-0.8 * (crp[2] - 0.5) ** 2 + weight)) + weight * crp_rnd  #test7
+    # label_init = hr_rnd  #test3
+    # label_init = weight * gender_rnd + (-(4/3)*(age_rnd - 0.5) ** 2 + weight) + weight * hr_fact  # test4
+    # label_init = weight * gender_rnd + (-(4 / 3) * (age_rnd - 0.5) ** 2 + weight) + weight * (1-hr_rnd)  # test5
+    label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (-0.8 * (hr[0] - 0.5) ** 2 + weight) + weight * hr_rnd  # test6
+    # label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (0.33 * (-0.8 * (hr[0] - 0.5) ** 2 + weight) + 0.33 * (-0.8 * (hr[1] - 0.5) ** 2 + weight) + 0.33 * (-0.8 * (hr[2] - 0.5) ** 2 + weight)) + weight * hr_rnd  #test7
 
     label = [label_init] * length
 
     # Concatenate vectors and transpose matrix
     concat_case = np.vstack(
-        (caseid, acts, tmstmp, gender, foreigner, age, bmi, crp_final, lacticacid_final, label)).transpose()
+        (caseid, acts, tmstmp, gender, foreigner, age, bmi, hr_final, bp_final, label)).transpose()
 
     # Create case
     df_temp = pd.DataFrame(data=concat_case,
-                           columns=['Case ID', 'Activity', 'Timestamp', 'Gender', 'Foreigner', 'Age', 'BMI', 'CRP',
-                                    'LacticAcid', 'Label'])
+                           columns=['Case ID', 'Activity', 'Timestamp', 'Gender', 'Foreigner', 'Age', 'BMI', 'HeartRate',
+                                    'BloodPressure', 'Label'])
 
     df_main = df_main.append(df_temp, ignore_index=True)
 
@@ -175,7 +175,7 @@ for idx in range(0, num_cases):
     foreigner_list.append(foreigner_rnd)
     age_list.append(age_rnd)
     bmi_list.append(bmi_rnd)
-    crp_list.append(crp_rnd)
+    hr_list.append(hr_rnd)
 
     pattern_list.append(pattern_occurrance)
 
@@ -204,9 +204,9 @@ df_main.to_csv(f'Simulation_data_{num_cases}.csv')
 # Take every 12th value from class list to get a short list for visualization
 class_rea_short = class_rea_final[::length]
 
-fig_data = np.vstack((gender_list, foreigner_list, age_list, bmi_list, crp_list, pattern_list, label_list_short)).transpose()
+fig_data = np.vstack((gender_list, foreigner_list, age_list, bmi_list, hr_list, pattern_list, label_list_short)).transpose()
 
-df_fig = pd.DataFrame(data=fig_data, columns=['Gender', 'Foreigner', 'Age', 'BMI', 'CRP', 'Activity Pattern', 'Label'])
+df_fig = pd.DataFrame(data=fig_data, columns=['Gender', 'Foreigner', 'Age', 'BMI', 'HeartRate', 'Activity Pattern', 'Label'])
 
 fig, axes = plt.subplots(2, 3, figsize=(18, 10))
  
@@ -217,7 +217,7 @@ sns.scatterplot(ax=axes[0, 0], data=df_fig, x='Gender', y='Label')
 sns.scatterplot(ax=axes[0, 1], data=df_fig, x='Foreigner', y='Label')
 sns.scatterplot(ax=axes[0, 2], data=df_fig, x='Age', y='Label')
 sns.scatterplot(ax=axes[1, 0], data=df_fig, x='BMI', y='Label')
-sns.scatterplot(ax=axes[1, 1], data=df_fig, x='CRP', y='Label')
+sns.scatterplot(ax=axes[1, 1], data=df_fig, x='HeartRate', y='Label')
 sns.scatterplot(ax=axes[1, 2], data=df_fig, x='Activity Pattern', y='Label')
 
 
