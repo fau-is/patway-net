@@ -88,7 +88,7 @@ for idx, value in enumerate(static_features):
     plt.rcParams["figure.figsize"] = (7.5, 5)
     plt.rc('font', size=13)
 
-    # x, out = model_0.plot_feat_stat_effect_custom(idx, 0, 1)
+    # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
     x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_stat_final[:, idx].reshape(-1, 1)).float())
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
@@ -120,7 +120,7 @@ for idx, value in enumerate(static_features):
     else:
         plt.plot(x, out, color='steelblue')
     plt.xlabel("Feature value")
-    plt.ylabel("Feature effect on model_0 output")
+    plt.ylabel("Feature effect on model output")
     plt.title(f"Static feature: {static_features[idx]}")
     fig1 = plt.gcf()
     plt.show()
@@ -136,7 +136,7 @@ for t in range(0, 10):
         plt.rc('font', size=13)
 
         if value == "CRP":
-            # x, out = model_0.plot_feat_seq_effect_custom(idx, -2, 2)
+            # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
             x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
                 x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
             x = x.detach().numpy().squeeze()
@@ -157,7 +157,7 @@ for t in range(0, 10):
             plt.xlim(-0.02, 1.02)
             plt.ylim(-0.15, 0.15)
             plt.xlabel("Feature value")
-            plt.ylabel("Feature effect on model_0 output")
+            plt.ylabel("Feature effect on model output")
             plt.title("Sequential feature: %s ($t_{%s}$)" % (str(seq_features[idx]), str(t + 1)))
             fig1 = plt.gcf()
             plt.show()
@@ -195,7 +195,7 @@ for idx, value in enumerate(seq_features):
     plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, linestyle='dashed', marker='o', markersize=4)
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
-plt.ylabel("Feature effect on model_0 output")
+plt.ylabel("Feature effect on model output")
 plt.title(f"Feature effect over time of patient pathway {case}")
 fig1 = plt.gcf()
 plt.legend(['ER Registration', 'IV Liquid', 'IV Antibiotics', 'CRP', 'LacticAcid'], loc='lower left',
