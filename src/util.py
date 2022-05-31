@@ -2,18 +2,18 @@ import numpy as np
 
 
 def get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, current_lacticacid_value):
-    if x['Activity'] == 'Start':
+    if x['Activity'] == 'ER Registration':
         ret = [0, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'IVL':
+    elif x['Activity'] == 'Medication B':
         ret = [1, 1]  # No additional information, so normal one hot
-    elif x['Activity'] == 'IVA':
+    elif x['Activity'] == 'Medication A':
         ret = [2, 1]  # No additional information, so normal one hot
-    if x['Activity'] == 'CRP':
-        ret = [3, min(x['CRP'], max_crp) / max_crp]
+    if x['Activity'] == 'Heart Rate':
+        ret = [3, min(x['Heart Rate'], max_crp) / max_crp]
         if np.isnan(ret[1]):
             ret[1] = -1
-    elif x['Activity'] == 'LacticAcid':
-        ret = [4, min(x['LacticAcid'], max_lacticacid) / max_lacticacid]
+    elif x['Activity'] == 'Blood Pressure':
+        ret = [4, min(x['Blood Pressure'], max_lacticacid) / max_lacticacid]
         if np.isnan(ret[1]):
             ret[1] = -1
 
@@ -21,9 +21,9 @@ def get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, c
     one_hot[ret[0]] = ret[1]
 
     # Set last value of seq features
-    if np.isnan(x['CRP']):
+    if np.isnan(x['Heart Rate']):
         one_hot[3] = current_crp_value
-    if np.isnan(x['LacticAcid']):
+    if np.isnan(x['Blood Pressure']):
         one_hot[4] = current_lacticacid_value
 
     return one_hot, one_hot[3], one_hot[4]

@@ -48,22 +48,22 @@ for t in range(0, 11):  # num of transmissions
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
         plt.colorbar(label='$\Delta$ Feature effect')
 
-        if feature == 'HeartRate' and t == 0:
+        if feature == 'Heart Rate' and t == 0:
             plt.clim(0, 0.13)
             plt.title(f"Sequential feature: {seq_features[idx]}")
-        elif feature == 'HeartRate' and t > 0:
+        elif feature == 'Heart Rate' and t > 0:
             plt.clim(-0.09, 0.015)
             plt.title(f"Sequential feature: {seq_features[idx]}")
-        elif feature == 'BloodPressure':
+        elif feature == 'Blood Pressure':
             plt.clim(-0.09, 0.015)
             plt.title(f"Sequential feature: {seq_features[idx]}")
-        elif feature == 'MedicationB':
+        elif feature == 'Medication B':
             plt.clim(-0.15, 0.15)
             plt.title(f"Sequential feature: IV Liquid")
-        elif feature == 'MedicationA':
+        elif feature == 'Medication A':
             plt.clim(-0.15, 0.15)
             plt.title(f"Sequential feature: IV Antibiotics")
-        elif feature == 'ERRegistration':
+        elif feature == 'ER Registration':
             plt.clim(-0.09, 0.015)
             plt.title(f"Sequential feature: {seq_features[idx]}")
         else:
@@ -135,16 +135,16 @@ for t in range(0, 10):
         plt.rcParams["figure.figsize"] = (7.5, 5)
         plt.rc('font', size=13)
 
-        if value == "HeartRate":
+        if value == "Heart Rate":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
             x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
                 x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
 
-            if value == "HeartRate" or value == "BloodPressure" or value == "ERRegistration":
+            if value == "Heart Rate" or value == "Blood Pressure" or value == "ER Registration":
                 plt.scatter(x, out, color='steelblue')
-            elif value == "MedicationA" or value == "MedicationB":
+            elif value == "Medication A" or value == "Medication B":
                 a, b = zip(set(x), set(np.squeeze(out)))
                 x = [list(a)[0], list(b)[0]]
                 out = [list(a)[1], list(b)[1]]
@@ -198,7 +198,7 @@ plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Feature effect over time of patient pathway {case}")
 fig1 = plt.gcf()
-plt.legend(['ER Registration', 'IV Liquid', 'IV Antibiotics', 'HeartRate', 'BloodPressure'], loc='lower left',
+plt.legend(['ER Registration', 'IV Liquid', 'IV Antibiotics', 'Heart Rate', 'Blood Pressure'], loc='lower left',
            title='Sequential feature')  # adjust based on plot
 plt.xticks(np.arange(1, 13, 1))
 plt.show()

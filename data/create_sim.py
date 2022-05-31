@@ -30,7 +30,7 @@ pattern_list = []
 
 # Basic structure of data frame
 df_main = pd.DataFrame(
-    columns=['Case ID', 'Activity', 'Timestamp', 'Gender', 'Foreigner', 'Age', 'BMI', 'HeartRate', 'BloodPressure', 'Label'])
+    columns=['Case ID', 'Activity', 'Timestamp', 'Gender', 'Foreigner', 'Age', 'BMI', 'Heart Rate', 'Blood Pressure', 'Label'])
 
 # Create one instance
 for idx in range(0, num_cases):
@@ -41,7 +41,7 @@ for idx in range(0, num_cases):
     caseid = [idx] * length
 
     # Activity
-    acts = ['MedicationA', 'MedicationA', 'MedicationB', 'MedicationA', 'MedicationA']
+    acts = ['Medication A', 'Medication A', 'Medication B', 'Medication A', 'Medication A']
     random.shuffle(acts)
     acts = ['ERRegistration', 'HeartRate', 'HeartRate', 'HeartRate', 'BloodPressure', 'BloodPressure', 'BloodPressure'] + acts
     #acts = ['ERRegistration'] + acts

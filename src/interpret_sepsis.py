@@ -17,7 +17,6 @@ number_interactions_seq = len(interactions_seq)
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
-
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
     return y2 - y1

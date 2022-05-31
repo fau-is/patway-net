@@ -8,7 +8,7 @@ def get_sim_data(label, file):
     ds_path = f'../data/{file}'
 
     static_features = ['Gender', 'Foreigner', 'BMI', 'Age']
-    seq_features = ['Start', 'IVL', 'IVA', 'CRP', 'LacticAcid']
+    seq_features = ['ER Registration', 'Medication B', 'Medication A', 'Heart Rate', 'Blood Pressure']
 
     df = pd.read_csv(ds_path)
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
@@ -17,8 +17,8 @@ def get_sim_data(label, file):
     bmi_max = max(df['BMI'])
     df['BMI'] = df['BMI'].apply(lambda x: x / bmi_max)
 
-    max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 100)  # remove outliers
-    max_crp = np.percentile(df['CRP'].dropna(), 100)  # remove outliers
+    max_lacticacid = np.percentile(df['Blood Pressure'].dropna(), 100)  # remove outliers
+    max_crp = np.percentile(df['Heart Rate'].dropna(), 100)  # remove outliers
 
     x_seqs = []
     x_statics = []
@@ -35,7 +35,7 @@ def get_sim_data(label, file):
 
         for _, x in df_tmp.iterrows():
             idx = idx + 1
-            if x['Activity'] == 'Start' and idx == 0:
+            if x['Activity'] == 'ER Registration' and idx == 0:
                 x_statics.append(x[static_features].values.astype(float))
                 x_time_vals.append([])
                 x_seqs.append([])
@@ -56,7 +56,7 @@ def get_sim_data(label, file):
 
 
 def get_sepsis_data(target_activity, max_len, min_len):
-    ds_path = '../data/Sepsis Cases - Event Log_end.csv'
+    ds_path = '../data/Sepsis Cases - Event Log_sub.csv'
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
