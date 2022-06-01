@@ -320,7 +320,7 @@ class Net(nn.Module):
         import random
         import pandas as pd
         from sklearn.model_selection import train_test_split
-        from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
+        from sklearn.metrics import roc_auc_score
 
         x_seq_features = list(range(x_seq.shape[2]))
 
@@ -361,8 +361,7 @@ class Net(nn.Module):
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
 
             try:
-                precision, recall, thresholds = precision_recall_curve(y_true=y_test, probas_pred=preds_proba)
-                measure = auc(recall, precision)
+                measure = roc_auc_score(y_true=y_test, y_score=preds_proba)
                 if np.isnan(measure):
                     measure = 0
 

@@ -49,8 +49,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 preds_proba = model.predict_proba(x_val_stat)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
                 try:
-                    precision, recall, thresholds = metrics.precision_recall_curve(y_true=y_val, probas_pred=preds_proba)
-                    auc = metrics.auc(recall, precision)
+                    auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     if np.isnan(auc):
                         auc = 0
                 except:
@@ -91,8 +90,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
             preds_proba = model.predict_proba(x_val_stat)
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
             try:
-                precision, recall, thresholds = metrics.precision_recall_curve(y_true=y_val, probas_pred=preds_proba)
-                auc = metrics.auc(recall, precision)
+                auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                 if np.isnan(auc):
                     auc = 0
             except:
@@ -134,8 +132,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 preds_proba = model.predict_proba(x_val_stat)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
                 try:
-                    precision, recall, thresholds = metrics.precision_recall_curve(y_true=y_val, probas_pred=preds_proba)
-                    auc = metrics.auc(recall, precision)
+                    auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     if np.isnan(auc):
                         auc = 0
                 except:
@@ -177,8 +174,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
             preds_proba = model.predict_proba(x_val_stat)
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
             try:
-                precision, recall, thresholds = metrics.precision_recall_curve(y_true=y_val, probas_pred=preds_proba)
-                auc = metrics.auc(recall, precision)
+                auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                 if np.isnan(auc):
                     auc = 0
             except:
@@ -324,8 +320,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                     preds_proba = torch.sigmoid(model_best_es(x_val_seq_, x_val_stat_))
                                     preds_proba = [pred_proba[0] for pred_proba in preds_proba]
                                     try:
-                                        precision, recall, thresholds = metrics.precision_recall_curve(y_true=y_val, probas_pred=preds_proba)
-                                        auc = metrics.auc(recall, precision)
+                                        auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                                         if np.isnan(auc):
                                             auc = 0
                                     except:
