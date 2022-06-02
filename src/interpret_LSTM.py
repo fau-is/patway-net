@@ -354,10 +354,10 @@ class Net(nn.Module):
                 x_seq_sample[:, :, :].reshape(-1, x_seq_sample.shape[1] * x_seq_sample.shape[2]),
                 y, train_size=0.8, shuffle=False)
 
-            from sklearn.ensemble import RandomForestClassifier
-            model = RandomForestClassifier(n_estimators=100)
-            model.fit(x_seq_sample_train, np.ravel(y_train))
-            preds_proba = model.predict_proba(x_seq_sample_test)
+            import xgboost as xgb
+            model = xgb.XGBRFClassifier()
+            model.fit(x_seq_sample_train.numpy(), np.ravel(y_train.numpy()))
+            preds_proba = model.predict_proba(x_seq_sample_test.numpy())
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
 
             try:

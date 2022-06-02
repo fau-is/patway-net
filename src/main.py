@@ -35,7 +35,6 @@ def concatenate_tensor_matrix(x_seq, x_stat):
 
 
 def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
-
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -77,7 +76,6 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 
 def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
-
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -118,7 +116,6 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 
 def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
-
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -161,7 +158,6 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 
 def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
-
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -263,7 +259,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                     number_batches = x_train_seq.shape[0] // batch_size
 
                                     for i in range(number_batches):
-
                                         optimizer.zero_grad()  # a clean up step for PyTorch
                                         out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
                                                     x_train_stat[i * batch_size:(i + 1) * batch_size])
@@ -286,7 +281,8 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                             for i in range(number_batches):
                                                 out = model(x_val_seq[i * batch_size: (i + 1) * batch_size],
                                                             x_val_stat[i * batch_size: (i + 1) * batch_size])
-                                                loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
+                                                loss = loss_function(out, y_val[
+                                                                          i * batch_size:(i + 1) * batch_size].double())
                                                 loss_total += loss.item()
                                         return loss_total / number_batches
 
@@ -347,7 +343,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
 
 def time_step_blow_up(X_seq, X_stat, y, max_len):
-
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
 
     for idx_seq in range(0, len(X_seq)):
@@ -367,7 +362,6 @@ def time_step_blow_up(X_seq, X_stat, y, max_len):
 
 
 def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features):
-
     k = 5
     results = {}
     id = -1
@@ -385,8 +379,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
     for train_index_, test_index in skfold.split(X=x_statics, y=y):
 
         id += 1
-        train_index = train_index_[0: int(len(train_index_)*(1-val_size))]
-        val_index = train_index_[int(len(train_index_)*(1-val_size)):]
+        train_index = train_index_[0: int(len(train_index_) * (1 - val_size))]
+        val_index = train_index_[int(len(train_index_) * (1 - val_size)):]
 
         X_train_seq, X_train_stat, y_train = time_step_blow_up(
             [x_seqs[x] for x in train_index],
@@ -402,7 +396,6 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             [x_seqs[x] for x in test_index],
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
-
 
         if mode == "test":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -481,12 +474,14 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         if mode == 'test':
             torch.save(model, os.path.join("../model", f"model_{id}"))
 
-        results_temp_train = pd.DataFrame(list(zip(results['preds_train'], results['preds_proba_train'], results['gts_train'])),
-                                    columns=['preds', 'preds_proba', 'gts'])
+        results_temp_train = pd.DataFrame(
+            list(zip(results['preds_train'], results['preds_proba_train'], results['gts_train'])),
+            columns=['preds', 'preds_proba', 'gts'])
         results_temp_val = pd.DataFrame(list(zip(results['preds_val'], results['preds_proba_val'], results['gts_val'])),
-                                    columns=['preds', 'preds_proba', 'gts'])
-        results_temp_test = pd.DataFrame(list(zip(results['preds_test'], results['preds_proba_test'], results['gts_test'])),
                                         columns=['preds', 'preds_proba', 'gts'])
+        results_temp_test = pd.DataFrame(
+            list(zip(results['preds_test'], results['preds_proba_test'], results['gts_test'])),
+            columns=['preds', 'preds_proba', 'gts'])
 
         if id == 0:
             results['pr_auc_train'] = list()
@@ -549,39 +544,60 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                     def to_labels(pos_probs, threshold):
                         return (pos_probs >= threshold).astype('int')
 
-                    return [metrics.precision_score(gts, to_labels(proba, t), average="binary", pos_label=label_id) for t in thresholds][ix]
+                    return \
+                    [metrics.precision_score(gts, to_labels(proba, t), average="binary", pos_label=label_id) for t in
+                     thresholds][ix]
                 else:
                     return metrics.f1_score(gts, preds, average="binary", pos_label=label_id)
             except:
                 return 0
 
-        results['pr_auc_train'].append(calc_pr_auc(gts=results_temp_train['gts'], probs=results_temp_train['preds_proba']))
+        results['pr_auc_train'].append(
+            calc_pr_auc(gts=results_temp_train['gts'], probs=results_temp_train['preds_proba']))
         results['pr_auc_val'].append(calc_pr_auc(gts=results_temp_val['gts'], probs=results_temp_val['preds_proba']))
         results['pr_auc_test'].append(calc_pr_auc(gts=results_temp_test['gts'], probs=results_temp_test['preds_proba']))
 
-        results['roc_auc_train'].append(calc_roc_auc(gts=results_temp_train['gts'], probs=results_temp_train['preds_proba']))
+        results['roc_auc_train'].append(
+            calc_roc_auc(gts=results_temp_train['gts'], probs=results_temp_train['preds_proba']))
         results['roc_auc_val'].append(calc_roc_auc(gts=results_temp_val['gts'], probs=results_temp_val['preds_proba']))
-        results['roc_auc_test'].append(calc_roc_auc(gts=results_temp_test['gts'], probs=results_temp_test['preds_proba']))
+        results['roc_auc_test'].append(
+            calc_roc_auc(gts=results_temp_test['gts'], probs=results_temp_test['preds_proba']))
 
         results['mcc_train'].append(calc_mcc(gts=results_temp_train['gts'], preds=results_temp_train['preds']))
         results['mcc_val'].append(calc_roc_auc(gts=results_temp_val['gts'], probs=results_temp_val['preds']))
         results['mcc_test'].append(calc_roc_auc(gts=results_temp_test['gts'], probs=results_temp_test['preds']))
 
-        results['f1_pos_train_corr'].append(calc_f1(gts=results_temp_train['gts'], preds=results_temp_train['preds'], proba=results_temp_train['preds_proba'], label_id=1, corr=True))
-        results['f1_pos_val_corr'].append(calc_f1(gts=results_temp_val['gts'], preds=results_temp_val['preds'], proba=results_temp_val['preds_proba'], label_id=1, corr=True))
-        results['f1_pos_test_corr'].append(calc_f1(gts=results_temp_test['gts'], preds=results_temp_test['preds'], proba=results_temp_test['preds_proba'], label_id=1, corr=True))
+        results['f1_pos_train_corr'].append(calc_f1(gts=results_temp_train['gts'], preds=results_temp_train['preds'],
+                                                    proba=results_temp_train['preds_proba'], label_id=1, corr=True))
+        results['f1_pos_val_corr'].append(
+            calc_f1(gts=results_temp_val['gts'], preds=results_temp_val['preds'], proba=results_temp_val['preds_proba'],
+                    label_id=1, corr=True))
+        results['f1_pos_test_corr'].append(calc_f1(gts=results_temp_test['gts'], preds=results_temp_test['preds'],
+                                                   proba=results_temp_test['preds_proba'], label_id=1, corr=True))
 
-        results['f1_neg_train_corr'].append(calc_f1(gts=results_temp_train['gts'], preds=results_temp_train['preds'], proba=results_temp_train['preds_proba'], label_id=0, corr=True))
-        results['f1_neg_val_corr'].append(calc_f1(gts=results_temp_val['gts'], preds=results_temp_val['preds'], proba=results_temp_val['preds_proba'], label_id=0, corr=True))
-        results['f1_neg_test_corr'].append(calc_f1(gts=results_temp_test['gts'], preds=results_temp_test['preds'], proba=results_temp_test['preds_proba'], label_id=0, corr=True))
+        results['f1_neg_train_corr'].append(calc_f1(gts=results_temp_train['gts'], preds=results_temp_train['preds'],
+                                                    proba=results_temp_train['preds_proba'], label_id=0, corr=True))
+        results['f1_neg_val_corr'].append(
+            calc_f1(gts=results_temp_val['gts'], preds=results_temp_val['preds'], proba=results_temp_val['preds_proba'],
+                    label_id=0, corr=True))
+        results['f1_neg_test_corr'].append(calc_f1(gts=results_temp_test['gts'], preds=results_temp_test['preds'],
+                                                   proba=results_temp_test['preds_proba'], label_id=0, corr=True))
 
-        results['f1_pos_train'].append(calc_f1(gts=results_temp_train['gts'], preds=results_temp_train['preds'], proba=results_temp_train['preds_proba'], label_id=1))
-        results['f1_pos_val'].append(calc_f1(gts=results_temp_val['gts'], preds=results_temp_val['preds'], proba=results_temp_val['preds_proba'], label_id=1))
-        results['f1_pos_test'].append(calc_f1(gts=results_temp_test['gts'], preds=results_temp_test['preds'], proba=results_temp_test['preds_proba'], label_id=1))
+        results['f1_pos_train'].append(calc_f1(gts=results_temp_train['gts'], preds=results_temp_train['preds'],
+                                               proba=results_temp_train['preds_proba'], label_id=1))
+        results['f1_pos_val'].append(
+            calc_f1(gts=results_temp_val['gts'], preds=results_temp_val['preds'], proba=results_temp_val['preds_proba'],
+                    label_id=1))
+        results['f1_pos_test'].append(calc_f1(gts=results_temp_test['gts'], preds=results_temp_test['preds'],
+                                              proba=results_temp_test['preds_proba'], label_id=1))
 
-        results['f1_neg_train'].append(calc_f1(gts=results_temp_train['gts'], preds=results_temp_train['preds'], proba=results_temp_train['preds_proba'], label_id=0))
-        results['f1_neg_val'].append(calc_f1(gts=results_temp_val['gts'], preds=results_temp_val['preds'], proba=results_temp_val['preds_proba'], label_id=0))
-        results['f1_neg_test'].append(calc_f1(gts=results_temp_test['gts'], preds=results_temp_test['preds'], proba=results_temp_test['preds_proba'], label_id=0))
+        results['f1_neg_train'].append(calc_f1(gts=results_temp_train['gts'], preds=results_temp_train['preds'],
+                                               proba=results_temp_train['preds_proba'], label_id=0))
+        results['f1_neg_val'].append(
+            calc_f1(gts=results_temp_val['gts'], preds=results_temp_val['preds'], proba=results_temp_val['preds_proba'],
+                    label_id=0))
+        results['f1_neg_test'].append(calc_f1(gts=results_temp_test['gts'], preds=results_temp_test['preds'],
+                                              proba=results_temp_test['preds_proba'], label_id=0))
 
         results['support_train'].append(f'{y_train.tolist().count(1)}--{y_train.tolist().count(0)}')
         results['support_val'].append(f'{y_val.tolist().count(1)}--{y_val.tolist().count(0)}')
@@ -621,9 +637,11 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 if __name__ == "__main__":
 
     hpos = {
-        "test": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        # "test": {"seq_feature_sz": [32], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128], "inter_seq_best": [1]},
-        "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)], "solver": ["lbfgs"]},
+        # "test": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        "test": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32],
+                 "inter_seq_best": [1]},
+        "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
+               "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
         "dt": {"max_depth": [2, 3, 4], "min_samples_split": [2]},
         "knn": {"n_neighbors": [3, 5, 10]}
@@ -633,7 +651,6 @@ if __name__ == "__main__":
 
         for mode in ['test']:  # 'test', 'lr', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
-
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
                     target_activity, max_len, min_len)
 
