@@ -44,7 +44,7 @@ for idx, value in enumerate(static_features):
 
 
 # Assumption: most admissions to ic in time step 9
-for t in range(8, 9):
+for t in range(9,10):
     for idx, value in enumerate(seq_features):
 
         x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seqs_final[:, t, idx].reshape(-1, 1, 1)).float())
