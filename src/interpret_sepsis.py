@@ -25,7 +25,7 @@ t_x = list(range(0, 11))
 t_y = list(range(1, 12))
 
 for t in range(0, 11):  # num of transmissions
-    plt.rcParams["figure.figsize"] = (7, 4)
+    plt.rcParams["figure.figsize"] = (8, 5)
     for idx, feature in enumerate(seq_features):
         x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(
             x_seqs_final[:, t_x[t], idx].reshape(-1, 1, 1)).float())
@@ -66,6 +66,7 @@ for t in range(0, 11):  # num of transmissions
         fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.pdf', dpi=100)
         plt.close(fig1)
 
+"""
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
     plt.rcParams["figure.figsize"] = (7.5, 5)
@@ -205,3 +206,4 @@ for t in range(0, 12):
             plt.draw()
             fig1.savefig(f'../plots/interaction_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}_{t}.pdf', dpi=100)
             plt.close(fig1)
+"""
