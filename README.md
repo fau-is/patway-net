@@ -1,4 +1,4 @@
-# PatWay-Net: A hybrid interpretable and explainable neural network for patient pathway prediction
+# PatWay-Net: An interpretable recurrent deep neural network for patient pathway prediction
 
 # Good HPO Settings
 - Simulation
