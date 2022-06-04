@@ -155,6 +155,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
     x_statics = []
     x_time_vals = []
     y = []
+    acts = []
 
     for case in df['Case ID'].unique():
 
@@ -175,6 +176,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                 x_time_vals.append([])
                 x_seqs.append([])
                 after_registration_flag = True
+                acts.append([])
 
             if x['Activity'] == target_activity and after_registration_flag:
                 found_target_flag = True
@@ -187,6 +189,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                                                             current_lacticacid_value)
                     x_seqs[-1].append(one_hot)
                     x_time_vals[-1].append(x['Complete Timestamp'])
+                    acts[-1].append(x['Activity'])
 
         if after_registration_flag:
             if found_target_flag:
@@ -196,23 +199,23 @@ def get_sepsis_data(target_activity, max_len, min_len):
 
     assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
 
-    x_seqs_, x_statics_, y_, x_time_vals_ = [], [], [], []
+    x_seqs_, x_statics_, y_, x_time_vals_, acts_ = [], [], [], [], []
     for i, x in enumerate(x_seqs):
         if min_len <= len(x) <= max_len:
             x_seqs_.append(x)
             x_statics_.append(x_statics[i])
             y_.append(y[i])
             x_time_vals_.append(x_time_vals[i])
+            acts_.append(acts[i])
 
-    """
+
     # Create event log
     f = open(f'../output/sepsis.txt', "w+")
-    f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])} \n')
+    f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])},Label \n')
     for idx in range(0, len(x_seqs_)):
         for idx_ts in range(0, len(x_seqs_[idx])):
-            f.write(f'{idx},{int2act[np.argmax(x_seqs_[idx][idx_ts])]},'
-                    f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])}\n')
+            f.write(f'{idx},{acts_[idx][idx_ts]},'
+                    f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])},{y_[idx]}\n')
     f.close()
-    """
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features

@@ -353,6 +353,7 @@ def time_step_blow_up(X_seq, X_stat, y, max_len):
 
     X_seq_final = np.zeros((len(X_seq_prefix), max_len, len(X_seq_prefix[0][0])), dtype=np.float32)
     X_stat_final = np.zeros((len(X_seq_prefix), len(X_stat_prefix[0])))
+
     for i, x in enumerate(X_seq_prefix):
         X_seq_final[i, :len(x), :] = np.array(x)
         X_stat_final[i, :] = np.array(X_stat_prefix[i])

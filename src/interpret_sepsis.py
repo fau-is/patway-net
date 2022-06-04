@@ -17,6 +17,7 @@ number_interactions_seq = len(interactions_seq)
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
+"""
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
     return y2 - y1
@@ -66,7 +67,6 @@ for t in range(0, 11):  # num of transmissions
         fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.pdf', dpi=100)
         plt.close(fig1)
 
-"""
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
     plt.rcParams["figure.figsize"] = (7.5, 5)
@@ -130,17 +130,19 @@ for t in range(0, 11):
             plt.draw()
             fig1.savefig(f'../plots/{value}_t{t + 1}.pdf', dpi=100)
             plt.close(fig1)
-
+"""
 
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
-case = 3006
+case = 92
 colors = ['steelblue', 'gray', 'olivedrab', 'lightskyblue', 'darkmagenta', 'crimson', 'darkorange']
 plt.gca().set_prop_cycle(color=colors)
 
 # seq_features=['Leucocytes', 'CRP', 'LacticAcid', 'IV Liquid', 'Admission NC']
-seq_features_rel = ['Leucocytes', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
-                    'IV Liquid', 'IV Antibiotics', 'Admission NC']
+seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
+                    'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
+                    'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
+                    'Release E']
 
 plt.rcParams["figure.figsize"] = (8, 5)
 plt.rc('font', size=10)
@@ -167,7 +169,7 @@ for idx, value in enumerate(seq_features):
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
-plt.title(f"Feature effect over time of patient pathway 222")
+plt.title(f"Feature effect over time of patient pathway 6")
 fig1 = plt.gcf()
 plt.legend(loc='upper left', title='Sequential feature')  # adjust based on plot
 plt.xticks(np.arange(1, 11, 1))
@@ -176,7 +178,7 @@ plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.pdf', dpi=100)
 plt.close(fig1)
 
-
+"""
 # (5) Print sequential feature interactions (global, no history)
 print(interactions_seq)
 for t in range(0, 12):
