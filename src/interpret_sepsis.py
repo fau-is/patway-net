@@ -134,15 +134,12 @@ for t in range(0, 11):
 
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
-case = 92
+case = 251
 colors = ['steelblue', 'gray', 'olivedrab', 'lightskyblue', 'darkmagenta', 'crimson', 'darkorange']
 plt.gca().set_prop_cycle(color=colors)
 
 # seq_features=['Leucocytes', 'CRP', 'LacticAcid', 'IV Liquid', 'Admission NC']
-seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
-                    'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
-                    'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
-                    'Release E']
+seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid', 'IV Liquid', 'Admission NC']
 
 plt.rcParams["figure.figsize"] = (8, 5)
 plt.rc('font', size=10)
@@ -169,7 +166,7 @@ for idx, value in enumerate(seq_features):
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
-plt.title(f"Feature effect over time of patient pathway 6")
+plt.title(f"Feature effect over time of patient pathway 18")
 fig1 = plt.gcf()
 plt.legend(loc='upper left', title='Sequential feature')  # adjust based on plot
 plt.xticks(np.arange(1, 11, 1))
