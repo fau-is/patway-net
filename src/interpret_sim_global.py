@@ -33,6 +33,7 @@ for idx, value in enumerate(static_features):
         feat_imports.append(max(out))
     else:
         from scipy import integrate
+
         sorted_index = np.argsort(np.array(x))
         out_sorted = np.array(out)[sorted_index]
         x_sorted = np.array(x)[sorted_index]
@@ -40,12 +41,14 @@ for idx, value in enumerate(static_features):
 
     feat_names.append(value)
 
+time = 11
 
 # assumption: last time step
-for t in range(11, 12):
+for t in range(time, time + 1):
     for idx, value in enumerate(seq_features):
 
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
+        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
+            x_seq_final[:, t, idx].reshape(-1, 1, 1)).float())
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
         out = np.ravel(out)
@@ -72,16 +75,30 @@ feat_names_sorted = np.array(feat_names)[sorted_index]
 feat_names_sorted = feat_names_sorted.tolist()
 feat_imports_sorted = feat_imports_sorted.tolist()
 
-plt.rcParams.update({'font.size': 12})
-plt.figure(figsize=(10, 6), dpi=100)
+# plt.rcParams.update({'font.size': 11})
+plt.figure(figsize=(5, 4))
+plt.rc('axes', titlesize=10)
+plt.rc('axes', labelsize=10)
+plt.rc('xtick', labelsize=10)
+plt.rc('ytick', labelsize=10)
+
 y_pos = np.arange(len(feat_names_sorted))
-plt.barh(y_pos, feat_imports_sorted, color='steelblue')
-plt.yticks(y_pos, feat_names_sorted)
+plot = plt.barh(y_pos, feat_imports_sorted, color='steelblue')
+# plt.yticks(y_pos, feat_names_sorted)
+plt.tick_params(left=False, labelleft=False)
 plt.xticks(np.arange(0, 0.21, step=0.05))
+
+
+def autolabel(plot):
+    for idx, rect in enumerate(plot):
+        plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='black')
+
+
+autolabel(plot)
 
 plt.xlabel("Feature importance")
 plt.ylabel("Feature")
-plt.title(f"Global feature importance")
+plt.title("Global feature importance ($t_{%s}$)" % str(time + 1))
 fig1 = plt.gcf()
 plt.show()
 plt.draw()

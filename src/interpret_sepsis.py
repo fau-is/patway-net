@@ -17,16 +17,17 @@ number_interactions_seq = len(interactions_seq)
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
-"""
+
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
     return y2 - y1
+
 
 t_x = list(range(0, 11))
 t_y = list(range(1, 12))
 
 for t in range(0, 11):  # num of transmissions
-    plt.rcParams["figure.figsize"] = (8, 5)
+    plt.rcParams["figure.figsize"] = (7.5, 5)
     for idx, feature in enumerate(seq_features):
         x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, torch.from_numpy(
             x_seqs_final[:, t_x[t], idx].reshape(-1, 1, 1)).float())
@@ -42,7 +43,7 @@ for t in range(0, 11):  # num of transmissions
 
         data = np.column_stack([x_x, x_y, z])
 
-        plt.rc('font', size=13)
+        plt.rc('font', size=16)
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
         plt.colorbar(label='$\Delta$ Feature effect')
 
@@ -55,7 +56,7 @@ for t in range(0, 11):  # num of transmissions
         #   plt.clim(-0.5, 0.5)
         plt.xlim(-0.05, 1.05)
         plt.ylim(-0.05, 1.05)
-        #plt.clim(-0.84, 0.84)
+        plt.clim(-1.3, 2.7)
 
         plt.plot([-0.5, 1.5], [-0.5, 1.5], color='grey', linewidth=0.6)
         plt.xlabel("Feature value $t_{%s}$" % str(t_x[t] + 1))
@@ -64,18 +65,22 @@ for t in range(0, 11):  # num of transmissions
         fig1 = plt.gcf()
         plt.show()
         plt.draw()
-        fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.pdf', dpi=100)
+        fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.png', dpi=100)
         plt.close(fig1)
 
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
     plt.rcParams["figure.figsize"] = (7.5, 5)
-    plt.rc('font', size=13)
+    plt.rc('font', size=16)
     # x, out = model.plot_feat_stat_effect_custom(idx, 0, 1)
     x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
-    if value == "Age" or value == "Diagnose":
+    if value == "Age":
+        plt.scatter(x, out + 1.6, color='steelblue')
+        plt.ylim(-0.24, 1.7)
+
+    elif value == "Diagnose":
         plt.scatter(x, out, color='steelblue')
         # plt.ylim(0.19, 0.41)
 
@@ -83,6 +88,13 @@ for idx, value in enumerate(static_features):
         a, b = zip(set(x), set(np.squeeze(out)))
         x = [list(a)[0], list(b)[0]]
         out = [list(a)[1] + 1.3, list(b)[1] + 1.3]
+        plt.bar(x, out, color='steelblue')
+        plt.xticks(x, x)
+
+    elif value == "DiagnosticBlood":
+        a, b = zip(set(x), set(np.squeeze(out)))
+        x = [list(a)[0], list(b)[0]]
+        out = [list(a)[1] + 1.35, list(b)[1] + 1.35]
         plt.bar(x, out, color='steelblue')
         plt.xticks(x, x)
 
@@ -105,49 +117,45 @@ for idx, value in enumerate(static_features):
     fig1.savefig(f'../plots/{value}.pdf', dpi=100)
     plt.close(fig1)
 
-
 # (3) Print sequential feature over time with value range (global)
 for t in range(0, 11):
     for idx, value in enumerate(seq_features):
         plt.rcParams["figure.figsize"] = (7.5, 5)
-        plt.rc('font', size=13)
+        plt.rc('font', size=16)
 
-        if value == "CRP" or value == "Leucocytes":  # or value == "LacticAcid":
+        if value == "CRP":  # or value == "LacticAcid" or value == "CRP":
             # x, out = model.plot_feat_seq_effect_custom(idx, -2, 2)
             x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
                 x_seqs_final[:, t, idx].reshape(-1, 1, 1)).float())
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
-            plt.scatter(x, out, color='steelblue')
+            plt.scatter(x, out + 0.75, color='steelblue')
 
-            # plt.xlim(-0.02, 1.02)
-            # plt.ylim(-0.2, 0.85)
+            plt.xlim(-0.02, 1.02)
+            plt.ylim(-0.02, 3.02)
             plt.xlabel("Feature value")
             plt.ylabel("Feature effect on model output")
             plt.title("Sequential feature: %s ($t_{%s}$)" % (str(seq_features[idx]), str(t + 1)))
             fig1 = plt.gcf()
             plt.show()
             plt.draw()
-            fig1.savefig(f'../plots/{value}_t{t + 1}.pdf', dpi=100)
+            fig1.savefig(f'../plots/{value}_t{t + 1}.png', dpi=100)
             plt.close(fig1)
-"""
 
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
 case = 251
-colors = ['steelblue', 'gray', 'olivedrab', 'lightskyblue', 'darkmagenta', 'crimson', 'darkorange']
+colors = ['steelblue', 'olivedrab', 'crimson', 'grey', 'yellow', 'lightskyblue', 'darkmagenta', 'darkorange']
 plt.gca().set_prop_cycle(color=colors)
 
 # seq_features=['Leucocytes', 'CRP', 'LacticAcid', 'IV Liquid', 'Admission NC']
-seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid', 'IV Liquid', 'Admission NC']
-
-plt.rcParams["figure.figsize"] = (8, 5)
-plt.rc('font', size=10)
+seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
+                    'IV Liquid', 'IV Antibiotics']
 
 for idx, value in enumerate(seq_features):
     effect_feature_values.append([])
     if value in seq_features_rel:
-        for t in range(0, 10):
+        for t in range(0, 11):
             x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, torch.from_numpy(
                 x_seqs_final[case, t, idx].reshape(1, 1, 1)).float())
             x = x.detach().numpy().squeeze()
@@ -161,27 +169,33 @@ for idx, value in enumerate(seq_features):
             effect_feature_values[-1].append(out_correction)
 
         # plt.ylim(-0.11, 0.21)
-        plt.plot(list(range(1, 11)), effect_feature_values[idx], label=value, linestyle='dashed', marker='o',
-                 markersize=4)
+        plt.plot(list(range(1, 12)), effect_feature_values[idx], label=value, linestyle='dashed', linewidth=3,
+                 marker='o', markersize=6)
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Feature effect over time of patient pathway 18")
 fig1 = plt.gcf()
-plt.legend(loc='upper left', title='Sequential feature')  # adjust based on plot
-plt.xticks(np.arange(1, 11, 1))
+plt.legend(loc='lower left', title='Sequential feature')  # adjust based on plot
+plt.xticks(np.arange(1, 12, 1))
+plt.rcParams["figure.figsize"] = (9, 9)
+plt.rc('axes', titlesize=20)
+plt.rc('axes', labelsize=17)
+plt.rc('xtick', labelsize=17)
+plt.rc('ytick', labelsize=17)
+plt.rc('legend', fontsize=19)
+plt.rc('legend', title_fontsize=19)
 plt.show()
 plt.draw()
-fig1.savefig(f'../plots/seq_features_case_{case}.pdf', dpi=100)
+fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 plt.close(fig1)
 
-"""
 # (5) Print sequential feature interactions (global, no history)
 print(interactions_seq)
+
 for t in range(0, 12):
     if number_interactions_seq > 0:
         for idx in range(0, number_interactions_seq):
-
             a = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][0]].reshape(-1, 1, 1))
             b = torch.from_numpy(x_seqs_final[:, t, interactions_seq[idx][1]].reshape(-1, 1, 1))
             x = torch.cat((a, b), dim=2)
@@ -193,16 +207,17 @@ for t in range(0, 12):
             b = b.reshape(-1, 1)
 
             data = np.concatenate((a, b, out), axis=1)
+            plt.figure(figsize=(5, 6))
             plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
+
             plt.colorbar(label='Interaction effect')
 
             plt.xlabel(f"Feature value {seq_features[interactions_seq[idx][0]]}")
             plt.ylabel(f"Feature value {seq_features[interactions_seq[idx][1]]}")
             plt.title("Interaction: %s x %s ($t_{%s}$)" % (str(seq_features[interactions_seq[idx][0]]),
-                                                           str(seq_features[interactions_seq[idx][1]]), str(t+1)))
+                                                           str(seq_features[interactions_seq[idx][1]]), str(t + 1)))
             fig1 = plt.gcf()
             plt.show()
             plt.draw()
-            fig1.savefig(f'../plots/interaction_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}_{t}.pdf', dpi=100)
+            fig1.savefig(f'../plots/interaction_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}_{t}.png', dpi=100)
             plt.close(fig1)
-"""
