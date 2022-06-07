@@ -1,9 +1,11 @@
+from src.data import get_sim_data
 import torch
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 import src.data as data
 from src.main import time_step_blow_up
+import pandas as pd
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 repetition = 0
@@ -81,13 +83,14 @@ feat_names_sorted = np.array(feat_names)[sorted_index]
 feat_names_sorted = feat_names_sorted.tolist()
 feat_imports_sorted = feat_imports_sorted.tolist()
 
-plt.figure(figsize=(5, 6))
-plt.rc('axes', titlesize=10)
+plt.figure(figsize=(12, 6))
+plt.rc('font', size=10)
+plt.rc('axes', titlesize=13)
 plt.rc('axes', labelsize=10)
 plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 y_pos = np.arange(len(feat_names_sorted))
-plot = plt.barh(y_pos, feat_imports_sorted, color='steelblue')
+plot = plt.barh(y_pos, feat_imports_sorted, color='lightblue')
 # plt.yticks(y_pos, feat_names_sorted)
 plt.tick_params(left=False, labelleft=False)
 plt.xticks(np.arange(0, 1.41, step=0.2))
@@ -95,7 +98,7 @@ plt.xticks(np.arange(0, 1.41, step=0.2))
 
 def autolabel(plot):
     for idx, rect in enumerate(plot):
-        plt.text(0.05, idx - 0.25, feat_names_sorted[idx], color='black')
+        plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='black')
 
 
 autolabel(plot)
@@ -106,5 +109,5 @@ plt.title("Global feature importance ($t_{%s}$)" % str(time + 1))
 fig1 = plt.gcf()
 plt.show()
 plt.draw()
-fig1.savefig(f'../plots/sepsis_global_feature_importance.png', dpi=100)
+fig1.savefig(f'../plots/sepsis_global_feature_importance.pdf', dpi=100)
 plt.close(fig1)

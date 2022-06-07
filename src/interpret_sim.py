@@ -45,6 +45,7 @@ for t in range(0, 11):  # num of transmissions
         data = np.column_stack([x_x, x_y, z])
 
         plt.rc('font', size=16)
+        plt.rc('axes', titlesize=18)
 
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
         plt.colorbar(label='$\Delta$ Feature effect')
@@ -80,9 +81,9 @@ for t in range(0, 11):  # num of transmissions
         fig1 = plt.gcf()
         plt.show()
         plt.draw()
-        fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.png', dpi=100)
+        fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.pdf', dpi=100)
         plt.close(fig1)
-
+'''
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
 
@@ -167,6 +168,7 @@ for t in range(0, 12):
             fig1.savefig(f'../plots/{value}_t{t + 1}.png', dpi=100)
             plt.close(fig1)
 
+
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
 case = 3
@@ -194,8 +196,7 @@ for idx, value in enumerate(seq_features):
 
     plt.ylim(-0.17, 0.17)
 
-    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, linestyle='dashed', linewidth=3, marker='o',
-             markersize=6)
+    plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, linestyle='dashed', linewidth=3, marker='o', markersize=6)
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
@@ -207,7 +208,7 @@ plt.xticks(np.arange(1, 13, 1))
 plt.rcParams["figure.figsize"] = (9, 9)
 plt.rc('axes', titlesize=20)
 plt.rc('axes', labelsize=17)
-plt.rc('xtick', labelsize=17)
+plt.rc('xtick', labelsize=17) 
 plt.rc('ytick', labelsize=17)
 plt.rc('legend', fontsize=19)
 plt.rc('legend', title_fontsize=19)
@@ -215,3 +216,4 @@ plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.pdf', dpi=100)
 plt.close(fig1)
+'''

@@ -17,11 +17,11 @@ number_interactions_seq = len(interactions_seq)
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
+'''
 
 # (1) Sequential features (2 time steps, without history)
 def delta(y2, y1):
     return y2 - y1
-
 
 t_x = list(range(0, 11))
 t_y = list(range(1, 12))
@@ -44,6 +44,8 @@ for t in range(0, 11):  # num of transmissions
         data = np.column_stack([x_x, x_y, z])
 
         plt.rc('font', size=16)
+        plt.rc('axes', titlesize=18)
+
         plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
         plt.colorbar(label='$\Delta$ Feature effect')
 
@@ -65,8 +67,9 @@ for t in range(0, 11):  # num of transmissions
         fig1 = plt.gcf()
         plt.show()
         plt.draw()
-        fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.png', dpi=100)
+        fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.pdf', dpi=100)
         plt.close(fig1)
+
 
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
@@ -77,8 +80,10 @@ for idx, value in enumerate(static_features):
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
     if value == "Age":
-        plt.scatter(x, out + 1.6, color='steelblue')
-        plt.ylim(-0.24, 1.7)
+        plt.scatter(x, out+1.6, color='steelblue')
+        plt.ylim(0, 1.7)
+        plt.yticks(np.arange(0, 1.7,step=0.2))
+
 
     elif value == "Diagnose":
         plt.scatter(x, out, color='steelblue')
@@ -117,6 +122,7 @@ for idx, value in enumerate(static_features):
     fig1.savefig(f'../plots/{value}.pdf', dpi=100)
     plt.close(fig1)
 
+
 # (3) Print sequential feature over time with value range (global)
 for t in range(0, 11):
     for idx, value in enumerate(seq_features):
@@ -129,7 +135,7 @@ for t in range(0, 11):
                 x_seqs_final[:, t, idx].reshape(-1, 1, 1)).float())
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
-            plt.scatter(x, out + 0.75, color='steelblue')
+            plt.scatter(x, out+0.75, color='steelblue')
 
             plt.xlim(-0.02, 1.02)
             plt.ylim(-0.02, 3.02)
@@ -142,10 +148,11 @@ for t in range(0, 11):
             fig1.savefig(f'../plots/{value}_t{t + 1}.png', dpi=100)
             plt.close(fig1)
 
+
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
 case = 251
-colors = ['steelblue', 'olivedrab', 'crimson', 'grey', 'yellow', 'lightskyblue', 'darkmagenta', 'darkorange']
+colors = ['steelblue', 'olivedrab',  'crimson', 'grey','yellow', 'lightskyblue','darkmagenta','darkorange']
 plt.gca().set_prop_cycle(color=colors)
 
 # seq_features=['Leucocytes', 'CRP', 'LacticAcid', 'IV Liquid', 'Admission NC']
@@ -169,8 +176,7 @@ for idx, value in enumerate(seq_features):
             effect_feature_values[-1].append(out_correction)
 
         # plt.ylim(-0.11, 0.21)
-        plt.plot(list(range(1, 12)), effect_feature_values[idx], label=value, linestyle='dashed', linewidth=3,
-                 marker='o', markersize=6)
+        plt.plot(list(range(1, 12)), effect_feature_values[idx], label=value, linestyle='dashed', linewidth=3, marker='o', markersize=6)
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
@@ -181,7 +187,7 @@ plt.xticks(np.arange(1, 12, 1))
 plt.rcParams["figure.figsize"] = (9, 9)
 plt.rc('axes', titlesize=20)
 plt.rc('axes', labelsize=17)
-plt.rc('xtick', labelsize=17)
+plt.rc('xtick', labelsize=17) 
 plt.rc('ytick', labelsize=17)
 plt.rc('legend', fontsize=19)
 plt.rc('legend', title_fontsize=19)
@@ -190,6 +196,7 @@ plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.png', dpi=100)
 plt.close(fig1)
 
+'''
 # (5) Print sequential feature interactions (global, no history)
 print(interactions_seq)
 
@@ -207,7 +214,11 @@ for t in range(0, 12):
             b = b.reshape(-1, 1)
 
             data = np.concatenate((a, b, out), axis=1)
-            plt.figure(figsize=(5, 6))
+            plt.figure(figsize=(7.5, 5))
+            plt.rc('axes', titlesize=18)
+            plt.rc('axes', labelsize=16)
+            plt.rc('xtick', labelsize=16)
+            plt.rc('ytick', labelsize=16)
             plt.scatter(data[:, 0], data[:, 1], c=data[:, 2], cmap='viridis')
 
             plt.colorbar(label='Interaction effect')
@@ -219,5 +230,5 @@ for t in range(0, 12):
             fig1 = plt.gcf()
             plt.show()
             plt.draw()
-            fig1.savefig(f'../plots/interaction_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}_{t}.png', dpi=100)
+            fig1.savefig(f'../plots/interaction_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}_{t}.pdf', dpi=100)
             plt.close(fig1)
