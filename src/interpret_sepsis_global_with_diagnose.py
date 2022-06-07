@@ -21,28 +21,26 @@ feat_names = []
 
 for idx, value in enumerate(static_features):
 
-    if value == 'DiagnosticBlood' or value == 'DiagnosticXthorax' or value == 'Hypotensie' or value == 'Age' or value == 'Oligurie' or value == 'DiagnosticArtAstrup' or value == 'DiagnosticECG' or value == 'SIRSCritTachypnea' or value == 'SIRSCriteria2OrMore' or value == 'DisfuncOrg' or value == 'SIRSCritHeartRate' or value == 'DiagnosticSputum' or value == 'SIRSCritLeucos' or value == 'DiagnosticLiquor' or value == 'InfectionSuspected' or value == 'DiagnosticUrinarySediment' or value == 'Infusion':
+    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
+    x = x.detach().numpy().squeeze()
+    out = out.detach().numpy()
+    out = np.ravel(out)
 
-        x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
-        x = x.detach().numpy().squeeze()
-        out = out.detach().numpy()
-        out = np.ravel(out)
+    out_min = min(out)
+    out_delta = 0 - out_min
+    out = [x + out_delta for x in out]
 
-        out_min = min(out)
-        out_delta = 0 - out_min
-        out = [x + out_delta for x in out]
+    if len(set(out)) <= 2:
+        feat_imports.append(max(out))
+    else:
+        from scipy import integrate
 
-        if len(set(out)) <= 2:
-            feat_imports.append(max(out))
-        else:
-            from scipy import integrate
+        sorted_index = np.argsort(np.array(x))
+        out_sorted = np.array(out)[sorted_index]
+        x_sorted = np.array(x)[sorted_index]
+        feat_imports.append(integrate.trapz(y=out_sorted, x=x_sorted))
 
-            sorted_index = np.argsort(np.array(x))
-            out_sorted = np.array(out)[sorted_index]
-            x_sorted = np.array(x)[sorted_index]
-            feat_imports.append(integrate.trapz(y=out_sorted, x=x_sorted))
-
-        feat_names.append(value)
+    feat_names.append(value)
 
 time = 8
 
@@ -90,7 +88,7 @@ y_pos = np.arange(len(feat_names_sorted))
 plot = plt.barh(y_pos, feat_imports_sorted, color='steelblue')
 # plt.yticks(y_pos, feat_names_sorted)
 plt.tick_params(left=False, labelleft=False)
-plt.xticks(np.arange(0, 1.41, step=0.2))
+plt.xticks(np.arange(0, 4, step=0.5))
 
 
 def autolabel(plot):
