@@ -64,7 +64,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                        'DiagnosticIC', 'DiagnosticSputum', 'DiagnosticLiquor',
                        'DiagnosticOther', 'SIRSCriteria2OrMore', 'DiagnosticXthorax',
                        'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos',
-                       'Oligurie', 'DiagnosticLacticAcid', 'Hypoxie', #'Diagnose'
+                       'Oligurie', 'DiagnosticLacticAcid', 'Hypoxie', 'Diagnose', #'Diagnose'
                        'DiagnosticUrinarySediment', 'DiagnosticECG']
 
     seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
@@ -85,7 +85,6 @@ def get_sepsis_data(target_activity, max_len, min_len):
     df = df.sort_values(['Case ID', 'Complete Timestamp'])
     df = df.reset_index()
 
-    """
     def map_diagnose_to_bin_features(df, feature, static_features):
 
         min_vals = 3
@@ -142,7 +141,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
         return df, static_features
 
     df, static_features = map_diagnose_to_bin_features(df, "Diagnose", static_features)
-    """
+
 
     df['Age'] = df['Age'].fillna(-1)
     df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
