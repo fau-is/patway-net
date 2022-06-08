@@ -9,3 +9,4 @@
 
 ![Interactions](/patway-net/Interactions.PNG?raw=true "Employee Data title")
 
+<img src="patway-net/Interactions.PNG" alt="Employee data" title="Employee Data title">
