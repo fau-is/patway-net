@@ -7,5 +7,5 @@
 - Sepsis (https://data.4tu.nl/articles/dataset/Sepsis_Cases_-_Event_Log/12707639)
 
 
-![Interactions](fau-is/patway-net/interactions.png "Employee Data title")
+![Interactions](/interactions.png "Employee Data title")
 
