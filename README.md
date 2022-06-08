@@ -4,9 +4,8 @@
 Sepsis (https://data.4tu.nl/articles/dataset/Sepsis_Cases_-_Event_Log/12707639)
 
 # Further Results
-![Interactions](Interactions.PNG?raw=true "Employee Data title")
+![Interactions](Interactions.PNG?raw=true "Results for different interactions settings")
 
 # Hyperparameter Settings
-<div style="width:60px ; height:60px">
-![Interactions](Hyperparameters.PNG?raw=true "Employee Data title")
-<div>
+![Hyperparameters](Hyperparameters.PNG?raw=true "Hyperparameter settings")
+
