@@ -7,4 +7,6 @@ Sepsis (https://data.4tu.nl/articles/dataset/Sepsis_Cases_-_Event_Log/12707639)
 ![Interactions](Interactions.PNG?raw=true "Employee Data title")
 
 # Hyperparameter Settings
+<div style="width:60px ; height:60px">
 ![Interactions](Hyperparameters.PNG?raw=true "Employee Data title")
+<div>
