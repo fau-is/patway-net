@@ -64,7 +64,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                        'DiagnosticIC', 'DiagnosticSputum', 'DiagnosticLiquor',
                        'DiagnosticOther', 'SIRSCriteria2OrMore', 'DiagnosticXthorax',
                        'SIRSCritTemperature', 'DiagnosticUrinaryCulture', 'SIRSCritLeucos',
-                       'Oligurie', 'DiagnosticLacticAcid', 'Hypoxie', 'Diagnose', #'Diagnose'
+                       'Oligurie', 'DiagnosticLacticAcid', 'Hypoxie',  # 'Diagnose',
                        'DiagnosticUrinarySediment', 'DiagnosticECG']
 
     seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
@@ -85,6 +85,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
     df = df.sort_values(['Case ID', 'Complete Timestamp'])
     df = df.reset_index()
 
+    """
     def map_diagnose_to_bin_features(df, feature, static_features):
 
         min_vals = 3
@@ -141,7 +142,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
         return df, static_features
 
     df, static_features = map_diagnose_to_bin_features(df, "Diagnose", static_features)
-
+    """
 
     df['Age'] = df['Age'].fillna(-1)
     df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
@@ -216,5 +217,32 @@ def get_sepsis_data(target_activity, max_len, min_len):
             f.write(f'{idx},{acts_[idx][idx_ts]},'
                     f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])},{y_[idx]}\n')
     f.close()
+
+    # test
+    from apyori import apriori
+
+    association_rules = apriori(acts_, min_support=0.01, min_confidence=0.01, min_lift=1, min_length=2)
+    association_results = list(association_rules)
+
+    for item in association_rules:
+        # first index of the inner list
+        # Contains base item and add item
+        pair = item[0]
+        items = [x for x in pair]
+        print("Rule: " + items[0] + " -> " + items[1])
+
+        # second index of the inner list
+        print("Support: " + str(item[1]))
+
+        # third index of the list located at 0th
+        # of the third index of the inner list
+
+        print("Confidence: " + str(item[2][0][2]))
+        print("Lift: " + str(item[2][0][3]))
+        print("=====================================")
+
+
+    print(0)
+
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
