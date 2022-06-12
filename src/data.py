@@ -218,9 +218,8 @@ def get_sepsis_data(target_activity, max_len, min_len):
                     f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])},{y_[idx]}\n')
     f.close()
 
-    # test
+    """
     from apyori import apriori
-
     association_rules = apriori(acts_, min_support=0.01, min_confidence=0.01, min_lift=1, min_length=2)
     association_results = list(association_rules)
 
@@ -240,9 +239,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
         print("Confidence: " + str(item[2][0][2]))
         print("Lift: " + str(item[2][0][3]))
         print("=====================================")
-
-
-    print(0)
+    """
 
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
