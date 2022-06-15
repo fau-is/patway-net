@@ -165,20 +165,5 @@ for idx in range(0, num_cases):
 
     pattern_list.append(pattern_occurrance)
 
-# Create label for classes
-threshold = np.median(label_list_short)
-class_rea_final = []
-
-for i in range(0, num_events):
-    if label_list_cases[i] > threshold:
-        class_rea_final.append(1)
-
-    else:
-        class_rea_final.append(0)
-
-# Add column with class labels to data frame
-# class_rea_final = class_rea_final.transpose()
-df_main.insert(loc=10, column='Release A', value=class_rea_final)
-
 # Save data frame as csv
 df_main.to_csv(f'Simulation_data_{num_cases}.csv')

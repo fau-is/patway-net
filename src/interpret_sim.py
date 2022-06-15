@@ -204,7 +204,7 @@ plt.xlabel("Time step")
 plt.ylabel("Feature effect on model output")
 plt.title(f"Feature effect over time of patient pathway {case}")
 fig1 = plt.gcf()
-plt.legend(['ER Registration', 'IV Liquid', 'IV Antibiotics', 'Heart Rate', 'Blood Pressure'], loc='lower left',
+plt.legend(loc='lower left',
            title='Sequential feature')  # adjust based on plot
 plt.xticks(np.arange(1, 13, 1))
 plt.rcParams["figure.figsize"] = (9, 9)
