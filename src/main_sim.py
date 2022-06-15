@@ -7,7 +7,7 @@ import numpy as np
 import os
 import copy
 
-x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
+x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_50000.csv')
 
 # Create dataset with prefixes
 x_seqs_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
@@ -33,7 +33,7 @@ trigger_times = 0
 model = Net(input_sz_seq=len(seq_features),
             hidden_per_seq_feat_sz=16,
             interactions_seq=[],
-            interactions_seq_itr=10,
+            interactions_seq_itr=100,
             interactions_seq_best=1,
             interactions_seq_auto=False,
             input_sz_stat=len(static_features),
@@ -84,4 +84,3 @@ for epoch in range(epochs):
     print(f'Epoch {epoch + 1}: {loss_all / num_batches}')
 
 torch.save(model_best_es, os.path.join("../model", f"model_sim"))
-

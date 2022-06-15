@@ -83,7 +83,7 @@ for t in range(0, 11):  # num of transmissions
         plt.draw()
         fig1.savefig(f'../plots/{feature}_{t_x[t] + 1}-{t_y[t] + 1}.pdf', dpi=100)
         plt.close(fig1)
-'''
+
 # (2) Print static features (global)
 for idx, value in enumerate(static_features):
 
@@ -171,7 +171,7 @@ for t in range(0, 12):
 
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
-case = 3
+case = 9
 colors = ['olivedrab', 'lightskyblue', 'steelblue', 'crimson', 'orange']
 plt.gca().set_prop_cycle(color=colors)
 
@@ -187,14 +187,17 @@ for idx, value in enumerate(seq_features):
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
 
+
         if t == 0:
             correction_value = 0 - out[0][0]
+
+        correction_value = 0
 
         out_correction = out[0][0] + correction_value
 
         effect_feature_values[-1].append(out_correction)
 
-    plt.ylim(-0.17, 0.17)
+    # plt.ylim(-0.17, 0.17)
 
     plt.plot(list(range(1, 13)), effect_feature_values[idx], label=value, linestyle='dashed', linewidth=3, marker='o', markersize=6)
 plt.axhline(y=0, color='grey', linewidth=0.6)
@@ -216,4 +219,3 @@ plt.show()
 plt.draw()
 fig1.savefig(f'../plots/seq_features_case_{case}.pdf', dpi=100)
 plt.close(fig1)
-'''
