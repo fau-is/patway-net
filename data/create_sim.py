@@ -123,8 +123,8 @@ for idx in range(0, num_cases):
             bp_final.append(np.nan)
 
     # Check if certain patterns occur in instance    
-    pattern1 = ['MedicationA', 'MedicationA', 'MedicationA', 'MedicationA', 'MedicationB']
-    # pattern2 = ['MedicationB', 'MedicationA', 'MedicationA', 'MedicationA', 'MedicationA']
+    pattern1 = ['Medication A', 'Medication A', 'Medication A', 'Medication A', 'Medication B']
+    # pattern2 = ['Medication B', 'Medication A', 'Medication A', 'Medication A', 'Medication A']
 
 
     def contains_sublist(l1, l2):
