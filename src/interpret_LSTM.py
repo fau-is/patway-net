@@ -407,8 +407,6 @@ class Net(nn.Module):
                     out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
 
             out = out_mlp @ self.output_coef.float() + self.output_bias
-            # out = sum(out_mlp) + self.output_bias  # test GAM idea
-            # out = x_stat @ self.output_coef.float() + self.output_bias  # test regression
 
         return out
 
@@ -459,7 +457,6 @@ class Net(nn.Module):
             out = mlp_out @ self.output_coef[feat_id + self.lstm.hidden_size: (feat_id + 1) + self.lstm.hidden_size]
         else:
             out = mlp_out @ self.output_coef[feat_id: (feat_id + 1)]
-            # out = x @ self.output_coef[feat_id: (feat_id + 1)]  # test regression
 
         return x, out
 
