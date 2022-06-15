@@ -8,7 +8,7 @@ def get_sim_data(label, file):
     ds_path = f'../data/{file}'
 
     static_features = ['Gender', 'Foreigner', 'BMI', 'Age']
-    seq_features = ['Start', 'IVL', 'IVA', 'CRP', 'LacticAcid']
+    seq_features = ['ER Registration', 'Medication B', 'Medication A', 'Heart Rate', 'Blood Pressure']
 
     df = pd.read_csv(ds_path)
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
@@ -17,14 +17,13 @@ def get_sim_data(label, file):
     bmi_max = max(df['BMI'])
     df['BMI'] = df['BMI'].apply(lambda x: x / bmi_max)
 
-    max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 100)  # remove outliers
-    max_crp = np.percentile(df['CRP'].dropna(), 100)  # remove outliers
+    max_lacticacid = np.percentile(df['Blood Pressure'].dropna(), 100)  # remove outliers
+    max_crp = np.percentile(df['Heart Rate'].dropna(), 100)  # remove outliers
 
     x_seqs = []
     x_statics = []
     x_time_vals = []
     y = []
-    acts = []
 
     for case in df['Case ID'].unique():
 
@@ -36,11 +35,10 @@ def get_sim_data(label, file):
 
         for _, x in df_tmp.iterrows():
             idx = idx + 1
-            if x['Activity'] == 'Start' and idx == 0:
+            if x['Activity'] == 'ER Registration' and idx == 0:
                 x_statics.append(x[static_features].values.astype(float))
                 x_time_vals.append([])
                 x_seqs.append([])
-                acts.append([])
                 after_registration_flag = True
 
             if after_registration_flag:
@@ -48,14 +46,13 @@ def get_sim_data(label, file):
                 one_hot, current_crp_value, current_lacticacid_value = util.get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, current_lacticacid_value)
                 x_seqs[-1].append(one_hot)
                 x_time_vals[-1].append(x['Timestamp'])
-                acts[-1].append(x['Activity'])
 
         if after_registration_flag:
             y.append(x[label])
 
     assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
 
-
+    """
     # Create event log
     f = open(f'../output/sim.txt', "w+")
     f.write(
@@ -69,6 +66,7 @@ def get_sim_data(label, file):
                     f'{",".join([str(x) for x in x_seqs[idx][idx_ts]])},'
                     f'{y[idx]}\n')
     f.close()
+    """
 
     return x_seqs, x_statics, y, x_time_vals, seq_features, static_features
 
@@ -226,7 +224,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
             x_time_vals_.append(x_time_vals[i])
             acts_.append(acts[i])
 
-
+    """
     # Create event log
     f = open(f'../output/sepsis.txt', "w+")
     f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])},Label \n')
@@ -235,6 +233,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
             f.write(f'{idx},{acts_[idx][idx_ts]},'
                     f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])},{y_[idx]}\n')
     f.close()
+    """
 
     """
     from apyori import apriori
@@ -258,6 +257,5 @@ def get_sepsis_data(target_activity, max_len, min_len):
         print("Lift: " + str(item[2][0][3]))
         print("=====================================")
     """
-
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features

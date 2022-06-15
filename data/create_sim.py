@@ -2,8 +2,6 @@ import pandas as pd
 import random
 import numpy as np
 from datetime import datetime
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 # Define number and length of cases
 num_cases = 1000  # 50000
@@ -43,8 +41,7 @@ for idx in range(0, num_cases):
     # Activity
     acts = ['Medication A', 'Medication A', 'Medication B', 'Medication A', 'Medication A']
     random.shuffle(acts)
-    acts = ['ERRegistration', 'HeartRate', 'HeartRate', 'HeartRate', 'BloodPressure', 'BloodPressure', 'BloodPressure'] + acts
-    #acts = ['ERRegistration'] + acts
+    acts = ['ER Registration', 'Heart Rate', 'Heart Rate', 'Heart Rate', 'Blood Pressure', 'Blood Pressure', 'Blood Pressure'] + acts
 
     # Timestamp
     tmstmp = []
@@ -78,9 +75,11 @@ for idx in range(0, num_cases):
     r = 0.3
     hr = []
     rnd = random.randrange(0, 100, 1) / 100
-    # Determine whether do increase or decrease initial value with random number; a value of 1 implies an increase, while a value of 0 implies a decrease
+    hr.append(rnd)
+    # Determine whether do increase or decrease initial value with random number; a value of 1 implies an increase,
+    # while a value of 0 implies a decrease
     hr_rnd = random.randint(0, 1)
-    for i in range(0, 3):
+    for i in range(0, 2):
         if hr_rnd == 1:
             rnd = rnd * (1 + r)
         else:
@@ -91,7 +90,7 @@ for idx in range(0, num_cases):
     hr_temp = [0] * length
     hr_final = []
     for i in range(0, length):
-        if acts[i] == 'HeartRate':
+        if acts[i] == 'Heart Rate':
             hr_temp[i] = 1
     idx = 0
     for i in range(0, length):
@@ -110,7 +109,7 @@ for idx in range(0, num_cases):
     bp_final = []
 
     for i in range(0, length):
-        if acts[i] == 'BloodPressure':
+        if acts[i] == 'Blood Pressure':
             bp_temp[i] = 1
 
     idx = 0
@@ -124,8 +123,6 @@ for idx in range(0, num_cases):
 
     # Check if certain patterns occur in instance    
     pattern1 = ['Medication A', 'Medication A', 'Medication A', 'Medication A', 'Medication B']
-    # pattern2 = ['Medication B', 'Medication A', 'Medication A', 'Medication A', 'Medication A']
-
 
     def contains_sublist(l1, l2):
         index_list = [i for i, v in enumerate(l1) if v == l2[0]]
@@ -141,20 +138,9 @@ for idx in range(0, num_cases):
     else:
         pattern_occurrance = 0
 
-    # Create label based on rules 
-    # weight = 0.50  # if only static
-    # weight = 0.25  # normal
+    # Create label
     weight = 0.2
-
-    # label_init = weight * gender_rnd + (-(age_rnd - 0.5) ** 2 + weight) + weight * hr_rnd + weight * pattern_occurance  #normal
-    # label_init = weight * gender_rnd + (-2*(age_rnd - 0.5) ** 2 + weight)  #test
-    # label_init = gender_rnd  #test2
-    # label_init = hr_rnd  #test3
-    # label_init = weight * gender_rnd + (-(4/3)*(age_rnd - 0.5) ** 2 + weight) + weight * hr_fact  # test4
-    # label_init = weight * gender_rnd + (-(4 / 3) * (age_rnd - 0.5) ** 2 + weight) + weight * (1-hr_rnd)  # test5
     label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (-0.8 * (hr[0] - 0.5) ** 2 + weight) + weight * hr_rnd  # test6
-    # label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (0.33 * (-0.8 * (hr[0] - 0.5) ** 2 + weight) + 0.33 * (-0.8 * (hr[1] - 0.5) ** 2 + weight) + 0.33 * (-0.8 * (hr[2] - 0.5) ** 2 + weight)) + weight * hr_rnd  #test7
-
     label = [label_init] * length
 
     # Concatenate vectors and transpose matrix
@@ -196,47 +182,3 @@ df_main.insert(loc=10, column='Release A', value=class_rea_final)
 
 # Save data frame as csv
 df_main.to_csv(f'Simulation_data_{num_cases}.csv')
-
-"""
-#####################
-### VISUALIZATION ###
-
-# Take every 12th value from class list to get a short list for visualization
-class_rea_short = class_rea_final[::length]
-
-fig_data = np.vstack((gender_list, foreigner_list, age_list, bmi_list, hr_list, pattern_list, label_list_short)).transpose()
-
-df_fig = pd.DataFrame(data=fig_data, columns=['Gender', 'Foreigner', 'Age', 'BMI', 'HeartRate', 'Activity Pattern', 'Label'])
-
-fig, axes = plt.subplots(2, 3, figsize=(18, 10))
- 
-fig.suptitle('Labels')
- 
- 
-sns.scatterplot(ax=axes[0, 0], data=df_fig, x='Gender', y='Label')
-sns.scatterplot(ax=axes[0, 1], data=df_fig, x='Foreigner', y='Label')
-sns.scatterplot(ax=axes[0, 2], data=df_fig, x='Age', y='Label')
-sns.scatterplot(ax=axes[1, 0], data=df_fig, x='BMI', y='Label')
-sns.scatterplot(ax=axes[1, 1], data=df_fig, x='HeartRate', y='Label')
-sns.scatterplot(ax=axes[1, 2], data=df_fig, x='Activity Pattern', y='Label')
-
-
-
-
-#######################
-### FURTHER METRICS ###
-
-# Show density of labels
-#sns.set_style('whitegrid')
-#sns.kdeplot(np.array(label_list_short), bw_method=0.5)
-
-# Print some metrics for check
-#print('Weight:', weight)
-#print('Threshold:', threshold)
-
-#print('Mean of labels:', np.mean(label_list_short))
-#print('Median of labels:', np.median(label_list_short))
-
-#print('Mean of classes:', np.mean(class_rea_final))
-
-"""
