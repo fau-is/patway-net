@@ -68,7 +68,7 @@ for idx in range(0, num_cases):
     age = [age_rnd] * length
 
     # BMI
-    bmi_rnd = random.randrange(15, 50, 1)
+    bmi_rnd = random.randrange(0, 100, 1) / 100
     bmi = [bmi_rnd] * length
 
     # hr with r as factor
@@ -102,7 +102,7 @@ for idx in range(0, num_cases):
 
 
     # bp
-    bp = [random.randrange(2, 45, 1) / 10.0 for p in range(0, 3)]
+    bp = [random.randrange(0, 100, 1) / 100 for p in range(0, 3)]
 
     # Place bp values to correspondent activities 
     bp_temp = [0] * length
@@ -140,7 +140,7 @@ for idx in range(0, num_cases):
 
     # Create label
     weight = 0.2
-    label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (-0.8 * (hr[0] - 0.5) ** 2 + weight) + weight * hr_rnd  # test6
+    label_init = weight * gender_rnd + (-0.8 * (age_rnd - 0.5) ** 2 + weight) + weight * pattern_occurrance + (-0.8 * (hr[0] - 0.5) ** 2 + weight) + weight * hr_rnd
     label = [label_init] * length
 
     # Concatenate vectors and transpose matrix
