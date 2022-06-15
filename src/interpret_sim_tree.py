@@ -27,6 +27,6 @@ for idx in range(0, len(max_depths)):
     fig = plt.figure(figsize=(40,40))
     plot_tree(model, feature_names=static_features, filled=True)
     plt.show()
-    fig.savefig(f"../plots/decision_tree_sim_{max_depths[idx]}.png")
+    fig.savefig(f"../plots/decision_tree_sim_{max_depths[idx]}.pdf")
     print(static_features)
     print(model.feature_importances_)

@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 model = torch.load(os.path.join("../model", f"model_sim"))
-
 x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
 
 # Create dataset without prefixes
@@ -127,7 +126,7 @@ for idx, value in enumerate(static_features):
     fig1 = plt.gcf()
     plt.show()
     plt.draw()
-    fig1.savefig(f'../plots/{value}.png', dpi=100)
+    fig1.savefig(f'../plots/{value}.', dpi=100)
     plt.close(fig1)
 
 # (3) Print sequential feature over time with value range (global)
@@ -165,7 +164,7 @@ for t in range(0, 12):
             fig1 = plt.gcf()
             plt.show()
             plt.draw()
-            fig1.savefig(f'../plots/{value}_t{t + 1}.png', dpi=100)
+            fig1.savefig(f'../plots/{value}_t{t + 1}.', dpi=100)
             plt.close(fig1)
 
 
