@@ -367,15 +367,6 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
     results = {}
     id = -1
 
-    """
-    data_index = np.arange(len(x_seqs))
-    np.random.shuffle(data_index)
-
-    x_seqs = [x_seqs[x] for x in data_index]
-    x_statics = [x_statics[x] for x in data_index]
-    y = [y[x] for x in data_index]
-    """
-
     skfold = StratifiedKFold(n_splits=k, shuffle=False, random_state=1)
     for train_index_, test_index in skfold.split(X=x_statics, y=y):
 

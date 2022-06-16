@@ -64,12 +64,12 @@ for epoch in range(epochs):
 
     for i in range(num_batches):
 
-        optimizer.zero_grad()  # a clean up step for PyTorch
+        optimizer.zero_grad()
         out = model(x_seq_final[i * batch_size:(i + 1) * batch_size].float(),
                     x_stat_final[i * batch_size:(i + 1) * batch_size].float())
         loss = criterion(out, y_final[i * batch_size:(i + 1) * batch_size].float().reshape(-1, 1))
-        loss.backward()  # compute updates for each parameter
-        optimizer.step()  # make the updates for each parameter
+        loss.backward()
+        optimizer.step()
         loss_all += float(loss)
 
     if loss_all >= last_loss_all:

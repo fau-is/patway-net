@@ -1,11 +1,9 @@
-from src.data import get_sim_data
 import torch
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 import src.data as data
 from src.main import time_step_blow_up
-import pandas as pd
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 repetition = 0
@@ -99,7 +97,6 @@ plt.xticks(np.arange(0, 1.41, step=0.2))
 def autolabel(plot):
     for idx, rect in enumerate(plot):
         plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='black')
-
 
 autolabel(plot)
 
