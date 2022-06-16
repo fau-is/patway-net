@@ -14,14 +14,9 @@ import torch
 from src.interpret_LSTM import Net
 from sklearn.model_selection import StratifiedKFold
 
-data_set = "sepsis"
-n_hidden = 8
 max_len = 50
 min_len = 3
 min_size_prefix = 1
-seed = False
-num_repetitions = 1
-mode = "test"
 val_size = 0.2
 train_size = 0.8
 hpo = True
@@ -34,7 +29,7 @@ def concatenate_tensor_matrix(x_seq, x_stat):
     return x_concat
 
 
-def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set):
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -75,7 +70,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set):
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -115,7 +110,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set):
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -157,7 +152,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo):
+def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set):
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -198,12 +193,12 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
 
 def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
-               hpo=False, mode="test"):
+               hpo=False, mode="pwn", data_set="sepsis"):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
 
-    if mode == "test":
+    if mode == "pwn":
         import torch
         import torch.nn as nn
         import torch.optim as optim
@@ -217,11 +212,11 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             x_train_stat = torch.from_numpy(x_train_stat)
             y_train = torch.from_numpy(y_train)
 
-            for learning_rate in hpos["test"]["learning_rate"]:
-                for batch_size in hpos["test"]["batch_size"]:
-                    for seq_feature_sz in hpos["test"]["seq_feature_sz"]:
-                        for stat_feature_sz in hpos["test"]["stat_feature_sz"]:
-                            for inter_seq_best in hpos["test"]["inter_seq_best"]:
+            for learning_rate in hpos["pwn"]["learning_rate"]:
+                for batch_size in hpos["pwn"]["batch_size"]:
+                    for seq_feature_sz in hpos["pwn"]["seq_feature_sz"]:
+                        for stat_feature_sz in hpos["pwn"]["stat_feature_sz"]:
+                            for inter_seq_best in hpos["pwn"]["inter_seq_best"]:
 
                                 model = Net(input_sz_seq=num_features_seq,
                                             hidden_per_seq_feat_sz=seq_feature_sz,
@@ -389,9 +384,9 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
 
-        if mode == "test":
+        if mode == "pwn":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                          y_val.reshape(-1, 1), hpos, hpo, mode)
+                                          y_val.reshape(-1, 1), hpos, hpo, mode, data_set)
 
             X_train_seq = torch.from_numpy(X_train_seq)
             X_train_stat = torch.from_numpy(X_train_stat)
@@ -423,15 +418,15 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
         elif mode == "lr":
             model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo)
+                                        y_val.reshape(-1, 1), hpos, hpo, data_set)
 
         elif mode == "nb":
             model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo)
+                                        y_val.reshape(-1, 1), hpos, hpo, data_set)
 
         elif mode == "dt":
             model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo)
+                                        y_val.reshape(-1, 1), hpos, hpo, data_set)
 
             """
             from matplotlib import pyplot as plt
@@ -446,7 +441,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
         elif mode == "knn":
             model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                         y_val.reshape(-1, 1), hpos, hpo)
+                                         y_val.reshape(-1, 1), hpos, hpo, data_set)
 
         if mode in ["dt", "knn", "nb", "lr"]:
             preds_proba_train = model.predict_proba(X_train_stat)
@@ -463,7 +458,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         results['gts_val'] = [int(y) for y in y_val]
         results['gts_test'] = [int(y) for y in y_test]
 
-        if mode == 'test':
+        if mode == 'pwn':
             torch.save(model, os.path.join("../model", f"model_{id}"))
 
         results_temp_train = pd.DataFrame(
@@ -537,8 +532,9 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
                         return (pos_probs >= threshold).astype('int')
 
                     return \
-                    [metrics.precision_score(gts, to_labels(proba, t), average="binary", pos_label=label_id) for t in
-                     thresholds][ix]
+                        [metrics.precision_score(gts, to_labels(proba, t), average="binary", pos_label=label_id) for t
+                         in
+                         thresholds][ix]
                 else:
                     return metrics.f1_score(gts, preds, average="binary", pos_label=label_id)
             except:
@@ -629,9 +625,9 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 if __name__ == "__main__":
 
     hpos = {
-        # "test": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        "test": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32],
-                 "inter_seq_best": [1]},
+        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32],
+                "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
@@ -641,7 +637,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
 
-        for mode in ['test']:  # 'test', 'lr', 'dt', 'knn', 'nb'
+        for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
             for target_activity in ['Admission IC']:
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
                     target_activity, max_len, min_len)
