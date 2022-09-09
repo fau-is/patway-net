@@ -1,8 +1,5 @@
 import pandas as pd
 import numpy as np
-import tensorflow as tf
-
-tf.compat.v1.disable_v2_behavior()
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
@@ -13,6 +10,10 @@ import src.data as data
 import torch
 from src.interpret_LSTM import Net
 from sklearn.model_selection import StratifiedKFold
+
+seed = 0
+np.random.seed(seed=seed)
+torch.manual_seed(seed=seed)
 
 max_len = 50
 min_len = 3
@@ -246,7 +247,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 flag_es = False
 
                                 for epoch in range(epochs):
-                                    print(f"Epoch: {epoch}")
+                                    print(f"Epoch: {epoch + 1}")
                                     np.random.shuffle(idx)
                                     x_train_seq = x_train_seq[idx]
                                     x_train_stat = x_train_stat[idx]
@@ -362,7 +363,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
     results = {}
     id = -1
 
-    skfold = StratifiedKFold(n_splits=k, shuffle=False, random_state=1)
+    skfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
     for train_index_, test_index in skfold.split(X=x_statics, y=y):
 
         id += 1
@@ -624,8 +625,10 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
 if __name__ == "__main__":
 
+    data_set = "sepsis"
+
     hpos = {
-        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "pwn": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32],
                 "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
