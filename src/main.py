@@ -1,8 +1,5 @@
 import pandas as pd
 import numpy as np
-import tensorflow as tf
-
-tf.compat.v1.disable_v2_behavior()
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
@@ -54,7 +51,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                     best_model = model
                     best_hpos = {"c": c, "solver": solver}
 
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
@@ -94,7 +91,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 best_model = model
                 best_hpos = {"var_smoothing": var_smoothing}
 
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
@@ -136,7 +133,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                     best_model = model
                     best_hpos = {"max_depth": max_depth, "min_samples_split": min_samples_split}
 
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
@@ -176,7 +173,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
                 best_model = model
                 best_hpos = {"n_eighbors": n_neighbors}
 
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
@@ -246,7 +243,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 flag_es = False
 
                                 for epoch in range(epochs):
-                                    print(f"Epoch: {epoch}")
+                                    print(f"Epoch: {epoch + 1}")
                                     np.random.shuffle(idx)
                                     x_train_seq = x_train_seq[idx]
                                     x_train_stat = x_train_stat[idx]
@@ -254,7 +251,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                     number_batches = x_train_seq.shape[0] // batch_size
 
                                     for i in range(number_batches):
-                                        optimizer.zero_grad()  # a clean up step for PyTorch
+                                        optimizer.zero_grad()  # clean up step for PyTorch
                                         out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
                                                     x_train_stat[i * batch_size:(i + 1) * batch_size])
                                         loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
@@ -319,13 +316,13 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                     aucs.append(auc)
 
                                     if auc >= max(aucs):
-                                        best_model = model_best_es
+                                        best_model = copy.deepcopy(model_best_es)
                                         best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
                                                      "seq_feature_sz": seq_feature_sz,
                                                      "stat_feature_sz": stat_feature_sz,
                                                      "inter_seq_best": inter_seq_best}
 
-            f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos.txt', 'a+')
+            f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
             f.write(str(best_hpos) + '\n')
             f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
             f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
@@ -357,12 +354,12 @@ def time_step_blow_up(X_seq, X_stat, y, max_len):
     return X_seq_final, X_stat_final, y_final
 
 
-def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features):
+def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed):
     k = 5
     results = {}
     id = -1
 
-    skfold = StratifiedKFold(n_splits=k, shuffle=False, random_state=1)
+    skfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
     for train_index_, test_index in skfold.split(X=x_statics, y=y):
 
         id += 1
@@ -459,7 +456,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         results['gts_test'] = [int(y) for y in y_test]
 
         if mode == 'pwn':
-            torch.save(model, os.path.join("../model", f"model_{id}"))
+            torch.save(model, os.path.join("../model", f"model_{id}_{seed}"))
 
         results_temp_train = pd.DataFrame(
             list(zip(results['preds_train'], results['preds_proba_train'], results['gts_train'])),
@@ -603,7 +600,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
         for metric_ in metrics_:
             vals = []
             try:
-                f = open(f'../output/{data_set}_{mode}_{target_activity}.txt', "a+")
+                f = open(f'../output/{data_set}_{mode}_{target_activity}_{seed}.txt', "a+")
                 f.write(metric_ + '\n')
                 print(metric_)
                 for idx_ in range(0, id + 1):
@@ -624,10 +621,12 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
 if __name__ == "__main__":
 
+    data_set = "sepsis"
+
     hpos = {
-        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        "pwn": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32],
-                "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        # "pwn": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32],
+        #        "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
@@ -636,13 +635,18 @@ if __name__ == "__main__":
     }
 
     if data_set == "sepsis":
+        for seed in [433, 687, 3434]:
+            for mode in ['pwd', 'lr', 'dt', 'knn', 'nb']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+                for target_activity in ['Admission IC']:
 
-        for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
-            for target_activity in ['Admission IC']:
-                x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
-                    target_activity, max_len, min_len)
+                    np.random.seed(seed=seed)
+                    torch.manual_seed(seed=seed)
 
-                x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                    evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features)
+                    x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data(
+                        target_activity, max_len, min_len)
+
+                    x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
+                        evaluate_on_cut(x_seqs, x_statics, y, mode,
+                                        target_activity, data_set, hpos, hpo, static_features, seed)
     else:
         print("Data set not available!")
