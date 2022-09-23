@@ -15,7 +15,8 @@ for i, x in enumerate(x_seqs):
     x_seq_final[i, :len(x), :] = np.array(x)
     x_stat_final[i, :] = np.array(x_statics[i])
 
-model = Lasso()
+# https://www.kirenz.com/post/2019-08-12-python-lasso-regression-auto/
+model = Lasso(alpha=0.01)
 model.fit(x_stat_final, np.ravel(y))
 
 print(static_features)
