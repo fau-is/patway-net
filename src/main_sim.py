@@ -3,7 +3,6 @@ import numpy as np
 from sklearn import metrics
 from sklearn.linear_model import Lasso, Ridge
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeRegressor
 import os
 from src.data import get_sim_data
@@ -32,7 +31,7 @@ def train_lasso(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val
 
         for alpha in hpos["lasso"]["alpha"]:
 
-            model = Lasso(alpha=alpha, max_iter=10000)
+            model = Lasso(alpha=alpha)
             model.fit(x_train_stat, np.ravel(y_train))
             preds = model.predict(x_val_stat)
 
@@ -48,7 +47,7 @@ def train_lasso(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val
                 best_model = model
                 best_hpos = {"alpha": alpha}
 
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
+        f = open(f'../output/{data_set}_{mode}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos))
         f.write("Validation MSEs," + ",".join([str(x) for x in mses]) + '\n')
         f.write(f'Avg,{sum(mses) / len(mses)}\n')
@@ -88,7 +87,7 @@ def train_ridge(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val
                 best_model = model
                 best_hpos = {"alpha": alpha}
 
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
+        f = open(f'../output/{data_set}_{mode}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos))
         f.write("Validation MSEs," + ",".join([str(x) for x in mses]) + '\n')
         f.write(f'Avg,{sum(mses) / len(mses)}\n')
@@ -129,7 +128,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                     best_model = model
                     best_hpos = {"max_depth": max_depth, "min_samples_split": min_samples_split}
 
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
+        f = open(f'../output/{data_set}_{mode}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation MSEs," + ",".join([str(x) for x in mses]) + '\n')
         f.write(f'Avg,{sum(mses) / len(mses)}\n')
@@ -167,7 +166,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
                 best_model = model
                 best_hpos = {"n_eighbors": n_neighbors}
 
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
+        f = open(f'../output/{data_set}_{mode}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation MSEs," + ",".join([str(x) for x in mses]) + '\n')
         f.write(f'Avg,{sum(mses) / len(mses)}\n')
@@ -455,8 +454,7 @@ if __name__ == "__main__":
     data_sets = ["sim"]
 
     hpos = {
-        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        "pwn": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.001], "batch_size": [128], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "lasso": {"alpha": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
         "ridge": {"alpha": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
         "dt": {"max_depth": [2, 3, 4], "min_samples_split": [2]},
