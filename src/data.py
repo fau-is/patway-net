@@ -161,6 +161,8 @@ def get_sepsis_data(target_activity, max_len, min_len):
     """
 
     df['Age'] = df['Age'].fillna(-1)
+    # todo: be careful, this is leaking data into the testset about the average of the trainset.
+    #  Only scale after data splitting based on train statistics
     df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
 
     max_leucocytes = np.percentile(df['Leucocytes'].dropna(), 95)  # remove outliers
@@ -257,5 +259,81 @@ def get_sepsis_data(target_activity, max_len, min_len):
         print("Lift: " + str(item[2][0][3]))
         print("=====================================")
     """
+
+    return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
+
+
+def get_bpi_data(max_len, min_len):
+    ds_path = '../data/bpic2012_O_ACCEPTED-COMPLETE.csv'
+
+    static_features = ['Case ID', 'AMOUNT_REQ']
+
+    seq_features = ['Activity', 'Resource', 'lifecycle:transition', 'timesincemidnight', 'timesincelastevent', 'timesincecasestart', 'event_nr', 'month', 'weekday', 'hour', 'open_cases']
+
+    df = pd.read_csv(ds_path, sep=";")
+    df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
+
+    df['Resource'] = df['Resource'].astype('category') # Resource is integer, but categorical according to TU Eindhoven and Teinema
+    df['Activity'] = df['Activity'].astype('category')
+    df['lifecycle:transition'] = df['lifecycle:transition'].astype('category')
+    df['month'] = df['month'].astype('category')
+    df['weekday'] = df['weekday'].astype('category')
+    df['label'] = df['label'].replace({'deviant': 0, 'regular': 1}).astype('int64')
+
+    df = df.sort_values(['Case ID', 'Complete Timestamp'])
+    df = df.reset_index()
+
+    max_open_cases = np.percentile(df['open_cases'].dropna(), 95)  # remove outliers
+
+    # At this point the features are not scaled to mean value and std deviation. This is due, since the sepsis log also
+    # does not do it.
+
+    df = pd.get_dummies(df)
+
+    x_seqs = []
+    x_statics = []
+    x_time_vals = []
+    y = []
+
+    for case in df['Case ID'].unique():
+
+        after_registration_flag = False
+        found_target_flag = False
+
+        df_tmp = df[df['Case ID'] == case]
+        df_tmp = df_tmp.sort_values(by='Complete Timestamp')
+
+        idx = 0
+
+        current_open_cases = 0
+
+        for _, x in df_tmp.iterrows():
+
+            if idx == 0: # x['Activity'] == 'ER Registration' and
+                x_statics.append(x[static_features].values.astype(float))
+                x_time_vals.append([])
+                x_seqs.append([])
+                after_registration_flag = True
+
+            if after_registration_flag:
+                    one_hot = x.drop("Complete Timestamp").values
+                    x_seqs[-1].append(one_hot)
+                    x_time_vals[-1].append(x['Complete Timestamp'])
+                    label = x['label']
+
+            idx = idx + 1
+
+        if after_registration_flag:
+            y.append(label)
+
+    assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
+
+    x_seqs_, x_statics_, y_, x_time_vals_ = [], [], [], []
+    for i, x in enumerate(x_seqs):
+        if min_len <= len(x) <= max_len:
+            x_seqs_.append(x)
+            x_statics_.append(x_statics[i])
+            y_.append(y[i])
+            x_time_vals_.append(x_time_vals[i])
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features

@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, current_lacticacid_value):
