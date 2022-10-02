@@ -463,7 +463,7 @@ if __name__ == "__main__":
 
     data_set = "sim"
 
-    for seed in [433]:
+    for seed in [15, 37, 98, 137, 245]:
         for mode in ['dt']:  # 'pwn', 'lasso', 'ridge', 'dt', 'knn'
             np.random.seed(seed=seed)
             torch.manual_seed(seed=seed)

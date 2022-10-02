@@ -635,8 +635,8 @@ if __name__ == "__main__":
     }
 
     if data_set == "sepsis":
-        for seed in [433, 687, 3434]:
-            for mode in ['pwd', 'lr', 'dt', 'knn', 'nb']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+        for seed in [15, 37, 98, 137, 245]:
+            for mode in ['lr']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
                 for target_activity in ['Admission IC']:
 
                     np.random.seed(seed=seed)
