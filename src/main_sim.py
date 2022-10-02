@@ -291,13 +291,14 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                         break
 
                                 # Select model based on val auc
-                                model.eval()
+                                model_best_es.eval()
                                 with torch.no_grad():
 
                                     x_val_stat_ = torch.from_numpy(x_val_stat)
                                     x_val_seq_ = torch.from_numpy(x_val_seq)
 
-                                    preds = torch.sigmoid(model_best_es(x_val_seq_.float(), x_val_stat_.float()))
+                                    # torch.sigmoid(
+                                    preds = model_best_es(x_val_seq_.float(), x_val_stat_.float())
                                     try:
                                         mse = metrics.mean_squared_error(y_true=y_val, y_pred=preds)
                                         if np.isnan(mse):
@@ -380,9 +381,10 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, data_set, hpos, hpo, static_feat
 
             model.eval()
             with torch.no_grad():
-                results['preds_train'] = torch.sigmoid(model(X_train_seq.float(), X_train_stat.float()))
-                results['preds_val'] = torch.sigmoid(model(X_val_seq.float(), X_val_stat.float()))
-                results['preds_test'] = torch.sigmoid(model(X_test_seq.float(), X_test_stat.float()))
+                # torch.sigmoid(
+                results['preds_train'] = model(X_train_seq.float(), X_train_stat.float())
+                results['preds_val'] = model(X_val_seq.float(), X_val_stat.float())
+                results['preds_test'] = model(X_test_seq.float(), X_test_stat.float())
 
         elif mode == "lasso":
             model, best_hpos = train_lasso(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -454,7 +456,9 @@ if __name__ == "__main__":
     data_sets = ["sim"]
 
     hpos = {
-        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001],
+                "batch_size": [32], "inter_seq_best": [1]},
+        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "lasso": {"alpha": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
         "ridge": {"alpha": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
         "dt": {"max_depth": [2, 3, 4], "min_samples_split": [2]},
@@ -463,12 +467,12 @@ if __name__ == "__main__":
 
     data_set = "sim"
 
-    for seed in [15, 37, 98, 137, 245]:
-        for mode in ['dt']:  # 'pwn', 'lasso', 'ridge', 'dt', 'knn'
+    for seed in [15]: # 37, 98, 137, 245]:
+        for mode in ['pwn']:  # 'pwn', 'lasso', 'ridge', 'dt', 'knn'
             np.random.seed(seed=seed)
             torch.manual_seed(seed=seed)
 
-            x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_50000.csv')
+            x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
 
             x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                 evaluate_on_cut(x_seqs, x_statics, y, mode, data_set, hpos, hpo, static_features, seed)
