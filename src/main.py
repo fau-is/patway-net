@@ -299,7 +299,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                         break
 
                                 # Select model based on val auc
-                                model.eval()
+                                model_best_es.eval()
                                 with torch.no_grad():
 
                                     x_val_stat_ = torch.from_numpy(x_val_stat)
