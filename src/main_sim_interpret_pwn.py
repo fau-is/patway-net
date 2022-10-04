@@ -75,7 +75,7 @@ for seed in seeds:
             optimizer.step()
             loss_all += float(loss)
 
-        if loss_all >= last_loss_all:
+        if loss_all > last_loss_all:
             trigger_times += 1
             if trigger_times >= patience:
                 break

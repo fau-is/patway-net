@@ -229,7 +229,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
                                 import copy
                                 best_val_loss = np.inf
-                                patience = 10
+                                patience = 2
                                 epochs = 100
                                 trigger_times = 0
                                 model_best_es = copy.deepcopy(model)
@@ -456,8 +456,8 @@ if __name__ == "__main__":
     data_sets = ["sim"]
 
     hpos = {
-        "pwn": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.01],
-                "batch_size": [32], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.01, 0.001],
+                "batch_size": [32, 128], "inter_seq_best": [1]},
         # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "lasso": {"alpha": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
         "ridge": {"alpha": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
@@ -468,11 +468,11 @@ if __name__ == "__main__":
     data_set = "sim"
 
     for seed in [15]: # 37, 98, 137, 245]:
-        for mode in ['dt']:  # 'pwn', 'lasso', 'ridge', 'dt', 'knn'
+        for mode in ['pwn']:  # 'pwn', 'lasso', 'ridge', 'dt', 'knn'
             np.random.seed(seed=seed)
             torch.manual_seed(seed=seed)
 
-            x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_50000.csv')
+            x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
 
             x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                 evaluate_on_cut(x_seqs, x_statics, y, mode, data_set, hpos, hpo, static_features, seed)

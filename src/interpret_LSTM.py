@@ -10,8 +10,8 @@ class MLP(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.fc1 = torch.nn.Linear(self.input_size, self.hidden_size)
-        # self.act1 = torch.nn.ReLU()
-        self.act1 = torch.nn.Tanh()
+        self.act1 = torch.nn.ReLU()
+        # self.act1 = torch.nn.Tanh()
         self.fc3 = torch.nn.Linear(self.hidden_size, 1)
         self.act3 = torch.nn.Sigmoid()
 
