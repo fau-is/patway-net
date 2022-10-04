@@ -86,7 +86,7 @@ for seed in seeds:
 
         print(f'Epoch {epoch + 1}: {loss_all / num_batches}')
 
-    torch.save(model_best_es, os.path.join("../model", f"model_sim"))
+    torch.save(model_best_es, os.path.join("../model", f"model_sim_{seed}"))
 
     model_best_es.eval()
     with torch.no_grad():

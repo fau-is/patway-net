@@ -237,7 +237,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 import copy
                                 best_val_loss = np.inf
                                 patience = 10
-                                epochs = 100
+                                epochs = 2
                                 trigger_times = 0
                                 model_best_es = copy.deepcopy(model)
                                 flag_es = False
@@ -624,9 +624,9 @@ if __name__ == "__main__":
     data_set = "sepsis"
 
     hpos = {
-        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        # "pwn": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32],
-        #        "inter_seq_best": [1]},
+        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.01], "batch_size": [32],
+                "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
@@ -635,8 +635,8 @@ if __name__ == "__main__":
     }
 
     if data_set == "sepsis":
-        for seed in [15, 37, 98, 137, 245]:
-            for mode in ['lr']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+        for seed in [15]: # 37, 98, 137, 245]:
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
                 for target_activity in ['Admission IC']:
 
                     np.random.seed(seed=seed)

@@ -43,7 +43,7 @@ def train_lasso(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val
                 mse = 0
             mses.append(mse)
 
-            if mse >= max(mses):
+            if mse <= min(mses):
                 best_model = model
                 best_hpos = {"alpha": alpha}
 
@@ -83,7 +83,7 @@ def train_ridge(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val
                 mse = 0
             mses.append(mse)
 
-            if mse >= max(mses):
+            if mse <= min(mses):
                 best_model = model
                 best_hpos = {"alpha": alpha}
 
@@ -124,7 +124,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
                 mses.append(mse)
 
-                if mse >= max(mses):
+                if mse <= min(mses):
                     best_model = model
                     best_hpos = {"max_depth": max_depth, "min_samples_split": min_samples_split}
 
@@ -162,7 +162,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
                 mse = 0
             mses.append(mse)
 
-            if mse >= max(mses):
+            if mse <= min(mses):
                 best_model = model
                 best_hpos = {"n_eighbors": n_neighbors}
 
@@ -307,7 +307,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                         mse = 0
                                     mses.append(mse)
 
-                                    if mse >= max(mses):
+                                    if mse <= min(mses):
                                         best_model = copy.deepcopy(model_best_es)
                                         best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
                                                      "seq_feature_sz": seq_feature_sz,
@@ -456,7 +456,7 @@ if __name__ == "__main__":
     data_sets = ["sim"]
 
     hpos = {
-        "pwn": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.001],
+        "pwn": {"seq_feature_sz": [16], "stat_feature_sz": [16], "learning_rate": [0.01],
                 "batch_size": [32], "inter_seq_best": [1]},
         # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "lasso": {"alpha": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)]},
@@ -472,7 +472,7 @@ if __name__ == "__main__":
             np.random.seed(seed=seed)
             torch.manual_seed(seed=seed)
 
-            x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
+            x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_50000.csv')
 
             x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                 evaluate_on_cut(x_seqs, x_statics, y, mode, data_set, hpos, hpo, static_features, seed)

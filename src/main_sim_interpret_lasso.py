@@ -10,7 +10,7 @@ results = {'mse_train': list(), 'mae_train': list(), 'r2_train': list()}
 for seed in seeds:
     np.random.seed(seed=seed)
     os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-    x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
+    x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_50000.csv')
 
     x_seq_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
     x_stat_final = np.zeros((len(x_seqs), len(x_statics[0])))
