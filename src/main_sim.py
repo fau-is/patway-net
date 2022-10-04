@@ -468,11 +468,11 @@ if __name__ == "__main__":
     data_set = "sim"
 
     for seed in [15]: # 37, 98, 137, 245]:
-        for mode in ['pwn']:  # 'pwn', 'lasso', 'ridge', 'dt', 'knn'
+        for mode in ['dt']:  # 'pwn', 'lasso', 'ridge', 'dt', 'knn'
             np.random.seed(seed=seed)
             torch.manual_seed(seed=seed)
 
-            x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
+            x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_50000.csv')
 
             x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                 evaluate_on_cut(x_seqs, x_statics, y, mode, data_set, hpos, hpo, static_features, seed)

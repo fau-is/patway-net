@@ -170,7 +170,7 @@ for t in range(0, 12):
 
 # (4) Print sequential features (local, no history)
 effect_feature_values = []
-case = 9
+case = 8
 colors = ['olivedrab', 'lightskyblue', 'steelblue', 'crimson', 'orange']
 plt.gca().set_prop_cycle(color=colors)
 
