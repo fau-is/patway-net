@@ -42,7 +42,6 @@ def get_sim_data(label, file):
                 after_registration_flag = True
 
             if after_registration_flag:
-
                 one_hot, current_crp_value, current_lacticacid_value = util.get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, current_lacticacid_value)
                 x_seqs[-1].append(one_hot)
                 x_time_vals[-1].append(x['Timestamp'])
@@ -161,7 +160,8 @@ def get_sepsis_data(target_activity, max_len, min_len):
     """
 
     df['Age'] = df['Age'].fillna(-1)
-    df['Age'] = df['Age'].apply(lambda x: x / max(df['Age']))
+    max_age = max(df['Age'])
+    df['Age'] = df['Age'].apply(lambda x: x / max_age)
 
     max_leucocytes = np.percentile(df['Leucocytes'].dropna(), 95)  # remove outliers
     max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)  # remove outliers
@@ -257,5 +257,164 @@ def get_sepsis_data(target_activity, max_len, min_len):
         print("Lift: " + str(item[2][0][3]))
         print("=====================================")
     """
+
+    return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
+
+
+def get_bpi_data(max_len, min_len):
+    # https://dl.acm.org/doi/abs/10.1145/3301300
+    # https://github.com/irhete/predictive-monitoring-benchmark
+
+    ds_path = '../data/bpic2012_O_ACCEPTED-COMPLETE.csv'
+
+    static_features = ['AMOUNT_REQ']
+    seq_features = ['Activity']
+
+    df = pd.read_csv(ds_path, sep=";")
+    df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
+    df['Resource'] = df['Resource'].astype('category') # Resource is integer, but categorical according to TU Eindhoven and Teinema
+    df['Activity'] = df['Activity'].astype('category')
+    df['lifecycle:transition'] = df['lifecycle:transition'].astype('category')
+    df['month'] = df['month'].astype('category')
+    df['weekday'] = df['weekday'].astype('category')
+    df['label'] = df['label'].replace({'deviant': 0, 'regular': 1}).astype('int64')
+
+    df = df.sort_values(['Case ID', 'Complete Timestamp'])
+    df = df.reset_index()
+
+    # Remove resource as > 25 categories
+    df = df.drop(['index', 'lifecycle:transition', 'timesincemidnight', 'timesincelastevent',
+                  'timesincecasestart', 'event_nr', 'month', 'weekday', 'hour',
+                  'open_cases', 'Resource'], axis=1)
+
+    max_amt = max(df['AMOUNT_REQ'])
+    df['AMOUNT_REQ'] = df['AMOUNT_REQ'].apply(lambda x: x / max_amt)
+
+    df = pd.get_dummies(df)
+
+    x_seqs = []
+    x_statics = []
+    x_time_vals = []
+    y = []
+
+    for case in df['Case ID'].unique():
+
+        after_registration_flag = False
+
+        df_tmp = df[df['Case ID'] == case]
+        df_tmp = df_tmp.sort_values(by='Complete Timestamp')
+
+        idx = 0
+
+        for _, x in df_tmp.iterrows():
+
+            if idx == 0:
+                x_statics.append(x[static_features].values.astype(float))
+                x_time_vals.append([])
+                x_seqs.append([])
+                after_registration_flag = True
+
+            if after_registration_flag:
+                    one_hot = x.drop(['Complete Timestamp', 'Case ID', 'label'] + static_features).values
+                    x_seqs[-1].append(one_hot)
+                    x_time_vals[-1].append(x['Complete Timestamp'])
+                    label = x['label']
+            idx = idx + 1
+
+        if after_registration_flag:
+            y.append(label)
+
+    assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
+
+    x_seqs_, x_statics_, y_, x_time_vals_ = [], [], [], []
+    for i, x in enumerate(x_seqs):
+        if min_len <= len(x) <= max_len:
+            x_seqs_.append(x)
+            x_statics_.append(x_statics[i])
+            y_.append(y[i])
+            x_time_vals_.append(x_time_vals[i])
+
+    return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
+
+
+def get_traffic_data(max_len, min_len):
+    # https://dl.acm.org/doi/abs/10.1145/3301300
+    # https://github.com/irhete/predictive-monitoring-benchmark
+
+    ds_path = '../data/traffic_fines_1.csv'
+
+    static_features = ['vehicleClass_A', 'vehicleClass_C', 'vehicleClass_M', 'vehicleClass_R', 'points']
+    seq_features = ['Activity', 'amount', 'lastSent', 'notification', 'expense']
+
+    df = pd.read_csv(ds_path, sep=";")
+    df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
+    df['Resource'] = df['Resource'].astype('category') # Resource is integer, but categorical according to TU Eindhoven and Teinema
+    df['article'] = df['article'].astype('category')  # article is integer, but categorical according to TU Eindhoven and Teinema
+    df['vehicleClass'] = df['vehicleClass'].astype('category')
+    df['Activity'] = df['Activity'].astype('category')
+    df['month'] = df['month'].astype('category')
+    df['weekday'] = df['weekday'].astype('category')
+    df['lastSent'] = df['lastSent'].astype('category')
+    df['notificationType'] = df['notificationType'].astype('category')
+    df['dismissal'] = df['dismissal'].astype('category')
+    df['label'] = df['label'].replace({'deviant': 0, 'regular': 1}).astype('int64')
+
+    df = df.sort_values(['Case ID', 'Complete Timestamp'])
+    df = df.reset_index()
+
+    # Remove resource, article as > 25 categories
+    df = df.drop(['index', 'timesincemidnight', 'timesincelastevent',
+                  'timesincecasestart', 'event_nr', 'month', 'weekday', 'hour', 'open_cases',
+                  'Resource', 'article'], axis=1)
+
+    max_amt = max(df['amount'])
+    df['amount'] = df['amount'].apply(lambda x: x / max_amt)
+    max_points = max(df['points'])
+    df['points'] = df['points'].apply(lambda x: x / max_points)
+    max_expense = max(df['expense'])
+    df['expense'] = df['expense'].apply(lambda x: x / max_expense)
+
+    not_transform_cols = ['Case ID', 'amount', 'points', 'expense', 'Complete Timestamp', 'label']
+    df = pd.get_dummies(data=df, columns=[col for col in df.columns if col not in not_transform_cols])
+    x_seqs = []
+    x_statics = []
+    x_time_vals = []
+    y = []
+
+    for case in df['Case ID'].unique():
+
+        after_registration_flag = False
+        df_tmp = df[df['Case ID'] == case]
+        df_tmp = df_tmp.sort_values(by='Complete Timestamp')
+
+        idx = 0
+
+        for _, x in df_tmp.iterrows():
+
+            if idx == 0:
+                x_statics.append(x[static_features].values.astype(float))
+                x_time_vals.append([])
+                x_seqs.append([])
+                after_registration_flag = True
+
+            if after_registration_flag:
+                    one_hot = x.drop(['Complete Timestamp', 'Case ID', 'label'] + static_features).values
+                    x_seqs[-1].append(one_hot)
+                    x_time_vals[-1].append(x['Complete Timestamp'])
+                    label = x['label']
+            idx = idx + 1
+
+        if after_registration_flag:
+            y.append(label)
+
+    assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
+
+    x_seqs_, x_statics_, y_, x_time_vals_ = [], [], [], []
+    for i, x in enumerate(x_seqs):
+        if min_len <= len(x) <= max_len:
+            x_seqs_.append(x)
+            x_statics_.append(x_statics[i])
+            y_.append(y[i])
+            x_time_vals_.append(x_time_vals[i])
 
     return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features

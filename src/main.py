@@ -26,7 +26,7 @@ def concatenate_tensor_matrix(x_seq, x_stat):
     return x_concat
 
 
-def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set):
+def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -67,7 +67,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set):
+def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -107,7 +107,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set):
+def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -149,7 +149,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set):
+def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -190,7 +190,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
 
 def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
-               hpo=False, mode="pwn", data_set="sepsis"):
+               hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
@@ -383,7 +383,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
         if mode == "pwn":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                          y_val.reshape(-1, 1), hpos, hpo, mode, data_set)
+                                          y_val.reshape(-1, 1), hpos, hpo, mode, data_set, target_activity=target_activity)
 
             X_train_seq = torch.from_numpy(X_train_seq)
             X_train_stat = torch.from_numpy(X_train_stat)
@@ -415,15 +415,15 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
         elif mode == "lr":
             model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo, data_set)
+                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
 
         elif mode == "nb":
             model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo, data_set)
+                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
 
         elif mode == "dt":
             model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo, data_set)
+                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
 
             """
             from matplotlib import pyplot as plt
@@ -438,7 +438,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
         elif mode == "knn":
             model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                         y_val.reshape(-1, 1), hpos, hpo, data_set)
+                                         y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
 
         if mode in ["dt", "knn", "nb", "lr"]:
             preds_proba_train = model.predict_proba(X_train_stat)
@@ -621,7 +621,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
 if __name__ == "__main__":
 
-    data_set = "sepsis"
+    data_set = "bpi2012"  # bpi2012, traffic
 
     hpos = {
         # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
@@ -636,7 +636,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
         for seed in [15]: # 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+            for mode in ['lr']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
                 for target_activity in ['Admission IC']:
 
                     np.random.seed(seed=seed)
@@ -646,7 +646,29 @@ if __name__ == "__main__":
                         target_activity, max_len, min_len)
 
                     x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                        evaluate_on_cut(x_seqs, x_statics, y, mode,
-                                        target_activity, data_set, hpos, hpo, static_features, seed)
+                        evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed)
+
+    elif data_set == "bpi2012":
+        for seed in [15]:  # 37, 98, 137, 245]:
+            for mode in ['lr']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+                np.random.seed(seed=seed)
+                torch.manual_seed(seed=seed)
+
+                x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_bpi_data(max_len, min_len)
+
+                x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
+                    evaluate_on_cut(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
+
+    elif data_set == "traffic":
+        for seed in [15]:  # 37, 98, 137, 245]:
+            for mode in ['lr']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+                np.random.seed(seed=seed)
+                torch.manual_seed(seed=seed)
+
+                x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_traffic_data(max_len, min_len)
+
+                x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
+                    evaluate_on_cut(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
+
     else:
         print("Data set not available!")
