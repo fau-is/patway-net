@@ -266,7 +266,6 @@ def get_bpi_data(max_len, min_len):
     # https://github.com/irhete/predictive-monitoring-benchmark
 
     ds_path = '../data/bpic2012_O_ACCEPTED-COMPLETE.csv'
-
     static_features = ['AMOUNT_REQ']
     seq_features = ['Activity']
 
@@ -297,17 +296,20 @@ def get_bpi_data(max_len, min_len):
     x_time_vals = []
     y = []
 
-    for case in df['Case ID'].unique():
+    c = 0
+    uni_cases = df['Case ID'].unique()
+    for case in uni_cases:
 
         after_registration_flag = False
-
         df_tmp = df[df['Case ID'] == case]
         df_tmp = df_tmp.sort_values(by='Complete Timestamp')
 
+        if min_len <= len(df_tmp) <= max_len:
+            c += 1
         idx = 0
+        print(f'{c} -- {len(uni_cases)}')
 
         for _, x in df_tmp.iterrows():
-
             if idx == 0:
                 x_statics.append(x[static_features].values.astype(float))
                 x_time_vals.append([])
@@ -323,6 +325,9 @@ def get_bpi_data(max_len, min_len):
 
         if after_registration_flag:
             y.append(label)
+
+        if c == 5000:
+            break
 
     assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
 
@@ -343,17 +348,13 @@ def get_traffic_data(max_len, min_len):
 
     ds_path = '../data/traffic_fines_1.csv'
 
-    static_features = ['vehicleClass_A', 'vehicleClass_C', 'vehicleClass_M', 'vehicleClass_R', 'points']
-    seq_features = ['Activity', 'amount', 'lastSent', 'notification', 'expense']
+    static_features = ['points']   # 'vehicleClass', strong imbalance of values
+    seq_features = ['Activity', 'amount', 'lastSent', 'notificationType', 'expense']
 
     df = pd.read_csv(ds_path, sep=";")
     df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
-    df['Resource'] = df['Resource'].astype('category') # Resource is integer, but categorical according to TU Eindhoven and Teinema
-    df['article'] = df['article'].astype('category')  # article is integer, but categorical according to TU Eindhoven and Teinema
     df['vehicleClass'] = df['vehicleClass'].astype('category')
     df['Activity'] = df['Activity'].astype('category')
-    df['month'] = df['month'].astype('category')
-    df['weekday'] = df['weekday'].astype('category')
     df['lastSent'] = df['lastSent'].astype('category')
     df['notificationType'] = df['notificationType'].astype('category')
     df['dismissal'] = df['dismissal'].astype('category')
@@ -376,18 +377,30 @@ def get_traffic_data(max_len, min_len):
 
     not_transform_cols = ['Case ID', 'amount', 'points', 'expense', 'Complete Timestamp', 'label']
     df = pd.get_dummies(data=df, columns=[col for col in df.columns if col not in not_transform_cols])
+
+    static_features_ = []
+    for static_feature in static_features:
+        static_features_ = static_features_ + [f for f in list(df.columns) if static_feature in f]
+    static_features = static_features_
+
     x_seqs = []
     x_statics = []
     x_time_vals = []
     y = []
 
-    for case in df['Case ID'].unique():
+    c = 0
+    uni_cases = df['Case ID'].unique()
+    for case in uni_cases:
 
         after_registration_flag = False
-        df_tmp = df[df['Case ID'] == case]
+        df_tmp = df.loc[df['Case ID'].isin([case])]
         df_tmp = df_tmp.sort_values(by='Complete Timestamp')
 
+        if min_len <= len(df_tmp) <= max_len:
+            c += 1
+
         idx = 0
+        print(f'{c} -- {len(uni_cases)}')
 
         for _, x in df_tmp.iterrows():
 
@@ -406,6 +419,98 @@ def get_traffic_data(max_len, min_len):
 
         if after_registration_flag:
             y.append(label)
+
+        if c == 5000:
+            break
+
+    assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
+
+    x_seqs_, x_statics_, y_, x_time_vals_ = [], [], [], []
+    for i, x in enumerate(x_seqs):
+        if min_len <= len(x) <= max_len:
+            x_seqs_.append(x)
+            x_statics_.append(x_statics[i])
+            y_.append(y[i])
+            x_time_vals_.append(x_time_vals[i])
+
+    return x_seqs_, x_statics_, y_, x_time_vals_, seq_features, static_features
+
+
+def get_hospital_data(max_len, min_len):
+    # https://dl.acm.org/doi/abs/10.1145/3301300
+    # https://github.com/irhete/predictive-monitoring-benchmark
+
+    ds_path = '../data/hospital_billing_2.csv'
+
+    static_features = ['speciality', 'caseType']  # 'blocked', 'flagD'
+    seq_features = ['Activity', 'state']  # 'actOrange', 'actRed', 'flagC', 'msgType', 'msgCode', 'version', 'isCancelled', 'msgCount'
+
+    df = pd.read_csv(ds_path, sep=";")
+    df['Complete Timestamp'] = pd.to_datetime(df['Complete Timestamp'])
+    df['Activity'] = df['Activity'].astype('category')
+    df['caseType'] = df['caseType'].astype('category')
+    df['label'] = df['label'].replace({'deviant': 0, 'regular': 1}).astype('int64')
+
+    df = df.sort_values(['Case ID', 'Complete Timestamp'])
+    df = df.reset_index()
+
+    # Remove resource, diagnosis, closeCode as > 25 categories
+    df = df.drop(['index', 'timesincemidnight', 'timesincelastevent',
+                  'timesincecasestart', 'event_nr', 'month', 'weekday', 'hour', 'open_cases',
+                  'Resource', 'diagnosis', 'closeCode', 'actOrange', 'actRed', 'flagC',
+                  'msgType', 'state', 'msgCode', 'version', 'isCancelled',
+                  'msgCount', 'blocked', 'flagD'], axis=1)
+
+    # max_amt = max(df['amount'])
+    # df['amount'] = df['amount'].apply(lambda x: x / max_amt)
+
+    not_transform_cols = ['Case ID', 'Complete Timestamp', 'label']
+    df = pd.get_dummies(data=df, columns=[col for col in df.columns if col not in not_transform_cols])
+
+    static_features_ = []
+    for static_feature in static_features:
+        static_features_ = static_features_ + [f for f in list(df.columns) if static_feature in f]
+    static_features = static_features_
+
+    x_seqs = []
+    x_statics = []
+    x_time_vals = []
+    y = []
+
+    c = 0
+    uni_cases = df['Case ID'].unique()
+    for case in uni_cases:
+
+        after_registration_flag = False
+        df_tmp = df.loc[df['Case ID'].isin([case])]
+        df_tmp = df_tmp.sort_values(by='Complete Timestamp')
+
+        if min_len <= len(df_tmp) <= max_len:
+            c += 1
+
+        idx = 0
+        print(f'{c} -- {len(uni_cases)}')
+
+        for _, x in df_tmp.iterrows():
+
+            if idx == 0:
+                x_statics.append(x[static_features].values.astype(float))
+                x_time_vals.append([])
+                x_seqs.append([])
+                after_registration_flag = True
+
+            if after_registration_flag:
+                one_hot = x.drop(['Complete Timestamp', 'Case ID', 'label'] + static_features).values
+                x_seqs[-1].append(one_hot)
+                x_time_vals[-1].append(x['Complete Timestamp'])
+                label = x['label']
+            idx = idx + 1
+
+        if after_registration_flag:
+            y.append(label)
+
+        if c == 5000:
+            break
 
     assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
 
