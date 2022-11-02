@@ -31,6 +31,6 @@ for seed in seeds:
     print(f'Model coefficients: {model.coef_}')
     print(f'Model intercept: {model.intercept_}')
 
-print(f'Test mse -- avg: {sum(results["mse_train"]) / len(results["mse_train"])} --sd: {np.std(results["mse_train"])} -- values: {results["mse_train"]}')
-print(f'Test mae -- avg: {sum(results["mae_train"]) / len(results["mae_train"])} --sd: {np.std(results["mae_train"])} -- values: {results["mae_train"]}')
-print(f'Test r2 -- avg: {sum(results["r2_train"]) / len(results["r2_train"])} --sd: {np.std(results["r2_train"])} -- values: {results["r2_train"]}')
+print(f'Train mse -- avg: {sum(results["mse_train"]) / len(results["mse_train"])} --sd: {np.std(results["mse_train"])} -- values: {results["mse_train"]}')
+print(f'Train mae -- avg: {sum(results["mae_train"]) / len(results["mae_train"])} --sd: {np.std(results["mae_train"])} -- values: {results["mae_train"]}')
+print(f'Train r2 -- avg: {sum(results["r2_train"]) / len(results["r2_train"])} --sd: {np.std(results["r2_train"])} -- values: {results["r2_train"]}')

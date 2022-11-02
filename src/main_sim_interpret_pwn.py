@@ -7,13 +7,18 @@ import numpy as np
 import os
 import copy
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import math
+import matplotlib.pyplot as plt
+from typing import List
 
-seeds = [137] # 15, 37, 98, 137, 245]
+plot_loss = True
+seeds = [15] # 15, 37, 98, 137, 245]
 results = {'mse_train': list(), 'mae_train': list(), 'r2_train': list()}
-epochs = 1000  # 1000
+epochs = 100  # 1000
 batch_size = 32
 lr = 0.001 # 0.001
 patience = 100 # 100
+loss_all_hist = []
 
 for seed in seeds:
     torch.manual_seed(seed=seed)
@@ -75,6 +80,7 @@ for seed in seeds:
             optimizer.step()
             loss_all += float(loss)
 
+        loss_all_hist.append(loss_all / num_batches)
         if loss_all > last_loss_all:
             trigger_times += 1
             if trigger_times >= patience:
@@ -91,7 +97,6 @@ for seed in seeds:
     model_best_es.eval()
     with torch.no_grad():
         y_pred = model_best_es(x_seq_final.float(), x_stat_final.float())
-        # torch.sigmoid(
 
     results["mse_train"].append(mean_squared_error(y_true=y, y_pred=y_pred))
     results["mae_train"].append(mean_absolute_error(y_true=y, y_pred=y_pred))
@@ -100,3 +105,30 @@ for seed in seeds:
 print(f'Train mse -- avg: {sum(results["mse_train"]) / len(results["mse_train"])} --sd: {np.std(results["mse_train"])} -- values: {results["mse_train"]}')
 print(f'Train mae -- avg: {sum(results["mae_train"]) / len(results["mae_train"])} --sd: {np.std(results["mae_train"])} -- values: {results["mae_train"]}')
 print(f'Train r2 -- avg: {sum(results["r2_train"]) / len(results["r2_train"])} --sd: {np.std(results["r2_train"])} -- values: {results["r2_train"]}')
+
+if plot_loss:
+    x1 = loss_all_hist[9:-1]
+    x2 = 0.024368097393050795
+    x3 = 0.023963458722330643
+    x4 = 0.020964661781617825
+
+    # for i in range(1, num_epochs + 1):
+    #    x1.append(-math.log10(i) + 2)
+
+
+    def plot_loss_function(x1: List[int], x2: int, x3: int, x4: int):
+        fig, ax = plt.subplots()
+        ax.set_xlabel('Number of epochs')
+        ax.set_ylabel('MSE')
+        ax.plot(x1, 'black', label='PatWay-Net')
+        ax.hlines(x2, 0, epochs-11, colors='gray', label='Lasso regression')
+        ax.hlines(x3, 0, epochs-11, colors='blue', label='Ridge regression')
+        ax.hlines(x4, 0, epochs-11, colors='darkgray', label='Decision tree')
+        ax.set_xticks([0, 9, 19, 29, 39, 49, 59, 69, 79, 89], [10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        ax.legend()
+
+        plt.savefig('./sim_mse_loss.pdf')
+        plt.show()
+
+
+    plot_loss_function(x1, x2, x3, x4)

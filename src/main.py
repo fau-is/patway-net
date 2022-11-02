@@ -621,12 +621,12 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
 if __name__ == "__main__":
 
-    data_set = "production"  # bpi2012, traffic, hospital
+    data_set = "sepsis"  # bpi2012, traffic, hospital
 
     hpos = {
-        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        # "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128],
-        #         "inter_seq_best": [1]},
+        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128],
+                 "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
@@ -650,7 +650,7 @@ if __name__ == "__main__":
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 37, 98, 137, 245]:
-            for mode in ['lr']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
                 np.random.seed(seed=seed)
                 torch.manual_seed(seed=seed)
 
@@ -683,7 +683,7 @@ if __name__ == "__main__":
 
     elif data_set == "production":
         for seed in [15]:  # 37, 98, 137, 245]:
-            for mode in ['pwn', 'lr', 'dt', 'knn', 'nb']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
                 np.random.seed(seed=seed)
                 torch.manual_seed(seed=seed)
 
