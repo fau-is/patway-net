@@ -236,7 +236,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
                                 import copy
                                 best_val_loss = np.inf
-                                patience = 10
+                                patience = 2
                                 epochs = 100
                                 trigger_times = 0
                                 model_best_es = copy.deepcopy(model)
@@ -621,7 +621,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
 if __name__ == "__main__":
 
-    data_set = "sepsis"  # bpi2012, traffic, hospital
+    data_set = "bpi2012"  # bpi2012, traffic, hospital
 
     hpos = {
         # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},

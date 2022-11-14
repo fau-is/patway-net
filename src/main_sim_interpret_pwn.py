@@ -112,10 +112,6 @@ if plot_loss:
     x3 = 0.023963458722330643
     x4 = 0.020964661781617825
 
-    # for i in range(1, num_epochs + 1):
-    #    x1.append(-math.log10(i) + 2)
-
-
     def plot_loss_function(x1: List[int], x2: int, x3: int, x4: int):
         fig, ax = plt.subplots()
         ax.set_xlabel('Number of epochs')
@@ -125,8 +121,8 @@ if plot_loss:
         ax.hlines(x3, 0, epochs-11, colors='blue', label='Ridge regression')
         ax.hlines(x4, 0, epochs-11, colors='darkgray', label='Decision tree')
         ax.set_xticks([0, 9, 19, 29, 39, 49, 59, 69, 79, 89], [10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        ax.legend()
-
+        ax.legend(loc='center right')
+        # plt.set_cmap('viridis')
         plt.savefig('./sim_mse_loss.pdf')
         plt.show()
 
