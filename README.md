@@ -8,7 +8,7 @@
 For BPI2012 and Hospital Billing, we use the preprocessed versions, namely "bpic2012_O_ACCEPTED-COMPLETE" and "hospital_billing_2.csv", shared by [Teinemaa et al. (2018)](https://github.com/irhete/predictive-monitoring-benchmark).   
 
 # Hyperparameter Settings for BPI2012 (for seed 15)
-![Hyperparameters](hyperparameters.JPG?raw=true "Hyperparameter settings")
+![Hyperparameters](bpi2012.JPG?raw=true "Hyperparameter settings")
 
 # Hyperparameter Settings for Hospital Billing (for seed 15)
-![Hyperparameters](hyperparameters.JPG?raw=true "Hyperparameter settings")
+![Hyperparameters](hospital_billing.JPG?raw=true "Hyperparameter settings")

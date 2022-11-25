@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0,"../")
+
 import pandas as pd
 import numpy as np
 from sklearn import metrics
@@ -236,7 +239,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
 
                                 import copy
                                 best_val_loss = np.inf
-                                patience = 2
+                                patience = 10
                                 epochs = 100
                                 trigger_times = 0
                                 model_best_es = copy.deepcopy(model)
@@ -363,6 +366,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
     for train_index_, test_index in skfold.split(X=x_statics, y=y):
 
         id += 1
+
         train_index = train_index_[0: int(len(train_index_) * (1 - val_size))]
         val_index = train_index_[int(len(train_index_) * (1 - val_size)):]
 
@@ -621,12 +625,12 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
 if __name__ == "__main__":
 
-    data_set = "bpi2012"  # bpi2012, traffic, hospital
+    data_set = "bpi2012"  # bpi2012, hospital
 
     hpos = {
-        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128],
-                 "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        # "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128],
+        #          "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
@@ -635,7 +639,7 @@ if __name__ == "__main__":
     }
 
     if data_set == "sepsis":
-        for seed in [15]: # 37, 98, 137, 245]:
+        for seed in [15]:  # 15, 37, 98, 137, 245]:
             for mode in ['lr']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
                 for target_activity in ['Admission IC']:
 
@@ -649,7 +653,7 @@ if __name__ == "__main__":
                         evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed)
 
     elif data_set == "bpi2012":
-        for seed in [15]:  # 37, 98, 137, 245]:
+        for seed in [15]:  # 15, 37, 98, 137, 245]:
             for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
                 np.random.seed(seed=seed)
                 torch.manual_seed(seed=seed)
@@ -659,19 +663,8 @@ if __name__ == "__main__":
                 x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                     evaluate_on_cut(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
 
-    elif data_set == "traffic":
-        for seed in [15]:  # 37, 98, 137, 245]:
-            for mode in ['lr']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
-                np.random.seed(seed=seed)
-                torch.manual_seed(seed=seed)
-
-                x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_traffic_data(max_len, min_len)
-
-                x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                    evaluate_on_cut(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
-
     elif data_set == "hospital":
-        for seed in [15]:  # 37, 98, 137, 245]:
+        for seed in [15]:  # 15, 37, 98, 137, 245]:
             for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
                 np.random.seed(seed=seed)
                 torch.manual_seed(seed=seed)
@@ -680,18 +673,6 @@ if __name__ == "__main__":
 
                 x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                     evaluate_on_cut(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
-
-    elif data_set == "production":
-        for seed in [15]:  # 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
-                np.random.seed(seed=seed)
-                torch.manual_seed(seed=seed)
-
-                x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_production_data(max_len, min_len)
-
-                x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                    evaluate_on_cut(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
-
 
     else:
         print("Data set not available!")
