@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon May  9 16:08:06 2022
-
-@author: ov59opom
-"""
 
 
 # Importing libraries
