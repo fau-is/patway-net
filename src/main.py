@@ -387,7 +387,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
 
-        with open(r"C:\Users\ReneJ\Desktop\UnityStuff\patway-net\data_plot\test_data", "ab") as output:
+
+        with open(r"..\data_plot\test_data", "ab") as output:
             data_dictionary = {"fold": id, "x_test_seq": X_test_seq, "x_test_stat": X_test_stat, "label" : y_test}
             pickle.dump(data_dictionary, output)
             print("Dataset from fold " + str(id) + "saved to "+ str(output))
