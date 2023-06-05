@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 import math
 import random
 
-#Straight up stolen from main.py
+
+# Straight up stolen from main.py
 def calc_roc_auc(gts, probs):
     try:
         auc = metrics.roc_auc_score(gts, probs)
@@ -23,8 +24,13 @@ def calc_roc_auc(gts, probs):
         print("except")
         return 0
 
+def concatenate_tensor_matrix(x_seq, x_stat):
+    x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
+    x_concat = np.concatenate((x_train_seq_, x_stat), axis=1)
 
-def read_data(dir = r"..\data_plot\test_data"):
+    return x_concat
+
+def read_data(dir=r"..\data_plot\test_data"):
     data_list = []
     with open(dir, "rb") as input:
         while True:
@@ -37,11 +43,11 @@ def read_data(dir = r"..\data_plot\test_data"):
     return data_list
 
 
-def read_models(dir = r"..\model"):
+def read_models(seed, dir=r"..\model"):
     model_list = []
     for file in os.listdir(dir):
         filename = os.fsdecode(file)
-        if "_15" in filename:
+        if str(seed) in filename:
             model_list.append(torch.load(dir + "\\" + file))
 
     return model_list
@@ -52,8 +58,8 @@ def get_prefix_length(seq, sample):
     rowCounter = -1
     lastRow = None
     actualPrefixRows = 0
-    for matrix in seq[sample,:,:]:
-        #print(matrix)
+    for matrix in seq[sample, :, :]:
+        # print(matrix)
         rowCounter += 1
 
         notZero = False
@@ -77,13 +83,13 @@ def get_prefix_length(seq, sample):
                 counter += 1
                 break
 
-    #print(actualPrefixRows)
-    #print(counter)
-    #print(rowCounter)
-    #print(lastRow)
+    # print(actualPrefixRows)
+    # print(counter)
+    # print(rowCounter)
+    # print(lastRow)
 
-    #return counter + (actualPrefixRows * len(lastRow))  #Every Value counts into the prefix size
-    return actualPrefixRows +1 #Every Row counts into the prefix size
+    # return counter + (actualPrefixRows * len(lastRow))  #Every Value counts into the prefix size
+    return actualPrefixRows + 1  # Every Row counts into the prefix size
 
 
 def get_prefix_dictionary(seq):
@@ -93,13 +99,13 @@ def get_prefix_dictionary(seq):
     mapList = []
     uniquePrefixSizes = []
     for t in range(0, samples):
-        indexPrefixSizeMap = {"index" : t, "prefixSize" : get_prefix_length(seq, t)}
-        #print("sample " + str(t) + ": " + str(getPrefixLength(seq, t)))
+        indexPrefixSizeMap = {"index": t, "prefixSize": get_prefix_length(seq, t)}
+        # print("sample " + str(t) + ": " + str(getPrefixLength(seq, t)))
         mapList.append(indexPrefixSizeMap)
         uniquePrefixSizes.append(get_prefix_length(seq, t))
 
     uniquePrefixSizes = set(uniquePrefixSizes)
-    #print(uniquePrefixSizes)
+    # print(uniquePrefixSizes)
 
     prefixDictionaryList = []
 
@@ -112,7 +118,7 @@ def get_prefix_dictionary(seq):
                 prefixDictionary["indizes"].append(entry["index"])
         prefixDictionaryList.append(prefixDictionary)
 
-    #print(prefixDictionary)
+    # print(prefixDictionary)
     return prefixDictionaryList
 
 
@@ -137,31 +143,18 @@ def get_plot_data(model_list, data_list):
             model.eval()
             with torch.no_grad():
                 prediction = torch.sigmoid(model.forward(prefixSeq, prefixStat))
-                prediction = prediction.numpy()
-                # prediction = [prediction[0][0] for pred in prediction]
-                # prediction = [map_value(pred) for pred in prediction]
 
-                # print(len(prediction))
-                # print(len(prefixLabel))
-
-                # if(len(np.unique(prefixLabel)) == 1):
-                # print("except in 3,2,1:")
-
-                performancePrefixDict["AUC"] = calc_roc_auc(prefixLabel, prediction)
-                # print(len(set(prefixLabel) - set(prediction)))
-
-                # rocauc = metrics.roc_auc_score(prefixLabel, prediction)
-                # print(rocauc)
-                # performancePrefixDict["AUC"] = rocauc
-
-                values["data"].append(performancePrefixDict)
+            prediction = prediction.numpy()
+            performancePrefixDict["AUC"] = calc_roc_auc(prefixLabel, prediction)
+            values["data"].append(performancePrefixDict)
 
         result.append(values)
 
     return result
 
-def get_average_result(result, conf = False, label = ""):
-    #ax = plt.subplot
+
+def get_average_result(result, conf: bool = False, label=""):
+    # ax = plt.subplot
     avg_y = []
     avg_x = []
     for values in result:
@@ -184,51 +177,6 @@ def get_average_result(result, conf = False, label = ""):
 
     return {"x": avg_x, "y": avg_y, "conf": conf, "label": label}
 
-'''
-def get_plot_result(result, conf = False):
-    colors = ["blue", "red", "green", "orange", "violet"]
-    fig = plt.figure()
-    ax = plt.subplot()
-    #ax = plt.subplot
-    avg_y = []
-    avg_x = []
-    for values, c in zip(result, colors):
-
-        data = values["data"]
-        df = pd.DataFrame(columns=["PrefixLength", "AUC"])
-        for i in range(0, len(data) - 1):
-            x = (data[i]["PrefixLength"])
-            y = (data[i]["AUC"])
-            df.loc[i] = (x, y)
-
-        df = df.sort_values(by=["PrefixLength"])
-        #fig.plot(df["PrefixLength"], df["AUC"], color = c, label = "Fold" + str(values["model"] + 1), marker = "o")
-
-        avg_y.append(df["AUC"])
-
-        if len(df["PrefixLength"]) > len(avg_x):
-            avg_x = df["PrefixLength"]
-
-    avg_y = sum(avg_y) / 5
-    avg_y = avg_y.fillna(0)
-    print(len(avg_y))
-
-    confiI = 0.05 * np.std(avg_y) / np.mean(avg_y)
-
-    plt.plot(avg_x, avg_y, color="cyan", label="Average", marker="o", ls="--")
-    if conf:
-        plt.fill_between(avg_x, (avg_y - confiI), (avg_y + confiI), color="deepskyblue", alpha=0.1)
-
-    fig.set_facecolor("white")
-
-    plt.xlabel("Prefix Length")
-    plt.ylabel("ROC AUC")
-    plt.xticks(range(0, 25))
-    plt.legend()
-    #plt.show()
-
-    return fig
-'''
 
 def plot_data(data):
     '''
@@ -241,7 +189,7 @@ def plot_data(data):
         if entry["conf"]:
             plt.plot(entry["x"], entry["y"], c="cyan", label=entry["label"], marker="o", ls="--")
             confiI = 0.05 * np.std(entry["y"]) / np.mean(entry["y"])
-            plt.fill_between(entry["x"], (entry["y"] - confiI), (entry["y"] + confiI), color = "cyan", alpha=0.1)
+            plt.fill_between(entry["x"], (entry["y"] - confiI), (entry["y"] + confiI), color="cyan", alpha=0.1)
         else:
             b = random.uniform(0, 0.5)
             col = (np.random.random(), np.random.random(), b)
@@ -255,12 +203,61 @@ def plot_data(data):
 
     return fig
 
+def save_procedure_plot_data(dir = r"..\data_plot\test_data"):
+    r_data = read_data()
+    r_models = read_models(r_data[0]["seed"]) #Der Seed ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
+
+    open(dir, 'w').close() #Das File muss geleert werden, damit Daten von anderen Verfahren einlesen werden können
+
+    conf = False
+    if r_data[0]["procedure"] == "pwn": #Das Vorgehen ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
+        conf = True
+
+    with open(r"..\data_plot\plot_data", "ab") as output:
+        pickle.dump(get_average_result(get_plot_data(r_models, r_data), conf, label= r_data[0]["procedure"]), output)
+
+    #return get_average_result(get_plot_data(r_models, r_data), conf, label= r_data["procedure"])
+
+
+def plot_everything_saved():
+    plot_list = []
+    with open(r"..\data_plot\plot_data", "rb") as input:
+        while True:
+            try:
+                x = pickle.load(input)
+            except EOFError:
+                break
+            plot_list.append(x)
+
+    plot_data(plot_list)
+    plt.show()
+
+def clear_plot_data_file():
+    open(r"..\data_plot\plot_data", 'w').close()
+
+'''
 x = get_average_result(get_plot_data(read_models(), read_data()), True, label="Methode 1")
 y = get_average_result(get_plot_data(read_models(), read_data()), label="Methode 2")
 z = get_average_result(get_plot_data(read_models(), read_data()), label="Methode 3")
 y["y"] *= 2
 z["y"] += .3
 z["y"] *= 0.5
-plot = plot_data([x,y,z])
-#combined_fig = combine_figures([x,y])
+plot = plot_data([x, y, z])
+# combined_fig = combine_figures([x,y])
 plt.show()
+'''
+
+#plot_everything_saved()
+#plt.show()
+'''
+plot_list = []
+with open(r"..\data_plot\plot_data", "rb") as input:
+    while True:
+        try:
+            x = pickle.load(input)
+        except EOFError:
+            break
+        plot_list.append(x)
+
+print(plot_list[1]["conf"])
+'''
