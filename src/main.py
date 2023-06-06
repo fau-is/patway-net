@@ -16,9 +16,8 @@ from sklearn.model_selection import StratifiedKFold
 
 import pickle
 
-from roc_auc_plot import save_procedure_plot_data
-from roc_auc_plot import plot_everything_saved
-from roc_auc_plot import clear_plot_data_file
+from roc_auc_plot import save_procedure_plot_data, plot_everything_saved, clear_plot_data_file
+
 
 max_len = 50
 min_len = 3
@@ -28,6 +27,7 @@ train_size = 0.8
 hpo = True
 
 procedure = None
+plot = True
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
@@ -393,11 +393,11 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
 
-
-        with open(r"..\data_plot\test_data", "ab") as output:
-            data_dictionary = {"fold": id, "x_test_seq": X_test_seq, "x_test_stat": X_test_stat, "label" : y_test, "procedure": procedure, "seed": seed}
-            pickle.dump(data_dictionary, output)
-            print("Dataset from fold " + str(id) + "saved to "+ str(output))
+        if plot:
+            with open(r"..\data_plot\test_data", "ab") as output:
+                data_dictionary = {"fold": id, "x_test_seq": X_test_seq, "x_test_stat": X_test_stat, "label" : y_test, "procedure": procedure, "seed": seed}
+                pickle.dump(data_dictionary, output)
+                print("Dataset from fold " + str(id) + "saved to "+ str(output))
 
         if mode == "pwn":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -469,6 +469,8 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds_test'] = [np.argmax(pred_proba) for pred_proba in preds_proba_test]
             results['preds_proba_test'] = [pred_proba[1] for pred_proba in preds_proba_test]
 
+            if plot:
+                torch.save(model, os.path.join("../model", f"model_{id}_{seed}"))
 
         results['gts_train'] = [int(y) for y in y_train]
         results['gts_val'] = [int(y) for y in y_val]
@@ -669,8 +671,8 @@ if __name__ == "__main__":
 
                     x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                         evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed)
-
-                save_procedure_plot_data()
+                if plot:
+                    save_procedure_plot_data()
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
@@ -701,4 +703,5 @@ if __name__ == "__main__":
     else:
         print("Data set not available!")
 
-    plot_everything_saved()
+    if plot:
+        plot_everything_saved()

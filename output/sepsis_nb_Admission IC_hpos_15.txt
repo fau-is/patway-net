@@ -18,3 +18,23 @@ Std,0.0
 Validation aucs,0,0,0,0,0,0,0,0,0,0
 Avg,0.0
 Std,0.0
+{'var_smoothing': 1e-09}
+Validation aucs,0,0,0,0,0,0,0,0,0,0
+Avg,0.0
+Std,0.0
+{'var_smoothing': 0.001}
+Validation aucs,0.910828025477707,1.0,1.0,1.0,0.8343949044585988,0.8343949044585988,0.8343949044585988,0.8343949044585988,0.8343949044585988,0.8343949044585988
+Avg,0.8917197452229297
+Std,0.07835516809870884
+{'var_smoothing': 1e-09}
+Validation aucs,0,0,0,0,0,0,0,0,0,0
+Avg,0.0
+Std,0.0
+{'var_smoothing': 1e-09}
+Validation aucs,0,0,0,0,0,0,0,0,0,0
+Avg,0.0
+Std,0.0
+{'var_smoothing': 1e-09}
+Validation aucs,0,0,0,0,0,0,0,0,0,0
+Avg,0.0
+Std,0.0

@@ -140,11 +140,14 @@ def get_plot_data(model_list, data_list):
             prefixStat = stat[prefixLengthDict["indizes"], :]
             prefixLabel = label[prefixLengthDict["indizes"]]
 
-            model.eval()
-            with torch.no_grad():
-                prediction = torch.sigmoid(model.forward(prefixSeq, prefixStat))
+            if dataset["procedure"] == "pwn":
+                model.eval()
+                with torch.no_grad():
+                    prediction = torch.sigmoid(model.forward(prefixSeq, prefixStat))
+                    prediction = prediction.numpy()
+            else:
+                prediction = model.predict_proba(prefixStat)
 
-            prediction = prediction.numpy()
             performancePrefixDict["AUC"] = calc_roc_auc(prefixLabel, prediction)
             values["data"].append(performancePrefixDict)
 
