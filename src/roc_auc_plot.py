@@ -24,6 +24,7 @@ def calc_roc_auc(gts, probs):
         print("except")
         return 0
 
+# Straight up stolen from main.py
 def concatenate_tensor_matrix(x_seq, x_stat):
     x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
     x_concat = np.concatenate((x_train_seq_, x_stat), axis=1)
@@ -31,6 +32,11 @@ def concatenate_tensor_matrix(x_seq, x_stat):
     return x_concat
 
 def read_data(dir=r"..\data_plot\test_data"):
+    '''
+    Reads dataset-dictionaries saved in main.py from file
+    :param dir: path of the file
+    :return: dataset-dictionaries in a list
+    '''
     data_list = []
     with open(dir, "rb") as input:
         while True:
@@ -44,6 +50,12 @@ def read_data(dir=r"..\data_plot\test_data"):
 
 
 def read_models(seed, dir=r"..\model"):
+    '''
+    Reads ml models saved in main.py from folder
+    :param seed: seed of the saved models, important for identifying the models in the folder
+    :param dir: path of the folder containing the models
+    :return: dataset-dictionaries in a list
+    '''
     model_list = []
     for file in os.listdir(dir):
         filename = os.fsdecode(file)
@@ -54,6 +66,12 @@ def read_models(seed, dir=r"..\model"):
 
 
 def get_prefix_length(seq, sample):
+    '''
+    Determines the prefix-length of a given sample from a given sequentiell dataset
+    :param seq: sequentiell dataset
+    :param sample: sample of the sequentiell dataset which prefix-length need to be determined
+    :return: prefix-length
+    '''
     counter = 0
     rowCounter = -1
     lastRow = None
@@ -93,6 +111,11 @@ def get_prefix_length(seq, sample):
 
 
 def get_prefix_dictionary(seq):
+    '''
+    Creates a dictionary mapping all samples of a sequentiell dataset with their prefix-length
+    :param seq: sequentiell dataset
+    :return: dictionary mapping all samples of a sequentiell dataset with their prefix-length
+    '''
     samples = seq.shape[0]
     print(samples)
 
@@ -123,6 +146,12 @@ def get_prefix_dictionary(seq):
 
 
 def get_plot_data(model_list, data_list):
+    '''
+    Creates data that is needed from the get_average_result() function to create plot data
+    :param model_list: ml models
+    :param data_list: list of datasets
+    :return: list of dictionaries containing the fold and a dictionary containing the prefix-length and the according AUC
+    '''
     result = []
     for model, dataset in zip(model_list, data_list):
         values = {"model": dataset["fold"], "data": []}
@@ -157,7 +186,13 @@ def get_plot_data(model_list, data_list):
 
 
 def get_average_result(result, conf: bool = False, label=""):
-    # ax = plt.subplot
+    '''
+    Creates plot-data for the average result over all folds.
+    :param result: input data created by get_plot_data()
+    :param conf: bool deciding if the line has a confidence intervall or not
+    :param label: label of the line
+    :return: a dictionary containing, x- and y-values, a bool, if a confidence intervall will be plottet for this line and a label
+    '''
     avg_y = []
     avg_x = []
     for values in result:
@@ -207,6 +242,10 @@ def plot_data(data):
     return fig
 
 def save_procedure_plot_data(dir = r"..\data_plot\test_data"):
+    '''
+    Creates and saves plot data for currently used ml procedure in main.py. Data will be saved to a file
+    :param dir: path of the file where the datasets from the current procedure where saved (main.py)
+    '''
     r_data = read_data()
     r_models = read_models(r_data[0]["seed"]) #Der Seed ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
 
@@ -223,6 +262,9 @@ def save_procedure_plot_data(dir = r"..\data_plot\test_data"):
 
 
 def plot_everything_saved():
+    '''
+    Plots everything that was saved by save_procedure_plot_data()
+    '''
     plot_list = []
     with open(r"..\data_plot\plot_data", "rb") as input:
         while True:
@@ -236,6 +278,9 @@ def plot_everything_saved():
     plt.show()
 
 def clear_plot_data_file():
+    '''
+    Cleares the plot_data file
+    '''
     open(r"..\data_plot\plot_data", 'w').close()
 
 '''
