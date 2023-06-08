@@ -236,7 +236,7 @@ def plot_data(data, max_prefix_size = 15):
         entry["y"] = np.array(entry["y"], dtype=float)
         if entry["conf"]:
             plt.plot(entry["x"], entry["y"], c="cyan", label=entry["label"], marker="o", ls="--")
-            confiI = 0.05 * np.std(entry["y"]) / np.mean(entry["y"])
+            confiI = 1.96 * np.std(entry["y"]) / np.sqrt(len(entry["y"]))
             plt.fill_between(entry["x"], (entry["y"] - confiI), (entry["y"] + confiI), color="cyan", alpha=0.1)
         else:
             b = random.uniform(0, 0.5)
