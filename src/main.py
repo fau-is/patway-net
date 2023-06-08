@@ -26,8 +26,10 @@ val_size = 0.2
 train_size = 0.8
 hpo = True
 
+### Plot Attributes ###
 procedure = None
 plot = True
+max_prefix_size = 20
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
@@ -393,7 +395,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
 
-        if plot:
+        if (mode == "pwn" or plot):
             with open(r"..\data_plot\test_data", "ab") as output:
                 data_dictionary = {"fold": id, "x_test_seq": X_test_seq, "x_test_stat": X_test_stat, "label" : y_test, "procedure": procedure, "seed": seed}
                 pickle.dump(data_dictionary, output)
@@ -672,7 +674,7 @@ if __name__ == "__main__":
                     x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                         evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed)
                 if plot:
-                    save_procedure_plot_data()
+                    save_procedure_plot_data(max_prefix_size=max_prefix_size)
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
@@ -704,4 +706,4 @@ if __name__ == "__main__":
         print("Data set not available!")
 
     if plot:
-        plot_everything_saved()
+        plot_everything_saved(max_prefix_size)

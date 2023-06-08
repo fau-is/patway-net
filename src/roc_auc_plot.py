@@ -110,11 +110,12 @@ def get_prefix_length(seq, sample):
     return actualPrefixRows + 1  # Every Row counts into the prefix size
 
 
-def get_prefix_dictionary(seq):
+def get_prefix_dictionary(seq, max_prefix_size = 15):
     '''
-    Creates a dictionary mapping all samples of a sequentiell dataset with their prefix-length
+    Creates a list of dictionaries mapping all samples of a sequentiell dataset with their prefix-length
     :param seq: sequentiell dataset
-    :return: dictionary mapping all samples of a sequentiell dataset with their prefix-length
+    :param max_prefix_size: maximal prefix length documented by the returned dictionary list
+    :return: list containing dictionaries mapping all samples of a sequentiell dataset with their prefix-length
     '''
     samples = seq.shape[0]
     print(samples)
@@ -141,15 +142,21 @@ def get_prefix_dictionary(seq):
                 prefixDictionary["indizes"].append(entry["index"])
         prefixDictionaryList.append(prefixDictionary)
 
+    filter_list = []
+    for entry in prefixDictionaryList:
+        if entry["prefixSize"] <= max_prefix_size:
+            filter_list.append(entry)
+
     # print(prefixDictionary)
-    return prefixDictionaryList
+    return filter_list
 
 
-def get_plot_data(model_list, data_list):
+def get_plot_data(model_list, data_list, max_prefix_size):
     '''
     Creates data that is needed from the get_average_result() function to create plot data
     :param model_list: ml models
     :param data_list: list of datasets
+    :param max_prefix_size: maximal prefix length used for plotting
     :return: list of dictionaries containing the fold and a dictionary containing the prefix-length and the according AUC
     '''
     result = []
@@ -160,7 +167,7 @@ def get_plot_data(model_list, data_list):
         stat = torch.from_numpy(dataset["x_test_stat"])
         label = torch.from_numpy(dataset["label"]).numpy()
 
-        prefixLengthDictList = get_prefix_dictionary(seq)
+        prefixLengthDictList = get_prefix_dictionary(seq, max_prefix_size)
 
         for prefixLengthDict in prefixLengthDictList:
             performancePrefixDict = {"PrefixLength": prefixLengthDict["prefixSize"]}
@@ -216,14 +223,17 @@ def get_average_result(result, conf: bool = False, label=""):
     return {"x": avg_x, "y": avg_y, "conf": conf, "label": label}
 
 
-def plot_data(data):
+def plot_data(data, max_prefix_size = 15):
     '''
     :param data: a list of dictionaries returned from get_average_result()
+    :param max_prefix_size: maximal prefix length used for plotting
     :return: a plot with all plots stored in the data list in it
     '''
     fig = plt.figure()
 
     for entry in data:
+        entry["x"] = np.array(entry["x"], dtype = float)
+        entry["y"] = np.array(entry["y"], dtype=float)
         if entry["conf"]:
             plt.plot(entry["x"], entry["y"], c="cyan", label=entry["label"], marker="o", ls="--")
             confiI = 0.05 * np.std(entry["y"]) / np.mean(entry["y"])
@@ -236,12 +246,12 @@ def plot_data(data):
 
     plt.xlabel("Prefix Length")
     plt.ylabel("ROC AUC")
-    plt.xticks(range(0, 25))
+    plt.xticks(range(0, max_prefix_size))
     plt.legend()
 
     return fig
 
-def save_procedure_plot_data(dir = r"..\data_plot\test_data"):
+def save_procedure_plot_data(max_prefix_size = 15, dir = r"..\data_plot\test_data"):
     '''
     Creates and saves plot data for currently used ml procedure in main.py. Data will be saved to a file
     :param dir: path of the file where the datasets from the current procedure where saved (main.py)
@@ -256,14 +266,15 @@ def save_procedure_plot_data(dir = r"..\data_plot\test_data"):
         conf = True
 
     with open(r"..\data_plot\plot_data", "ab") as output:
-        pickle.dump(get_average_result(get_plot_data(r_models, r_data), conf, label= r_data[0]["procedure"]), output)
+        pickle.dump(get_average_result(get_plot_data(r_models, r_data, max_prefix_size), conf, label= r_data[0]["procedure"]), output)
 
     #return get_average_result(get_plot_data(r_models, r_data), conf, label= r_data["procedure"])
 
 
-def plot_everything_saved():
+def plot_everything_saved(max_prefix_size = 15):
     '''
     Plots everything that was saved by save_procedure_plot_data()
+    :param max_prefix_size: maximal prefix length used for plotting
     '''
     plot_list = []
     with open(r"..\data_plot\plot_data", "rb") as input:
@@ -274,7 +285,7 @@ def plot_everything_saved():
                 break
             plot_list.append(x)
 
-    plot_data(plot_list)
+    plot_data(plot_list, max_prefix_size)
     plt.show()
 
 def clear_plot_data_file():
@@ -282,6 +293,30 @@ def clear_plot_data_file():
     Cleares the plot_data file
     '''
     open(r"..\data_plot\plot_data", 'w').close()
+
+
+if __name__ == "__main__":
+
+    clear_plot_data_file()
+
+    #Erster Eintrag des Tupels ist der Pfad zu den Datensätzen (gepickeltes Format, vgl main.py)
+    #Zweite Eintrag des Tupels ist der Pfad zum Ordner, in dem die Modelle liegen
+    dir_pairs = [(r"..\data_plot\test_data", r"..\model")]
+    max_prefix_size = 10
+
+    for pair in dir_pairs:
+        data_list = read_data(pair[0])
+        model_list = read_models(data_list[0]["seed"], pair[1])
+
+        conf = False
+        if data_list[0]["procedure"] == "pwn":  # Das Vorgehen ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
+            conf = True
+
+        with open(r"..\data_plot\plot_data", "ab") as output:
+            pickle.dump(get_average_result(get_plot_data(model_list, data_list, max_prefix_size), conf, label=data_list[0]["procedure"]), output)
+
+    plot_everything_saved(max_prefix_size)
+
 
 '''
 x = get_average_result(get_plot_data(read_models(), read_data()), True, label="Methode 1")
