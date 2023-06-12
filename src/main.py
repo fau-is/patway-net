@@ -29,7 +29,7 @@ hpo = True
 ### Plot Attributes ###
 procedure = None
 plot = True
-max_prefix_size = 11
+max_prefix_size = 12
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):

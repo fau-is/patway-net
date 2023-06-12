@@ -159,6 +159,8 @@ def get_plot_data(model_list, data_list, max_prefix_size):
     :param max_prefix_size: maximal prefix length used for plotting
     :return: list of dictionaries containing the fold and a dictionary containing the prefix-length and the according AUC
     '''
+    max_prefix_size += 1
+
     result = []
     for model, dataset in zip(model_list, data_list):
         values = {"model": dataset["fold"], "data": []}
@@ -230,10 +232,14 @@ def plot_data(data, max_prefix_size = 15):
     :return: a plot with all plots stored in the data list in it
     '''
     fig = plt.figure()
+    ax = plt.gca()
 
     for entry in data:
         entry["x"] = np.array(entry["x"], dtype = float)
         entry["y"] = np.array(entry["y"], dtype=float)
+
+        print(entry["x"][0])
+
         if entry["conf"]:
             plt.plot(entry["x"], entry["y"], c="cyan", label=entry["label"], marker="o", ls="--")
             confiI = 1.96 * np.std(entry["y"]) / np.sqrt(len(entry["y"]))
@@ -246,7 +252,10 @@ def plot_data(data, max_prefix_size = 15):
 
     plt.xlabel("Prefix Length")
     plt.ylabel("ROC AUC")
-    plt.xticks(range(0, max_prefix_size))
+
+    tick_range = [x+1 for x in range(0, max_prefix_size)]
+    plt.xticks(tick_range)
+
     plt.legend()
 
     return fig
