@@ -11,6 +11,7 @@ from sklearn import metrics
 import matplotlib.pyplot as plt
 import math
 import random
+import datetime as dt
 
 
 # Straight up stolen from main.py
@@ -280,7 +281,7 @@ def save_procedure_plot_data(max_prefix_size = 15, dir = r"..\data_plot\test_dat
     #return get_average_result(get_plot_data(r_models, r_data), conf, label= r_data["procedure"])
 
 
-def plot_everything_saved(max_prefix_size = 15):
+def plot_everything_saved(max_prefix_size = 15, save = False):
     '''
     Plots everything that was saved by save_procedure_plot_data()
     :param max_prefix_size: maximal prefix length used for plotting
@@ -295,7 +296,14 @@ def plot_everything_saved(max_prefix_size = 15):
             plot_list.append(x)
 
     plot_data(plot_list, max_prefix_size)
-    plt.show()
+
+    if save:
+        name = str(dt.datetime.now())
+        name = name.replace(".","-")
+        name = name.replace(":", "-")
+        plt.savefig(r"..\data_plot\plot-pngs" + "\\" + name + ".png")
+
+        plt.show()
 
 def clear_plot_data_file():
     '''
@@ -324,7 +332,7 @@ if __name__ == "__main__":
         with open(r"..\data_plot\plot_data", "ab") as output:
             pickle.dump(get_average_result(get_plot_data(model_list, data_list, max_prefix_size), conf, label=data_list[0]["procedure"]), output)
 
-    plot_everything_saved(max_prefix_size)
+    plot_everything_saved(max_prefix_size, False)
 
 
 '''

@@ -30,6 +30,7 @@ hpo = True
 procedure = None
 plot = True
 max_prefix_size = 12
+save_plot = True
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
@@ -706,4 +707,4 @@ if __name__ == "__main__":
         print("Data set not available!")
 
     if plot:
-        plot_everything_saved(max_prefix_size)
+        plot_everything_saved(max_prefix_size, save_plot)
