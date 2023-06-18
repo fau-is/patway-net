@@ -1,5 +1,4 @@
 import pickle
-
 import numpy
 import pandas as pd
 import numpy as np
@@ -10,6 +9,7 @@ import os
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import math
+import seaborn as sns
 import random
 import datetime as dt
 
@@ -25,6 +25,7 @@ def calc_roc_auc(gts, probs):
         print("except")
         return 0
 
+
 # Straight up stolen from main.py
 def concatenate_tensor_matrix(x_seq, x_stat):
     x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
@@ -32,12 +33,14 @@ def concatenate_tensor_matrix(x_seq, x_stat):
 
     return x_concat
 
-def read_data(dir=r"..\data_plot\test_data"):
+
+def read_data(dir=f"../data_plot/test_data"):
     '''
     Reads dataset-dictionaries saved in main.py from file
     :param dir: path of the file
     :return: dataset-dictionaries in a list
     '''
+
     data_list = []
     with open(dir, "rb") as input:
         while True:
@@ -50,7 +53,7 @@ def read_data(dir=r"..\data_plot\test_data"):
     return data_list
 
 
-def read_models(seed, dir=r"..\model"):
+def read_models(seed, mode, dir=r"..\model"):
     '''
     Reads ml models saved in main.py from folder
     :param seed: seed of the saved models, important for identifying the models in the folder
@@ -60,7 +63,7 @@ def read_models(seed, dir=r"..\model"):
     model_list = []
     for file in os.listdir(dir):
         filename = os.fsdecode(file)
-        if str(seed) in filename:
+        if str(seed) in filename and mode in filename:
             model_list.append(torch.load(dir + "\\" + file))
 
     return model_list
@@ -111,12 +114,12 @@ def get_prefix_length(seq, sample):
     return actualPrefixRows + 1  # Every Row counts into the prefix size
 
 
-def get_prefix_dictionary(seq, max_prefix_size = 15):
+def get_prefix_dictionary(seq, max_prefix_size=15):
     '''
     Creates a list of dictionaries mapping all samples of a sequentiell dataset with their prefix-length
-    :param seq: sequentiell dataset
+    :param seq: sequential dataset
     :param max_prefix_size: maximal prefix length documented by the returned dictionary list
-    :return: list containing dictionaries mapping all samples of a sequentiell dataset with their prefix-length
+    :return: list containing dictionaries mapping all samples of a sequential dataset with their prefix length
     '''
     samples = seq.shape[0]
     print(samples)
@@ -125,7 +128,7 @@ def get_prefix_dictionary(seq, max_prefix_size = 15):
     uniquePrefixSizes = []
     for t in range(0, samples):
         indexPrefixSizeMap = {"index": t, "prefixSize": get_prefix_length(seq, t)}
-        # print("sample " + str(t) + ": " + str(getPrefixLength(seq, t)))
+
         mapList.append(indexPrefixSizeMap)
         uniquePrefixSizes.append(get_prefix_length(seq, t))
 
@@ -148,47 +151,49 @@ def get_prefix_dictionary(seq, max_prefix_size = 15):
         if entry["prefixSize"] <= max_prefix_size:
             filter_list.append(entry)
 
-    # print(prefixDictionary)
     return filter_list
 
 
-def get_plot_data(model_list, data_list, max_prefix_size):
+def get_plot_data(model_list, data_list, max_prefix_size, model_name):
     '''
     Creates data that is needed from the get_average_result() function to create plot data
     :param model_list: ml models
     :param data_list: list of datasets
     :param max_prefix_size: maximal prefix length used for plotting
+    :param model: name of model
     :return: list of dictionaries containing the fold and a dictionary containing the prefix-length and the according AUC
     '''
     max_prefix_size += 1
 
     result = []
     for model, dataset in zip(model_list, data_list):
+
         values = {"model": dataset["fold"], "data": []}
 
         seq = torch.from_numpy(dataset["x_test_seq"])
         stat = torch.from_numpy(dataset["x_test_stat"])
         label = torch.from_numpy(dataset["label"]).numpy()
 
-        prefixLengthDictList = get_prefix_dictionary(seq, max_prefix_size)
+        prefix_length_dict_list = get_prefix_dictionary(seq, max_prefix_size)
 
-        for prefixLengthDict in prefixLengthDictList:
-            performancePrefixDict = {"PrefixLength": prefixLengthDict["prefixSize"]}
+        for prefix_length_dict in prefix_length_dict_list:
+            performance_prefix_dict = {"PrefixLength": prefix_length_dict["prefixSize"]}
 
-            prefixSeq = seq[prefixLengthDict["indizes"], :, :]
-            prefixStat = stat[prefixLengthDict["indizes"], :]
-            prefixLabel = label[prefixLengthDict["indizes"]]
+            prefix_seq = seq[prefix_length_dict["indizes"], :, :]
+            prefix_stat = stat[prefix_length_dict["indizes"], :]
+            prefix_label = label[prefix_length_dict["indizes"]]
 
-            if dataset["procedure"] == "pwn":
+            if model_name == "pwn" or model_name == "lstm" or model_name == "pwn_no_inter":
                 model.eval()
                 with torch.no_grad():
-                    prediction = torch.sigmoid(model.forward(prefixSeq, prefixStat))
-                    prediction = prediction.numpy()
+                    preds_proba = torch.sigmoid(model.forward(prefix_seq, prefix_stat))
+                    preds_proba = [pred_proba[0] for pred_proba in preds_proba]
             else:
-                prediction = model.predict_proba(prefixStat)
+                preds_proba = model.predict_proba(prefix_stat)
+                preds_proba = [pred_proba[1] for pred_proba in preds_proba]
 
-            performancePrefixDict["AUC"] = calc_roc_auc(prefixLabel, prediction)
-            values["data"].append(performancePrefixDict)
+            performance_prefix_dict["AUC"] = calc_roc_auc(prefix_label, preds_proba)
+            values["data"].append(performance_prefix_dict)
 
         result.append(values)
 
@@ -203,6 +208,7 @@ def get_average_result(result, conf: bool = False, label=""):
     :param label: label of the line
     :return: a dictionary containing, x- and y-values, a bool, if a confidence intervall will be plottet for this line and a label
     '''
+
     avg_y = []
     avg_x = []
     for values in result:
@@ -220,74 +226,77 @@ def get_average_result(result, conf: bool = False, label=""):
         if len(df["PrefixLength"]) > len(avg_x):
             avg_x = df["PrefixLength"]
 
-    avg_y = sum(avg_y) / 5
+    avg_y = sum(avg_y) / len(avg_y)
     avg_y = avg_y.fillna(0)
 
     return {"x": avg_x, "y": avg_y, "conf": conf, "label": label}
 
 
-def plot_data(data, max_prefix_size = 15):
+def plot_data(results, max_prefix_size=15):
     '''
-    :param data: a list of dictionaries returned from get_average_result()
+    :param results: a list of dictionaries returned from get_average_result()
     :param max_prefix_size: maximal prefix length used for plotting
     :return: a plot with all plots stored in the data list in it
     '''
+
     fig = plt.figure()
     ax = plt.gca()
+    palet = sns.color_palette()
 
-    for entry in data:
-        entry["x"] = np.array(entry["x"], dtype = float)
-        entry["y"] = np.array(entry["y"], dtype=float)
+    for i, result in enumerate(results):
+        result["x"] = np.array(result["x"], dtype=float)
+        result["y"] = np.array(result["y"], dtype=float)
 
-        print(entry["x"][0])
+        print(result["x"][0])
 
-        if entry["conf"]:
-            plt.plot(entry["x"], entry["y"], c="cyan", label=entry["label"], marker="o", ls="--")
-            confiI = 1.96 * np.std(entry["y"]) / np.sqrt(len(entry["y"]))
-            plt.fill_between(entry["x"], (entry["y"] - confiI), (entry["y"] + confiI), color="cyan", alpha=0.1)
+        if result["conf"]:
+            plt.plot(result["x"], result["y"], c="cyan", label=result["label"], marker="o", ls="--")
+            confiI = 1.96 * np.std(result["y"]) / np.sqrt(len(result["y"]))
+            plt.fill_between(result["x"], (result["y"] - confiI), (result["y"] + confiI), color="cyan", alpha=0.2)
         else:
-            b = random.uniform(0, 0.5)
-            col = (np.random.random(), np.random.random(), b)
+            # b = random.uniform(0, 0.5)
+            # col = (np.random.random(), np.random.random(), b)
 
-            plt.plot(entry["x"], entry["y"], c=col, label=entry["label"], marker="o", ls="--")
+            plt.plot(result["x"], result["y"], label=result["label"], marker="o", ls="--", color=palet[i])
 
     plt.xlabel("Prefix Length")
     plt.ylabel("ROC AUC")
 
-    tick_range = [x+1 for x in range(0, max_prefix_size)]
+    tick_range = [x + 1 for x in range(0, max_prefix_size)]
     plt.xticks(tick_range)
 
     plt.legend()
 
     return fig
 
-def save_procedure_plot_data(max_prefix_size = 15, dir = r"..\data_plot\test_data"):
+"""
+def save_procedure_plot_data(max_prefix_size=15, dir=f"../data_prediction_plot/test_data"):
     '''
     Creates and saves plot data for currently used ml procedure in main.py. Data will be saved to a file
     :param dir: path of the file where the datasets from the current procedure where saved (main.py)
     '''
     r_data = read_data()
-    r_models = read_models(r_data[0]["seed"]) #Der Seed ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
+    r_models = read_models(r_data[0]["seed"])  # Der Seed ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
 
-    open(dir, 'w').close() #Das File muss geleert werden, damit Daten von anderen Verfahren einlesen werden können
+    open(dir, 'w').close()  # Das File muss geleert werden, damit Daten von anderen Verfahren einlesen werden können
 
     conf = False
-    if r_data[0]["procedure"] == "pwn": #Das Vorgehen ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
+    if r_data[0]["procedure"] == "pwn":  # Das Vorgehen ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
         conf = True
 
-    with open(r"..\data_plot\plot_data", "ab") as output:
-        pickle.dump(get_average_result(get_plot_data(r_models, r_data, max_prefix_size), conf, label= r_data[0]["procedure"]), output)
+    with open(f"../data_prediction_plot/plot_data", "ab") as output:
+        pickle.dump(get_average_result(get_plot_data(
+            r_models, r_data, max_prefix_size), conf, label=r_data[0]["procedure"]), output)
+"""
 
-    #return get_average_result(get_plot_data(r_models, r_data), conf, label= r_data["procedure"])
-
-
-def plot_everything_saved(max_prefix_size = 15, save = False):
+def plot_everything_saved(max_prefix_size=15, save=False):
     '''
     Plots everything that was saved by save_procedure_plot_data()
     :param max_prefix_size: maximal prefix length used for plotting
     '''
+
     plot_list = []
-    with open(r"..\data_plot\plot_data", "rb") as input:
+    with open(f"../data_prediction_plot/plot_data", "rb") as input:
         while True:
             try:
                 x = pickle.load(input)
@@ -299,65 +308,48 @@ def plot_everything_saved(max_prefix_size = 15, save = False):
 
     if save:
         name = str(dt.datetime.now())
-        name = name.replace(".","-")
+        name = name.replace(".", "-")
         name = name.replace(":", "-")
-        plt.savefig(r"..\data_plot\plot-pngs" + "\\" + name + ".png")
-
+        plt.savefig(r"..\plots\prediction" + "\\" + name + ".png")
         plt.show()
+
 
 def clear_plot_data_file():
     '''
-    Cleares the plot_data file
+    Clears the plot_data file.
     '''
-    open(r"..\data_plot\plot_data", 'w').close()
+
+    open(f"../data_prediction_plot/plot_data", 'w').close()
 
 
 if __name__ == "__main__":
 
     clear_plot_data_file()
+    # plt.rcParams['text.usetex'] = True
+    # plt.style.use('science')
 
-    #Erster Eintrag des Tupels ist der Pfad zu den Datensätzen (gepickeltes Format, vgl main.py)
-    #Zweite Eintrag des Tupels ist der Pfad zum Ordner, in dem die Modelle liegen
-    dir_pairs = [(r"..\data_plot\test_data", r"..\model")]
-    max_prefix_size = 10
+    seed = 137
+    dir_pairs = [(f"../data_prediction_plot/test_data_{seed}", f"../model")]
+    max_prefix_size = 15
+    model_names = ["pwn", "pwn_no_inter", "lstm", "lr", "dt", "knn", "nb"]
+    model_names_paper = ["PatWay-Net (with interaction)",
+                         "PatWay-Net (without interaction)",
+                         "LSTM network (with static module)",
+                         "Logistic regression", "Decision tree",
+                         "K-nearest neighbor", "Naive Bayes"]
 
     for pair in dir_pairs:
-        data_list = read_data(pair[0])
-        model_list = read_models(data_list[0]["seed"], pair[1])
+        for i, model_name in enumerate(model_names):
+            data_list = read_data(pair[0])
+            model_list = read_models(seed, model_name, pair[1])
 
-        conf = False
-        if data_list[0]["procedure"] == "pwn":  # Das Vorgehen ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
-            conf = True
+            conf = False
+            if model_name == "pwn":
+                conf = True
 
-        with open(r"..\data_plot\plot_data", "ab") as output:
-            pickle.dump(get_average_result(get_plot_data(model_list, data_list, max_prefix_size), conf, label=data_list[0]["procedure"]), output)
+            with open(r"..\data_prediction_plot\plot_data", "ab") as output:
+                pickle.dump(get_average_result(get_plot_data(model_list, data_list,
+                                                             max_prefix_size, model_name),
+                                               conf, label=model_names_paper[i]), output)
 
-    plot_everything_saved(max_prefix_size, False)
-
-
-'''
-x = get_average_result(get_plot_data(read_models(), read_data()), True, label="Methode 1")
-y = get_average_result(get_plot_data(read_models(), read_data()), label="Methode 2")
-z = get_average_result(get_plot_data(read_models(), read_data()), label="Methode 3")
-y["y"] *= 2
-z["y"] += .3
-z["y"] *= 0.5
-plot = plot_data([x, y, z])
-# combined_fig = combine_figures([x,y])
-plt.show()
-'''
-
-#plot_everything_saved()
-#plt.show()
-'''
-plot_list = []
-with open(r"..\data_plot\plot_data", "rb") as input:
-    while True:
-        try:
-            x = pickle.load(input)
-        except EOFError:
-            break
-        plot_list.append(x)
-
-print(plot_list[1]["conf"])
-'''
+    plot_everything_saved(max_prefix_size, save=True)

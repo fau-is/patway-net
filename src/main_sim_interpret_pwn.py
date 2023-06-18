@@ -116,7 +116,7 @@ if plot_loss:
         fig, ax = plt.subplots()
         ax.set_xlabel('Number of epochs')
         ax.set_ylabel('MSE')
-        ax.plot(x1, 'black', label='PatWay-Net')
+        ax.create_plot(x1, 'black', label='PatWay-Net')
         ax.hlines(x2, 0, epochs-11, colors='gray', label='Lasso regression')
         ax.hlines(x3, 0, epochs-11, colors='blue', label='Ridge regression')
         ax.hlines(x4, 0, epochs-11, colors='darkgray', label='Decision tree')
