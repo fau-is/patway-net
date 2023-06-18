@@ -14,12 +14,23 @@ import torch
 from src.interpret_LSTM import Net
 from sklearn.model_selection import StratifiedKFold
 
+import pickle
+
+from roc_auc_plot import save_procedure_plot_data, plot_everything_saved, clear_plot_data_file
+
+
 max_len = 50
 min_len = 3
 min_size_prefix = 1
 val_size = 0.2
 train_size = 0.8
 hpo = True
+
+### Plot Attributes ###
+procedure = None
+plot = True
+max_prefix_size = 12
+save_plot = True
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
@@ -240,7 +251,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
                                 import copy
                                 best_val_loss = np.inf
                                 patience = 10
-                                epochs = 100
+                                epochs = 1
                                 trigger_times = 0
                                 model_best_es = copy.deepcopy(model)
                                 flag_es = False
@@ -385,6 +396,12 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
 
+        if (mode == "pwn" or plot):
+            with open(r"..\data_plot\test_data", "ab") as output:
+                data_dictionary = {"fold": id, "x_test_seq": X_test_seq, "x_test_stat": X_test_stat, "label" : y_test, "procedure": procedure, "seed": seed}
+                pickle.dump(data_dictionary, output)
+                print("Dataset from fold " + str(id) + "saved to "+ str(output))
+
         if mode == "pwn":
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                           y_val.reshape(-1, 1), hpos, hpo, mode, data_set, target_activity=target_activity)
@@ -454,6 +471,9 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             preds_proba_test = model.predict_proba(X_test_stat)
             results['preds_test'] = [np.argmax(pred_proba) for pred_proba in preds_proba_test]
             results['preds_proba_test'] = [pred_proba[1] for pred_proba in preds_proba_test]
+
+            if plot:
+                torch.save(model, os.path.join("../model", f"model_{id}_{seed}"))
 
         results['gts_train'] = [int(y) for y in y_train]
         results['gts_val'] = [int(y) for y in y_val]
@@ -625,12 +645,12 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
 
 if __name__ == "__main__":
 
-    data_set = "bpi2012"  # bpi2012, hospital
+    data_set = "sepsis"  # bpi2012, hospital
 
     hpos = {
-        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        # "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128],
-        #          "inter_seq_best": [1]},
+        #"pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+         "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [128],
+                  "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
@@ -638,9 +658,12 @@ if __name__ == "__main__":
         "knn": {"n_neighbors": [3, 5, 10]}
     }
 
+    clear_plot_data_file()
+
     if data_set == "sepsis":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
-            for mode in ['lr']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+            for mode in ['pwn','knn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+                procedure = mode
                 for target_activity in ['Admission IC']:
 
                     np.random.seed(seed=seed)
@@ -651,10 +674,14 @@ if __name__ == "__main__":
 
                     x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                         evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed)
+                if plot:
+                    save_procedure_plot_data(max_prefix_size=max_prefix_size)
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
             for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+                procedure = mode
+
                 np.random.seed(seed=seed)
                 torch.manual_seed(seed=seed)
 
@@ -666,6 +693,8 @@ if __name__ == "__main__":
     elif data_set == "hospital":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
             for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+                procedure = mode
+
                 np.random.seed(seed=seed)
                 torch.manual_seed(seed=seed)
 
@@ -676,3 +705,6 @@ if __name__ == "__main__":
 
     else:
         print("Data set not available!")
+
+    if plot:
+        plot_everything_saved(max_prefix_size, save_plot)
