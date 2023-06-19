@@ -2,6 +2,7 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
+import warnings
 
 
 class MLP(nn.Module):
@@ -337,6 +338,9 @@ class Net(nn.Module):
             rnd_feat_target = random.choice(x_seq_features)
             feat_pair = [rnd_feat_target, rnd_feat_source]
             feat_pair.sort()
+
+            # Blocks Future Warnings from Numpy (Elementwise Comparison failed; returning scalar but in-the futur will perform elementwise comparison
+            warnings.simplefilter(action="ignore",category=FutureWarning)
 
             # Exists interaction already or is the interaction a loop?
             if str(feat_pair) in results["Pair"].values or rnd_feat_source == rnd_feat_target:

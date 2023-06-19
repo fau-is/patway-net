@@ -276,12 +276,13 @@ def save_procedure_plot_data(max_prefix_size=15, dir=f"../data_prediction_plot/t
     :param dir: path of the file where the datasets from the current procedure where saved (main.py)
     '''
     r_data = read_data()
-    r_models = read_models(r_data[0]["seed"])  # Der Seed ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
+    r_models = read_models(r_data[0]["seed"])  # the seed of the r_data list is the same for every entry, therefore I use the seed from index 0
+    
 
-    open(dir, 'w').close()  # Das File muss geleert werden, damit Daten von anderen Verfahren einlesen werden können
+    open(dir, 'w').close()  # the file needs to be cleared, so data from another procedure can be saved
 
     conf = False
-    if r_data[0]["procedure"] == "pwn":  # Das Vorgehen ist in allen Einträgen der r_data Liste gleich, daher kann man einfach Index 0 nehmen
+    if r_data[0]["procedure"] == "pwn":  # the procedure of the r_data list is the same for every entry, therefore I use the seed from index 0
         conf = True
 
     with open(f"../data_prediction_plot/plot_data", "ab") as output:
