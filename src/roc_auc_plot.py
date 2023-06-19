@@ -328,7 +328,7 @@ if __name__ == "__main__":
     # plt.rcParams['text.usetex'] = True
     # plt.style.use('science')
 
-    seed = 137
+    seed = 245
     dir_pairs = [(f"../data_prediction_plot/test_data_{seed}", f"../model")]
     max_prefix_size = 15
     model_names = ["pwn", "pwn_no_inter", "lstm", "lr", "dt", "knn", "nb"]
