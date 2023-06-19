@@ -22,7 +22,7 @@ def calc_roc_auc(gts, probs):
             auc = 0
         return auc
     except:
-        print("except")
+        # print("except")
         return 0
 
 
@@ -122,7 +122,7 @@ def get_prefix_dictionary(seq, max_prefix_size=15):
     :return: list containing dictionaries mapping all samples of a sequential dataset with their prefix length
     '''
     samples = seq.shape[0]
-    print(samples)
+    # print(samples)
 
     mapList = []
     uniquePrefixSizes = []
@@ -229,6 +229,8 @@ def get_average_result(result, conf: bool = False, label=""):
     avg_y = sum(avg_y) / len(avg_y)
     avg_y = avg_y.fillna(0)
 
+    print(f"x: {str([x for x in avg_x])},\n y: {str([y for y in avg_y])}, \n conf: {conf},\n label: {label}\n\n")
+
     return {"x": avg_x, "y": avg_y, "conf": conf, "label": label}
 
 
@@ -331,7 +333,7 @@ if __name__ == "__main__":
 
     seed = 245
     dir_pairs = [(f"../data_prediction_plot/test_data_{seed}", f"../model")]
-    max_prefix_size = 15
+    max_prefix_size = 30
     model_names = ["pwn", "pwn_no_inter", "lstm", "lr", "dt", "knn", "nb"]
     model_names_paper = ["PatWay-Net (with interaction)",
                          "PatWay-Net (without interaction)",
