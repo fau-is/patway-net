@@ -13,10 +13,7 @@ import src.data as data
 import torch
 from src.interpret_LSTM import Net
 from sklearn.model_selection import StratifiedKFold
-
 import pickle
-
-from roc_auc_plot import save_procedure_plot_data, plot_everything_saved, clear_plot_data_file
 
 
 max_len = 50
@@ -25,13 +22,7 @@ min_size_prefix = 1
 val_size = 0.2
 train_size = 0.8
 hpo = True
-
-### Plot Attributes ###
-procedure = None
-plot = True
-max_prefix_size = 12
-save_plot = True
-
+create_plot = True
 
 def concatenate_tensor_matrix(x_seq, x_stat):
     x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
@@ -203,138 +194,155 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         return model
 
 
-def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
+def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
                hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
 
-    if mode == "pwn":
-        import torch
-        import torch.nn as nn
-        import torch.optim as optim
+    interactions_seq_itr = 100
+    patience = 10
+    epochs = 100
+    lstm_mode = ["pwn", "pwn_no_inter", "lstm"][0]
 
-        if hpo:
-            best_model = ""
-            best_hpos = ""
-            aucs = []
+    if lstm_mode == "pwn":
+        masking = True
+        interactions_seq_auto = True
+        only_static = False
 
-            x_train_seq = torch.from_numpy(x_train_seq)
-            x_train_stat = torch.from_numpy(x_train_stat)
-            y_train = torch.from_numpy(y_train)
+    elif lstm_mode == "pwn_no_inter":
+        masking = True
+        interactions_seq_auto = False
+        only_static = False
 
-            for learning_rate in hpos["pwn"]["learning_rate"]:
-                for batch_size in hpos["pwn"]["batch_size"]:
-                    for seq_feature_sz in hpos["pwn"]["seq_feature_sz"]:
-                        for stat_feature_sz in hpos["pwn"]["stat_feature_sz"]:
-                            for inter_seq_best in hpos["pwn"]["inter_seq_best"]:
+    elif lstm_mode == "lstm":
+        masking = False
+        interactions_seq_auto = False
+        only_static = False
 
-                                model = Net(input_sz_seq=num_features_seq,
-                                            hidden_per_seq_feat_sz=seq_feature_sz,
-                                            interactions_seq=[],
-                                            interactions_seq_itr=100,
-                                            interactions_seq_best=inter_seq_best,
-                                            interactions_seq_auto=True,
-                                            input_sz_stat=num_features_stat,
-                                            output_sz=1,
-                                            only_static=False,
-                                            masking=True,
-                                            mlp_hidden_size=stat_feature_sz,
-                                            x_seq=x_train_seq,
-                                            x_stat=x_train_stat,
-                                            y=y_train)
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
 
-                                criterion = nn.BCEWithLogitsLoss()
-                                optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-                                idx = np.arange(len(x_train_seq))
+    if hpo:
+        best_model = ""
+        best_hpos = ""
+        aucs = []
 
-                                import copy
-                                best_val_loss = np.inf
-                                patience = 10
-                                epochs = 1
-                                trigger_times = 0
-                                model_best_es = copy.deepcopy(model)
-                                flag_es = False
+        x_train_seq = torch.from_numpy(x_train_seq)
+        x_train_stat = torch.from_numpy(x_train_stat)
+        y_train = torch.from_numpy(y_train)
 
-                                for epoch in range(epochs):
-                                    print(f"Epoch: {epoch + 1}")
-                                    np.random.shuffle(idx)
-                                    x_train_seq = x_train_seq[idx]
-                                    x_train_stat = x_train_stat[idx]
-                                    y_train = y_train[idx]
-                                    number_batches = x_train_seq.shape[0] // batch_size
+        for learning_rate in hpos["pwn"]["learning_rate"]:
+            for batch_size in hpos["pwn"]["batch_size"]:
+                for seq_feature_sz in hpos["pwn"]["seq_feature_sz"]:
+                    for stat_feature_sz in hpos["pwn"]["stat_feature_sz"]:
+                        for inter_seq_best in hpos["pwn"]["inter_seq_best"]:
 
-                                    for i in range(number_batches):
-                                        optimizer.zero_grad()  # clean up step for PyTorch
-                                        out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
-                                                    x_train_stat[i * batch_size:(i + 1) * batch_size])
-                                        loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
-                                        loss.backward()  # compute updates for each parameter
-                                        optimizer.step()  # make the updates for each parameter
+                            model = Net(input_sz_seq=num_features_seq,
+                                        hidden_per_seq_feat_sz=seq_feature_sz,
+                                        interactions_seq=[],
+                                        interactions_seq_itr=interactions_seq_itr,
+                                        interactions_seq_best=inter_seq_best,
+                                        interactions_seq_auto=interactions_seq_auto,
+                                        input_sz_stat=num_features_stat,
+                                        output_sz=1,
+                                        only_static=only_static,
+                                        masking=masking,
+                                        mlp_hidden_size=stat_feature_sz,
+                                        x_seq=x_train_seq,
+                                        x_stat=x_train_stat,
+                                        y=y_train)
 
-                                    # Early stopping
-                                    def validation(model, x_val_seq, x_val_stat, y_val, loss_function):
+                            criterion = nn.BCEWithLogitsLoss()
+                            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+                            idx = np.arange(len(x_train_seq))
 
-                                        x_val_stat = torch.from_numpy(x_val_stat)
-                                        x_val_seq = torch.from_numpy(x_val_seq)
-                                        y_val = torch.from_numpy(y_val)
+                            import copy
+                            best_val_loss = np.inf
+                            trigger_times = 0
+                            model_best_es = copy.deepcopy(model)
+                            flag_es = False
 
-                                        model.eval()
-                                        loss_total = 0
-                                        number_batches = x_val_seq.shape[0] // batch_size
+                            for epoch in range(epochs):
+                                print(f"Epoch: {epoch + 1}")
+                                np.random.shuffle(idx)
+                                x_train_seq = x_train_seq[idx]
+                                x_train_stat = x_train_stat[idx]
+                                y_train = y_train[idx]
+                                number_batches = x_train_seq.shape[0] // batch_size
 
-                                        with torch.no_grad():
-                                            for i in range(number_batches):
-                                                out = model(x_val_seq[i * batch_size: (i + 1) * batch_size],
-                                                            x_val_stat[i * batch_size: (i + 1) * batch_size])
-                                                loss = loss_function(out, y_val[
-                                                                          i * batch_size:(i + 1) * batch_size].double())
-                                                loss_total += loss.item()
-                                        return loss_total / number_batches
+                                for i in range(number_batches):
+                                    optimizer.zero_grad()  # clean up step for PyTorch
+                                    out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
+                                                x_train_stat[i * batch_size:(i + 1) * batch_size])
+                                    loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
+                                    loss.backward()  # compute updates for each parameter
+                                    optimizer.step()  # make the updates for each parameter
 
-                                    current_val_loss = validation(model, x_val_seq, x_val_stat, y_val, criterion)
-                                    print('Validation loss:', current_val_loss)
+                                # Early stopping
+                                def validation(model, x_val_seq, x_val_stat, y_val, loss_function):
 
-                                    if current_val_loss > best_val_loss:
-                                        trigger_times += 1
-                                        print('trigger times:', trigger_times)
+                                    x_val_stat = torch.from_numpy(x_val_stat)
+                                    x_val_seq = torch.from_numpy(x_val_seq)
+                                    y_val = torch.from_numpy(y_val)
 
-                                        if trigger_times >= patience:
-                                            print('Early stopping!\nStart to test process.')
-                                            flag_es = True
-                                            break
-                                    else:
-                                        print('trigger times: 0')
-                                        trigger_times = 0
-                                        model_best_es = copy.deepcopy(model)
-                                        best_val_loss = current_val_loss
+                                    model.eval()
+                                    loss_total = 0
+                                    number_batches = x_val_seq.shape[0] // batch_size
 
-                                    if flag_es:
+                                    with torch.no_grad():
+                                        for i in range(number_batches):
+                                            out = model(x_val_seq[i * batch_size: (i + 1) * batch_size],
+                                                        x_val_stat[i * batch_size: (i + 1) * batch_size])
+                                            loss = loss_function(out, y_val[
+                                                                      i * batch_size:(i + 1) * batch_size].double())
+                                            loss_total += loss.item()
+                                    return loss_total / number_batches
+
+                                current_val_loss = validation(model, x_val_seq, x_val_stat, y_val, criterion)
+                                print('Validation loss:', current_val_loss)
+
+                                if current_val_loss > best_val_loss:
+                                    trigger_times += 1
+                                    print('trigger times:', trigger_times)
+
+                                    if trigger_times >= patience:
+                                        print('Early stopping!\nStart to test process.')
+                                        flag_es = True
                                         break
+                                else:
+                                    print('trigger times: 0')
+                                    trigger_times = 0
+                                    model_best_es = copy.deepcopy(model)
+                                    best_val_loss = current_val_loss
 
-                                # Select model based on val auc
-                                model_best_es.eval()
-                                with torch.no_grad():
+                                if flag_es:
+                                    break
 
-                                    x_val_stat_ = torch.from_numpy(x_val_stat)
-                                    x_val_seq_ = torch.from_numpy(x_val_seq)
+                            # Select model based on val auc
+                            model_best_es.eval()
+                            with torch.no_grad():
 
-                                    preds_proba = torch.sigmoid(model_best_es(x_val_seq_, x_val_stat_))
-                                    preds_proba = [pred_proba[0] for pred_proba in preds_proba]
-                                    try:
-                                        auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
-                                        if np.isnan(auc):
-                                            auc = 0
-                                    except:
+                                x_val_stat_ = torch.from_numpy(x_val_stat)
+                                x_val_seq_ = torch.from_numpy(x_val_seq)
+
+                                preds_proba = torch.sigmoid(model_best_es(x_val_seq_, x_val_stat_))
+                                preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+                                try:
+                                    auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                                    if np.isnan(auc):
                                         auc = 0
-                                    aucs.append(auc)
+                                except:
+                                    auc = 0
+                                aucs.append(auc)
 
-                                    if auc >= max(aucs):
-                                        best_model = copy.deepcopy(model_best_es)
-                                        best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
-                                                     "seq_feature_sz": seq_feature_sz,
-                                                     "stat_feature_sz": stat_feature_sz,
-                                                     "inter_seq_best": inter_seq_best}
+                                if auc >= max(aucs):
+                                    best_model = copy.deepcopy(model_best_es)
+                                    best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
+                                                 "seq_feature_sz": seq_feature_sz,
+                                                 "stat_feature_sz": stat_feature_sz,
+                                                 "inter_seq_best": inter_seq_best}
 
             f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
             f.write(str(best_hpos) + '\n')
@@ -342,6 +350,8 @@ def train_lstm(x_train_seq, x_train_stat, y_train, x_val_seq=False, x_val_stat=F
             f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
             f.write(f'Std,{np.std(aucs, ddof=1)}\n')
             f.close()
+
+            torch.save(model, os.path.join("../model", f"model_{lstm_mode}_{id}_{seed}"))
 
             return best_model, best_hpos
         else:
@@ -396,14 +406,15 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
 
-        if (mode == "pwn" or plot):
-            with open(r"..\data_plot\test_data", "ab") as output:
-                data_dictionary = {"fold": id, "x_test_seq": X_test_seq, "x_test_stat": X_test_stat, "label" : y_test, "procedure": procedure, "seed": seed}
+        if create_plot:
+            with open(f"../data_prediction_plot/test_data_{seed}", "ab") as output:
+                data_dictionary = {"fold": id, "x_test_seq": X_test_seq,
+                                   "x_test_stat": X_test_stat, "label": y_test, "seed": seed}
                 pickle.dump(data_dictionary, output)
-                print("Dataset from fold " + str(id) + "saved to "+ str(output))
+                print("Test data from fold " + str(id) + " saved to " + str(output))
 
         if mode == "pwn":
-            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat,
                                           y_val.reshape(-1, 1), hpos, hpo, mode, data_set, target_activity=target_activity)
 
             X_train_seq = torch.from_numpy(X_train_seq)
@@ -472,15 +483,12 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds_test'] = [np.argmax(pred_proba) for pred_proba in preds_proba_test]
             results['preds_proba_test'] = [pred_proba[1] for pred_proba in preds_proba_test]
 
-            if plot:
-                torch.save(model, os.path.join("../model", f"model_{id}_{seed}"))
+            if create_plot:
+                torch.save(model, os.path.join("../model", f"model_{mode}_{id}_{seed}"))
 
         results['gts_train'] = [int(y) for y in y_train]
         results['gts_val'] = [int(y) for y in y_val]
         results['gts_test'] = [int(y) for y in y_test]
-
-        if mode == 'pwn':
-            torch.save(model, os.path.join("../model", f"model_{id}_{seed}"))
 
         results_temp_train = pd.DataFrame(
             list(zip(results['preds_train'], results['preds_proba_train'], results['gts_train'])),
@@ -658,11 +666,9 @@ if __name__ == "__main__":
         "knn": {"n_neighbors": [3, 5, 10]}
     }
 
-    clear_plot_data_file()
-
     if data_set == "sepsis":
-        for seed in [15]:  # 15, 37, 98, 137, 245]:
-            for mode in ['pwn','knn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+        for seed in [245]:  # 15, 37, 98, 137, 245]:
+            for mode in ['lr', 'dt', 'knn', 'nb']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
                 procedure = mode
                 for target_activity in ['Admission IC']:
 
@@ -674,8 +680,6 @@ if __name__ == "__main__":
 
                     x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
                         evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed)
-                if plot:
-                    save_procedure_plot_data(max_prefix_size=max_prefix_size)
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
@@ -705,6 +709,3 @@ if __name__ == "__main__":
 
     else:
         print("Data set not available!")
-
-    if plot:
-        plot_everything_saved(max_prefix_size, save_plot)
