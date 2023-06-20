@@ -22,7 +22,6 @@ def calc_roc_auc(gts, probs):
             auc = 0
         return auc
     except:
-        # print("except")
         return 0
 
 
@@ -60,6 +59,7 @@ def read_models(seed, mode, dir=r"..\model"):
     :param dir: path of the folder containing the models
     :return: dataset-dictionaries in a list
     '''
+
     model_list = []
     for file in os.listdir(dir):
         filename = os.fsdecode(file)
@@ -81,9 +81,8 @@ def get_prefix_length(seq, sample):
     lastRow = None
     actualPrefixRows = 0
     for matrix in seq[sample, :, :]:
-        # print(matrix)
-        rowCounter += 1
 
+        rowCounter += 1
         notZero = False
 
         for x in matrix:
@@ -105,11 +104,6 @@ def get_prefix_length(seq, sample):
                 counter += 1
                 break
 
-    # print(actualPrefixRows)
-    # print(counter)
-    # print(rowCounter)
-    # print(lastRow)
-
     # return counter + (actualPrefixRows * len(lastRow))  #Every Value counts into the prefix size
     return actualPrefixRows + 1  # Every Row counts into the prefix size
 
@@ -122,7 +116,6 @@ def get_prefix_dictionary(seq, max_prefix_size=15):
     :return: list containing dictionaries mapping all samples of a sequential dataset with their prefix length
     '''
     samples = seq.shape[0]
-    # print(samples)
 
     mapList = []
     uniquePrefixSizes = []
@@ -133,7 +126,6 @@ def get_prefix_dictionary(seq, max_prefix_size=15):
         uniquePrefixSizes.append(get_prefix_length(seq, t))
 
     uniquePrefixSizes = set(uniquePrefixSizes)
-    # print(uniquePrefixSizes)
 
     prefixDictionaryList = []
 
@@ -183,7 +175,7 @@ def get_plot_data(model_list, data_list, max_prefix_size, model_name):
             prefix_stat = stat[prefix_length_dict["indizes"], :]
             prefix_label = label[prefix_length_dict["indizes"]]
 
-            if model_name == "pwn" or model_name == "lstm" or model_name == "pwn_no_inter":
+            if model_name == "pwn_one_inter" or model_name == "lstm" or model_name == "pwn_no_inter":
                 model.eval()
                 with torch.no_grad():
                     preds_proba = torch.sigmoid(model.forward(prefix_seq, prefix_stat))
@@ -256,9 +248,6 @@ def plot_data(results, max_prefix_size=15):
             confiI = 1.96 * np.std(result["y"]) / np.sqrt(len(result["y"]))
             plt.fill_between(result["x"], (result["y"] - confiI), (result["y"] + confiI), color="cyan", alpha=0.2)
         else:
-            # b = random.uniform(0, 0.5)
-            # col = (np.random.random(), np.random.random(), b)
-
             plt.plot(result["x"], result["y"], label=result["label"], marker="o", ls="--", color=palet[i])
 
     plt.xlabel("Prefix Length")
@@ -270,27 +259,6 @@ def plot_data(results, max_prefix_size=15):
     plt.legend()
 
     return fig
-
-"""
-def save_procedure_plot_data(max_prefix_size=15, dir=f"../data_prediction_plot/test_data"):
-    '''
-    Creates and saves plot data for currently used ml procedure in main.py. Data will be saved to a file
-    :param dir: path of the file where the datasets from the current procedure where saved (main.py)
-    '''
-    r_data = read_data()
-    r_models = read_models(r_data[0]["seed"])  # the seed of the r_data list is the same for every entry, therefore I use the seed from index 0
-    
-
-    open(dir, 'w').close()  # the file needs to be cleared, so data from another procedure can be saved
-
-    conf = False
-    if r_data[0]["procedure"] == "pwn":  # the procedure of the r_data list is the same for every entry, therefore I use the seed from index 0
-        conf = True
-
-    with open(f"../data_prediction_plot/plot_data", "ab") as output:
-        pickle.dump(get_average_result(get_plot_data(
-            r_models, r_data, max_prefix_size), conf, label=r_data[0]["procedure"]), output)
-"""
 
 def plot_everything_saved(max_prefix_size=15, save=False):
     '''
@@ -328,13 +296,11 @@ def clear_plot_data_file():
 if __name__ == "__main__":
 
     clear_plot_data_file()
-    # plt.rcParams['text.usetex'] = True
-    # plt.style.use('science')
 
     seed = 245
     dir_pairs = [(f"../data_prediction_plot/test_data_{seed}", f"../model")]
     max_prefix_size = 30
-    model_names = ["pwn", "pwn_no_inter", "lstm", "lr", "dt", "knn", "nb"]
+    model_names = ["pwn_one_inter", "pwn_no_inter", "lstm", "lr", "dt", "knn", "nb"]
     model_names_paper = ["PatWay-Net (with interaction)",
                          "PatWay-Net (without interaction)",
                          "LSTM network (with static module)",
@@ -347,12 +313,11 @@ if __name__ == "__main__":
             model_list = read_models(seed, model_name, pair[1])
 
             conf = False
-            if model_name == "pwn":
+            if model_name == "pwn_one_inter":
                 conf = True
 
             with open(r"..\data_prediction_plot\plot_data", "ab") as output:
-                pickle.dump(get_average_result(get_plot_data(model_list, data_list,
-                                                             max_prefix_size, model_name),
+                pickle.dump(get_average_result(get_plot_data(model_list, data_list, max_prefix_size, model_name),
                                                conf, label=model_names_paper[i]), output)
 
     plot_everything_saved(max_prefix_size, save=True)
