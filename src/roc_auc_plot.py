@@ -1,16 +1,11 @@
 import pickle
-import numpy
 import pandas as pd
 import numpy as np
-import os
-import src.data as data
 import torch
 import os
 from sklearn import metrics
 import matplotlib.pyplot as plt
-import math
 import seaborn as sns
-import random
 import datetime as dt
 
 
@@ -23,15 +18,6 @@ def calc_roc_auc(gts, probs):
         return auc
     except:
         return 0
-
-
-# Straight up stolen from main.py
-def concatenate_tensor_matrix(x_seq, x_stat):
-    x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
-    x_concat = np.concatenate((x_train_seq_, x_stat), axis=1)
-
-    return x_concat
-
 
 def read_data(dir=f"../data_plot/test_data"):
     '''
@@ -77,26 +63,26 @@ def get_prefix_length(seq, sample):
     :return: prefix-length
     '''
     counter = 0
-    rowCounter = -1
-    lastRow = None
-    actualPrefixRows = 0
+    row_counter = -1
+    last_row = None
+    actual_prefix_rows = 0
     for matrix in seq[sample, :, :]:
 
-        rowCounter += 1
-        notZero = False
+        row_counter += 1
+        not_zero = False
 
         for x in matrix:
             x = float(x)
             if x != 0:
-                notZero = True
+                not_zero = True
                 break
 
-        if notZero:
-            lastRow = matrix
-            actualPrefixRows = rowCounter
+        if not_zero:
+            last_row = matrix
+            actual_prefix_rows = row_counter
 
-    if lastRow != None:
-        for entry in lastRow:
+    if last_row != None:
+        for entry in last_row:
             if entry == 0:
                 counter += 1
 
@@ -104,8 +90,8 @@ def get_prefix_length(seq, sample):
                 counter += 1
                 break
 
-    # return counter + (actualPrefixRows * len(lastRow))  #Every Value counts into the prefix size
-    return actualPrefixRows + 1  # Every Row counts into the prefix size
+    # return counter + (actual_prefix_rows * len(last_row))  #Every value counts into the prefix size
+    return actual_prefix_rows + 1  # Every row counts into the prefix size
 
 
 def get_prefix_dictionary(seq, max_prefix_size=15):
@@ -117,30 +103,30 @@ def get_prefix_dictionary(seq, max_prefix_size=15):
     '''
     samples = seq.shape[0]
 
-    mapList = []
-    uniquePrefixSizes = []
+    map_list = []
+    unique_prefix_sizes = []
     for t in range(0, samples):
-        indexPrefixSizeMap = {"index": t, "prefixSize": get_prefix_length(seq, t)}
+        index_prefix_size_map = {"index": t, "prefix_size": get_prefix_length(seq, t)}
 
-        mapList.append(indexPrefixSizeMap)
-        uniquePrefixSizes.append(get_prefix_length(seq, t))
+        map_list.append(index_prefix_size_map)
+        unique_prefix_sizes.append(get_prefix_length(seq, t))
 
-    uniquePrefixSizes = set(uniquePrefixSizes)
+    unique_prefix_sizes = set(unique_prefix_sizes)
 
-    prefixDictionaryList = []
+    prefix_dictionary_list = []
 
-    for prefixSize in uniquePrefixSizes:
-        prefixDictionary = {}
-        prefixDictionary["prefixSize"] = prefixSize
-        prefixDictionary["indizes"] = []
-        for entry in mapList:
-            if entry["prefixSize"] == prefixSize:
-                prefixDictionary["indizes"].append(entry["index"])
-        prefixDictionaryList.append(prefixDictionary)
+    for prefix_size in unique_prefix_sizes:
+        prefix_dictionary = {}
+        prefix_dictionary["prefix_size"] = prefix_size
+        prefix_dictionary["indizes"] = []
+        for entry in map_list:
+            if entry["prefix_size"] == prefix_size:
+                prefix_dictionary["indizes"].append(entry["index"])
+        prefix_dictionary_list.append(prefix_dictionary)
 
     filter_list = []
-    for entry in prefixDictionaryList:
-        if entry["prefixSize"] <= max_prefix_size:
+    for entry in prefix_dictionary_list:
+        if entry["prefix_size"] <= max_prefix_size:
             filter_list.append(entry)
 
     return filter_list
@@ -206,17 +192,17 @@ def get_average_result(result, conf: bool = False, label=""):
     for values in result:
 
         data = values["data"]
-        df = pd.DataFrame(columns=["PrefixLength", "AUC"])
+        df = pd.DataFrame(columns=["prefix_length", "AUC"])
         for i in range(0, len(data) - 1):
-            x = (data[i]["PrefixLength"])
+            x = (data[i]["prefix_length"])
             y = (data[i]["AUC"])
             df.loc[i] = (x, y)
 
-        df = df.sort_values(by=["PrefixLength"])
+        df = df.sort_values(by=["prefix_length"])
         avg_y.append(df["AUC"])
 
-        if len(df["PrefixLength"]) > len(avg_x):
-            avg_x = df["PrefixLength"]
+        if len(df["prefix_length"]) > len(avg_x):
+            avg_x = df["prefix_length"]
 
     avg_y = sum(avg_y) / len(avg_y)
     avg_y = avg_y.fillna(0)
@@ -234,7 +220,6 @@ def plot_data(results, max_prefix_size=15):
     '''
 
     fig = plt.figure()
-    ax = plt.gca()
     palet = sns.color_palette()
 
     for i, result in enumerate(results):
