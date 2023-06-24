@@ -1,0 +1,180 @@
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 2, 'min_samples_split': 2}
+Validation aucs,1.0,0.5,0.5
+Avg,0.6666666666666666
+Std,0.28867513459481287
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 2, 'min_samples_split': 2}
+Validation aucs,1.0,0.5,0.5
+Avg,0.6666666666666666
+Std,0.28867513459481287
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 2, 'min_samples_split': 2}
+Validation aucs,1.0,0.5,0.5
+Avg,0.6666666666666666
+Std,0.28867513459481287
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 2, 'min_samples_split': 2}
+Validation aucs,1.0,0.5,0.5
+Avg,0.6666666666666666
+Std,0.28867513459481287
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 2, 'min_samples_split': 2}
+Validation aucs,1.0,0.5,0.5
+Avg,0.6666666666666666
+Std,0.28867513459481287
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 2, 'min_samples_split': 2}
+Validation aucs,1.0,0.5,0.5
+Avg,0.6666666666666666
+Std,0.28867513459481287
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 2, 'min_samples_split': 2}
+Validation aucs,1.0,0.5,0.5
+Avg,0.6666666666666666
+Std,0.28867513459481287
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 2, 'min_samples_split': 2}
+Validation aucs,1.0,0.5,0.5
+Avg,0.6666666666666666
+Std,0.28867513459481287
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 2, 'min_samples_split': 2}
+Validation aucs,1.0,0.5,0.5
+Avg,0.6666666666666666
+Std,0.28867513459481287
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0
+{'max_depth': 4, 'min_samples_split': 2}
+Validation aucs,0,0,0
+Avg,0.0
+Std,0.0

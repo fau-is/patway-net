@@ -14,7 +14,7 @@ import torch
 from src.interpret_LSTM import Net
 from sklearn.model_selection import StratifiedKFold
 import pickle
-
+import xgboost as xgb
 
 max_len = 50
 min_len = 3
@@ -24,11 +24,54 @@ train_size = 0.8
 hpo = True
 create_plot = True
 
+
 def concatenate_tensor_matrix(x_seq, x_stat):
     x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
     x_concat = np.concatenate((x_train_seq_, x_stat), axis=1)
 
     return x_concat
+
+
+def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    if hpo:
+        best_model = ""
+        best_hpos = ""
+        aucs = []
+
+        for max_depth in hpos["xgb"]["max_depth"]:
+            for learning_rate in hpos["xgb"]["learning_rate"]:
+
+                model = xgb.XGBClassifier(max_depth=max_depth, learning_rate=learning_rate, n_estimators=100)
+                model.fit(x_train_stat, np.ravel(y_train))
+
+                preds_proba = model.predict_proba(x_val_stat)
+                preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                try:
+                    auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                    if np.isnan(auc):
+                        auc = 0
+                except:
+                    auc = 0
+                aucs.append(auc)
+
+                if auc >= max(aucs):
+                    best_model = model
+                    best_hpos = {"max_depth": max_depth, "learning_rate": learning_rate}
+
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
+        f.write(str(best_hpos))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+        f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+        f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+        f.close()
+
+        return best_model, best_hpos
+
+    else:
+        model = xgb.XGBClassifier()
+        model.fit(x_train_stat, np.ravel(y_train))
+
+        return model
 
 
 def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
@@ -445,9 +488,13 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds_test'] = [map_value(pred[0]) for pred in preds_proba_test]
             results['preds_proba_test'] = [pred_proba[0] for pred_proba in preds_proba_test]
 
+        elif mode == "xgb":
+            model, best_hpos = train_xgb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+
         elif mode == "lr":
             model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+                                         y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
 
         elif mode == "nb":
             model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -472,7 +519,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                          y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
 
-        if mode in ["dt", "knn", "nb", "lr"]:
+        if mode in ["xgb", "dt", "knn", "nb", "lr"]:
             preds_proba_train = model.predict_proba(X_train_stat)
             results['preds_train'] = [np.argmax(pred_proba) for pred_proba in preds_proba_train]
             results['preds_proba_train'] = [pred_proba[1] for pred_proba in preds_proba_train]
@@ -663,12 +710,13 @@ if __name__ == "__main__":
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
         "dt": {"max_depth": [2, 3, 4], "min_samples_split": [2]},
-        "knn": {"n_neighbors": [3, 5, 10]}
+        "knn": {"n_neighbors": [3, 5, 10]},
+        "xgb": {"max_depth": [2, 6, 12], "learning_rate": [0.3, 0.1, 0.03]}
     }
 
     if data_set == "sepsis":
-        for seed in [15, 37, 98, 137, 245]:  # 15, 37, 98, 137, 245]:
-            for mode in ['nb']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+        for seed in [15]:  # [15, 37, 98, 137, 245]:
+            for mode in ['xgb']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb'
                 procedure = mode
                 for target_activity in ['Admission IC']:
 
@@ -683,7 +731,7 @@ if __name__ == "__main__":
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb'
                 procedure = mode
 
                 np.random.seed(seed=seed)
@@ -696,7 +744,7 @@ if __name__ == "__main__":
 
     elif data_set == "hospital":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb'
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb'
                 procedure = mode
 
                 np.random.seed(seed=seed)
