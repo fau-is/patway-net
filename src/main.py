@@ -715,7 +715,7 @@ if __name__ == "__main__":
     }
 
     if data_set == "sepsis":
-        for seed in [15]:  # [15, 37, 98, 137, 245]:
+        for seed in [15, 37, 98, 137, 245]:  # [15, 37, 98, 137, 245]:
             for mode in ['xgb']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb'
                 procedure = mode
                 for target_activity in ['Admission IC']:
@@ -743,7 +743,7 @@ if __name__ == "__main__":
                     evaluate_on_cut(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
 
     elif data_set == "hospital":
-        for seed in [15]:  # 15, 37, 98, 137, 245]:
+        for seed in [15]:  # [15, 37, 98, 137, 245]:
             for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb'
                 procedure = mode
 

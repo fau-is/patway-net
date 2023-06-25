@@ -19,6 +19,7 @@ def calc_roc_auc(gts, probs):
     except:
         return 0
 
+
 def read_data(dir=f"../data_plot/test_data"):
     '''
     Reads dataset-dictionaries saved in main.py from file
@@ -57,73 +58,63 @@ def read_models(seed, mode, dir=r"..\model"):
 
 def get_prefix_length(seq, sample):
     '''
-    Determines the prefix-length of a given sample from a given sequentiell dataset
-    :param seq: sequentiell dataset
-    :param sample: sample of the sequentiell dataset which prefix-length need to be determined
-    :return: prefix-length
+    Determines the prefix-length of a given sample from a given sequential dataset
+    :param seq: sequential dataset
+    :param sample: sample of the sequential dataset which prefix length need to be determined
+    :return: prefix length
     '''
-    counter = 0
-    row_counter = -1
-    last_row = None
-    actual_prefix_rows = 0
-    for matrix in seq[sample, :, :]:
 
-        row_counter += 1
-        not_zero = False
+    actual_prefix_size = 0
+    feature_matrix = seq[sample, :, :]
 
-        for x in matrix:
-            x = float(x)
-            if x != 0:
-                not_zero = True
-                break
+    for idx, feature_vector in enumerate(feature_matrix):
+        if sum(feature_vector) > 0:
+             actual_prefix_size += 1
+        else:
+            break
 
-        if not_zero:
-            last_row = matrix
-            actual_prefix_rows = row_counter
-
-    if last_row != None:
-        for entry in last_row:
-            if entry == 0:
-                counter += 1
-
-            if entry != 0:
-                counter += 1
-                break
-
-    # return counter + (actual_prefix_rows * len(last_row))  #Every value counts into the prefix size
-    return actual_prefix_rows + 1  # Every row counts into the prefix size
+    return actual_prefix_size
 
 
 def get_prefix_dictionary(seq, max_prefix_size=15):
     '''
-    Creates a list of dictionaries mapping all samples of a sequentiell dataset with their prefix-length
+    Creates a list of dictionaries mapping all samples of a sequential dataset with their prefix-length
     :param seq: sequential dataset
     :param max_prefix_size: maximal prefix length documented by the returned dictionary list
     :return: list containing dictionaries mapping all samples of a sequential dataset with their prefix length
     '''
-    samples = seq.shape[0]
 
+    samples = seq.shape[0]
     map_list = []
     unique_prefix_sizes = []
-    for t in range(0, samples):
-        index_prefix_size_map = {"index": t, "prefix_size": get_prefix_length(seq, t)}
+    prefix_dictionary_list = []
 
+    for t in range(0, samples):
+        prefix_length = get_prefix_length(seq, t)
+
+        # correct prefix length
+        if t > 0:
+            if map_list[t-1]["prefix_size"] != 1 and prefix_length != 1:
+                if map_list[t-1]["prefix_size"] >= prefix_length:
+                    prefix_length = map_list[t-1]["prefix_size"] + 1
+
+        index_prefix_size_map = {"index": t, "prefix_size": prefix_length}
         map_list.append(index_prefix_size_map)
-        unique_prefix_sizes.append(get_prefix_length(seq, t))
+        unique_prefix_sizes.append(prefix_length)
 
     unique_prefix_sizes = set(unique_prefix_sizes)
 
-    prefix_dictionary_list = []
-
+    # create prefix dictionary list
     for prefix_size in unique_prefix_sizes:
         prefix_dictionary = {}
         prefix_dictionary["prefix_size"] = prefix_size
-        prefix_dictionary["indizes"] = []
+        prefix_dictionary["indices"] = []
         for entry in map_list:
             if entry["prefix_size"] == prefix_size:
-                prefix_dictionary["indizes"].append(entry["index"])
+                prefix_dictionary["indices"].append(entry["index"])
         prefix_dictionary_list.append(prefix_dictionary)
 
+    # filter traces
     filter_list = []
     for entry in prefix_dictionary_list:
         if entry["prefix_size"] <= max_prefix_size:
@@ -141,6 +132,7 @@ def get_plot_data(model_list, data_list, max_prefix_size, model_name):
     :param model: name of model
     :return: list of dictionaries containing the fold and a dictionary containing the prefix-length and the according AUC
     '''
+
     max_prefix_size += 1
 
     result = []
@@ -155,11 +147,11 @@ def get_plot_data(model_list, data_list, max_prefix_size, model_name):
         prefix_length_dict_list = get_prefix_dictionary(seq, max_prefix_size)
 
         for prefix_length_dict in prefix_length_dict_list:
-            performance_prefix_dict = {"PrefixLength": prefix_length_dict["prefixSize"]}
+            performance_prefix_dict = {"prefix_length": prefix_length_dict["prefix_size"]}
 
-            prefix_seq = seq[prefix_length_dict["indizes"], :, :]
-            prefix_stat = stat[prefix_length_dict["indizes"], :]
-            prefix_label = label[prefix_length_dict["indizes"]]
+            prefix_seq = seq[prefix_length_dict["indices"], :, :]
+            prefix_stat = stat[prefix_length_dict["indices"], :]
+            prefix_label = label[prefix_length_dict["indices"]]
 
             if model_name == "pwn_one_inter" or model_name == "lstm" or model_name == "pwn_no_inter":
                 model.eval()
@@ -182,9 +174,9 @@ def get_average_result(result, conf: bool = False, label=""):
     '''
     Creates plot-data for the average result over all folds.
     :param result: input data created by get_plot_data()
-    :param conf: bool deciding if the line has a confidence intervall or not
+    :param conf: bool deciding if the line has a confidence interval or not
     :param label: label of the line
-    :return: a dictionary containing, x- and y-values, a bool, if a confidence intervall will be plottet for this line and a label
+    :return: a dictionary containing, x- and y-values, a bool, if a confidence interval will be plottet for this line and a label
     '''
 
     avg_y = []
@@ -245,6 +237,7 @@ def plot_data(results, max_prefix_size=15):
 
     return fig
 
+
 def plot_everything_saved(max_prefix_size=15, save=False):
     '''
     Plots everything that was saved by save_procedure_plot_data()
@@ -282,7 +275,7 @@ if __name__ == "__main__":
 
     clear_plot_data_file()
 
-    seed = 245
+    seed = 15  # [15, 37, 98, 137, 245]:
     dir_pairs = [(f"../data_prediction_plot/test_data_{seed}", f"../model")]
     max_prefix_size = 30
     model_names = ["pwn_one_inter", "pwn_no_inter", "lstm", "lr", "dt", "knn", "nb"]
