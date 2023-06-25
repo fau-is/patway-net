@@ -147,7 +147,8 @@ def get_plot_data(model_list, data_list, max_prefix_size, model_name):
         prefix_length_dict_list = get_prefix_dictionary(seq, max_prefix_size)
 
         for prefix_length_dict in prefix_length_dict_list:
-            performance_prefix_dict = {"prefix_length": prefix_length_dict["prefix_size"]}
+            performance_prefix_dict = {"prefix_length": prefix_length_dict["prefix_size"],
+                                       "prefix_num": len(prefix_length_dict["indices"])}
 
             prefix_seq = seq[prefix_length_dict["indices"], :, :]
             prefix_stat = stat[prefix_length_dict["indices"], :]
@@ -181,17 +182,20 @@ def get_average_result(result, conf: bool = False, label=""):
 
     avg_y = []
     avg_x = []
+    avg_z = []
     for values in result:
 
         data = values["data"]
-        df = pd.DataFrame(columns=["prefix_length", "AUC"])
+        df = pd.DataFrame(columns=["prefix_length", "AUC", "num_prefix"])
         for i in range(0, len(data) - 1):
             x = (data[i]["prefix_length"])
             y = (data[i]["AUC"])
-            df.loc[i] = (x, y)
+            z = (data[i]["prefix_num"])
+            df.loc[i] = (x, y, z)
 
         df = df.sort_values(by=["prefix_length"])
         avg_y.append(df["AUC"])
+        avg_z.append(df["num_prefix"])
 
         if len(df["prefix_length"]) > len(avg_x):
             avg_x = df["prefix_length"]
@@ -199,7 +203,13 @@ def get_average_result(result, conf: bool = False, label=""):
     avg_y = sum(avg_y) / len(avg_y)
     avg_y = avg_y.fillna(0)
 
-    print(f"x: {str([x for x in avg_x])},\n y: {str([y for y in avg_y])}, \n conf: {conf},\n label: {label}\n\n")
+    avg_z = sum(avg_z) / len(avg_z)
+    avg_z = avg_z.fillna(0)
+
+    print(f"x: {str([x for x in avg_x])},\n "
+          f"y: {str([y for y in avg_y])},\n "
+          f"z: {str([z for z in avg_z])}, \n "
+          f"conf: {conf},\n label: {label}\n\n")
 
     return {"x": avg_x, "y": avg_y, "conf": conf, "label": label}
 
@@ -275,7 +285,7 @@ if __name__ == "__main__":
 
     clear_plot_data_file()
 
-    seed = 15  # [15, 37, 98, 137, 245]:
+    seed = 245  # [15, 37, 98, 137, 245]:
     dir_pairs = [(f"../data_prediction_plot/test_data_{seed}", f"../model")]
     max_prefix_size = 30
     model_names = ["pwn_one_inter", "pwn_no_inter", "lstm", "lr", "dt", "knn", "nb"]
