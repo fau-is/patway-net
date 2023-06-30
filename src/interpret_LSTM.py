@@ -1,3 +1,4 @@
+import copy
 import math
 import numpy as np
 import torch
@@ -272,16 +273,16 @@ class NaiveCustomLSTM(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self, input_sz_seq: int, hidden_per_seq_feat_sz: int, input_sz_stat: int, output_sz: int,
+    def __init__(self, input_sz_seq: int, hidden_per_seq_feat_sz: int, interactions_seq: list,
                  interactions_seq_itr: int, interactions_seq_best: int, interactions_seq_auto: bool,
-                 x_seq: torch.Tensor, masking: bool, only_static: bool, x_stat: torch.Tensor, y: torch.Tensor,
-                 mlp_hidden_size: int, interactions_seq: list = []):
+                 input_sz_stat: int, output_sz: int, only_static: bool, all_feat_seq: bool, masking: bool,
+                 mlp_hidden_size: int, x_seq: torch.Tensor, x_stat: torch.Tensor, y: torch.Tensor):
         """
         :param input_sz_seq:
         :param hidden_per_seq_feat_sz:
+        :param interactions_seq:
         :param input_sz_stat: assumption, each feature is represented by a single feature; not interactions?
         :param output_sz:
-        :param interactions_seq:
         """
 
         super().__init__()
@@ -293,20 +294,28 @@ class Net(nn.Module):
         self.interactions_seq_itr = interactions_seq_itr
         self.masking = masking
         self.only_static = only_static
+        self.all_feat_seq = all_feat_seq
 
         if self.interactions_seq_auto and self.interactions_seq == [] and self.masking:
             self.interactions_seq = self.get_interactions_seq_auto(x_seq, y)
 
-        self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, self.interactions_seq)
-        self.mlps = nn.ModuleList([MLP(1, mlp_hidden_size) for i in range(input_sz_stat)])
-
         if only_static:
+            self.mlps = nn.ModuleList([MLP(1, mlp_hidden_size) for i in range(input_sz_stat)])
             self.output_coef = nn.Parameter(torch.randn(input_sz_stat, output_sz))
+
+        elif all_feat_seq:
+            input_sz_seq = input_sz_seq + input_sz_stat
+            self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, self.interactions_seq)
+            self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size, output_sz))
+
         else:
+            self.lstm = NaiveCustomLSTM(input_sz_seq, hidden_per_seq_feat_sz, self.masking, self.interactions_seq)
+            self.mlps = nn.ModuleList([MLP(1, mlp_hidden_size) for i in range(input_sz_stat)])
             self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size + input_sz_stat, output_sz))
 
-        self.output_bias = nn.Parameter(torch.randn(output_sz))
         self.input_sz_stat = input_sz_stat
+
+        self.output_bias = nn.Parameter(torch.randn(output_sz))
 
     def get_number_interactions_seq(self):
         return self.interactions_seq
@@ -375,7 +384,10 @@ class Net(nn.Module):
                 pass
 
             # Save result
-            results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
+            # results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
+            # pandas 2.0 append removed
+            # https://stackoverflow.com/questions/75956209/dataframe-object-has-no-attribute-append
+            pd.concat([results, pd.DataFrame([{'Pair': str(feat_pair), 'Measure': max_measure}])], ignore_index=True)
 
         # Retrieve best interactions
         results = results.nlargest(n=num_best_inters, columns=['Measure'])
@@ -388,7 +400,31 @@ class Net(nn.Module):
 
     def forward(self, x_seq, x_stat):
 
-        if not self.only_static:
+        if self.only_static:
+            out_mlp = []
+            for i, mlp in enumerate(self.mlps):
+                if i == 0:
+                    out_mlp = mlp(x_stat[:, i].reshape(-1, 1).float())
+                else:
+                    out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
+                    out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
+
+            out = out_mlp @ self.output_coef.float() + self.output_bias
+
+        elif self.all_feat_seq:
+
+            x_stat_ = torch.reshape(x_stat, (-1, 1, x_stat.shape[1]))
+            x_stats = copy.copy(x_stat_)
+            T = x_seq.shape[1]
+            for t in range(1, T):
+                x_stats = torch.concat((x_stats, x_stat_), 1)
+            x_seq = torch.concat((x_seq, x_stats), 2).float()
+
+            hidden_seq, (h_t, c_t) = self.lstm(x_seq)
+
+            out = h_t @ self.output_coef.float() + self.output_bias
+
+        else:
             hidden_seq, (h_t, c_t) = self.lstm(x_seq)
 
             out_mlp = []
@@ -400,17 +436,6 @@ class Net(nn.Module):
                     out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
 
             out = torch.cat((h_t, out_mlp), dim=1) @ self.output_coef.float() + self.output_bias
-
-        else:
-            out_mlp = []
-            for i, mlp in enumerate(self.mlps):
-                if i == 0:
-                    out_mlp = mlp(x_stat[:, i].reshape(-1, 1).float())
-                else:
-                    out_mlp_temp = mlp(x_stat[:, i].reshape(-1, 1).float())
-                    out_mlp = torch.cat((out_mlp, out_mlp_temp), dim=1)
-
-            out = out_mlp @ self.output_coef.float() + self.output_bias
 
         return out
 
