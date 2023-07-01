@@ -47,7 +47,7 @@ for seed in seeds:
                 interactions_seq_auto=False,
                 input_sz_stat=len(static_features),
                 output_sz=1,
-                masking=False,
+                masking=True,
                 mlp_hidden_size=16,  # 16
                 only_static=False,
                 x_seq=x_seq_final,
