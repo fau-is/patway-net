@@ -8,6 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 import os
 import src.data as data
 import torch
@@ -31,6 +32,50 @@ def concatenate_tensor_matrix(x_seq, x_stat):
 
     return x_concat
 
+
+def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    if hpo:
+        best_model = ""
+        best_hpos = ""
+        aucs = []
+
+        for max_depth in hpos["rf"]["max_depth"]:
+            for n_estimators in hpos["rf"]["n_estimators"]:
+                for max_leaf_nodes in hpos["rf"]["max_leaf_nodes"]:
+
+                    model = RandomForestClassifier(max_depth=max_depth, n_estimators=n_estimators,
+                                                   max_leaf_nodes=max_leaf_nodes)
+                    model.fit(x_train_stat, np.ravel(y_train))
+
+                    preds_proba = model.predict_proba(x_val_stat)
+                    preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                    try:
+                        auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                        if np.isnan(auc):
+                            auc = 0
+                    except:
+                        auc = 0
+                    aucs.append(auc)
+
+                    if auc >= max(aucs):
+                        best_model = model
+                        best_hpos = {"max_depth": max_depth, "n_estimators": n_estimators,
+                                     "max_leaf_nodes": max_leaf_nodes}
+
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
+        f.write(str(best_hpos))
+        f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+        f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+        f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+        f.close()
+
+        return best_model, best_hpos
+
+    else:
+        model = RandomForestClassifier()
+        model.fit(x_train_stat, np.ravel(y_train))
+
+        return model
 
 def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
     if hpo:
@@ -431,7 +476,7 @@ def time_step_blow_up(X_seq, X_stat, y, max_len):
     return X_seq_final, X_stat_final, y_final
 
 
-def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed):
+def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed):
     k = 5
     results = {}
     id = -1
@@ -498,6 +543,10 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             results['preds_test'] = [map_value(pred[0]) for pred in preds_proba_test]
             results['preds_proba_test'] = [pred_proba[0] for pred_proba in preds_proba_test]
 
+        elif mode == "rf":
+            model, best_hpos = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+
         elif mode == "xgb":
             model, best_hpos = train_xgb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                         y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
@@ -529,7 +578,7 @@ def evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos,
             model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                          y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
 
-        if mode in ["xgb", "dt", "knn", "nb", "lr"]:
+        if mode in ["rf", "xgb", "dt", "knn", "nb", "lr"]:
             preds_proba_train = model.predict_proba(X_train_stat)
             results['preds_train'] = [np.argmax(pred_proba) for pred_proba in preds_proba_train]
             results['preds_proba_train'] = [pred_proba[1] for pred_proba in preds_proba_train]
@@ -714,18 +763,19 @@ if __name__ == "__main__":
 
     hpos = {
         #"pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        "pwn": {"seq_feature_sz": [32], "stat_feature_sz": [0], "learning_rate": [0.01], "batch_size": [32], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4, 32, 128], "stat_feature_sz": [0], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [0]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
         "dt": {"max_depth": [2, 3, 4], "min_samples_split": [2]},
         "knn": {"n_neighbors": [3, 5, 10]},
-        "xgb": {"max_depth": [2, 6, 12], "learning_rate": [0.3, 0.1, 0.03]}
+        "xgb": {"max_depth": [2, 6, 12], "learning_rate": [0.3, 0.1, 0.03]},
+        "rf": {"max_depth": [2, 6, 12], "n_estimators": [100, 200, 400], "max_leaf_nodes": [2, 6, 12]}
     }
 
     if data_set == "sepsis":
         for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb'
+            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
                 procedure = mode
                 for target_activity in ['Admission IC']:
 
@@ -736,11 +786,11 @@ if __name__ == "__main__":
                         target_activity, max_len, min_len)
 
                     x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                        evaluate_on_cut(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed)
+                        evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed)
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb'
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
                 procedure = mode
 
                 np.random.seed(seed=seed)
@@ -749,11 +799,11 @@ if __name__ == "__main__":
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_bpi_data(max_len, min_len)
 
                 x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                    evaluate_on_cut(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
+                    evaluate(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
 
     elif data_set == "hospital":
         for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb'
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
                 procedure = mode
 
                 np.random.seed(seed=seed)
@@ -762,7 +812,7 @@ if __name__ == "__main__":
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_hospital_data(max_len, min_len)
 
                 x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                    evaluate_on_cut(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
+                    evaluate(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
 
     else:
         print("Data set not available!")
