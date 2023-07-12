@@ -128,9 +128,7 @@ class NaiveCustomLSTM(nn.Module):
         hidden_seq = hidden_seq.transpose(0, 1).contiguous()
         return hidden_seq, (h_t, c_t)
 
-    def single_forward(self, x, feat_id, interaction=False, init_states=None):
-
-        history = False
+    def single_forward(self, x, feat_id, interaction=False, init_states=None, history=False):
 
         if history:
             # todo: check interactions
@@ -317,7 +315,7 @@ class Net(nn.Module):
 
         self.output_bias = nn.Parameter(torch.randn(output_sz))
 
-    def get_number_interactions_seq(self):
+    def get_interactions_seq(self):
         return self.interactions_seq
 
     def get_interactions_seq_auto(self, x_seq, y):
@@ -387,7 +385,7 @@ class Net(nn.Module):
             # results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
             # pandas 2.0 append removed
             # https://stackoverflow.com/questions/75956209/dataframe-object-has-no-attribute-append
-            pd.concat([results, pd.DataFrame([{'Pair': str(feat_pair), 'Measure': max_measure}])], ignore_index=True)
+            results = pd.concat([results, pd.DataFrame([{'Pair': str(feat_pair), 'Measure': max_measure}])], ignore_index=True)
 
         # Retrieve best interactions
         results = results.nlargest(n=num_best_inters, columns=['Measure'])
@@ -447,9 +445,9 @@ class Net(nn.Module):
 
         return x, out
 
-    def plot_feat_seq_effect(self, feat_id, x):
+    def plot_feat_seq_effect(self, feat_id, x, history=False):
 
-        hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, feat_id)
+        hidden_seq, (h_t, c_t) = self.lstm.single_forward(x, feat_id, history=history)
         out = h_t @ self.output_coef[feat_id * self.hidden_per_feat_sz: (feat_id + 1) * self.hidden_per_feat_sz]
 
         return x, out, h_t, self.output_coef[
