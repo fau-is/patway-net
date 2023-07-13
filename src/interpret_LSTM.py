@@ -295,7 +295,7 @@ class Net(nn.Module):
         self.all_feat_seq = all_feat_seq
 
         if self.interactions_seq_auto and self.interactions_seq == [] and self.masking:
-            self.interactions_seq = self.get_interactions_seq_auto(x_seq, y)
+            self.interactions_seq = self.get_interactions_seq_auto_hpo(x_seq, y)
 
         if only_static:
             self.mlps = nn.ModuleList([MLP(1, mlp_hidden_size) for i in range(input_sz_stat)])
@@ -324,17 +324,17 @@ class Net(nn.Module):
         :param x_seq:
         :return:
         """
-
+        import xgboost as xgb
         import random
         import pandas as pd
         from sklearn.model_selection import train_test_split
         from sklearn.metrics import roc_auc_score
 
         x_seq_features = list(range(x_seq.shape[2]))
-
         num_iters = self.interactions_seq_itr
         num_best_inters = self.interactions_seq_best
-        results = pd.DataFrame({'Pair': [], 'Measure': []})
+        results = pd.DataFrame({'pair': [], 'measure': []})
+
 
         for _ in range(0, num_iters):
 
@@ -350,7 +350,7 @@ class Net(nn.Module):
             warnings.simplefilter(action="ignore",category=FutureWarning)
 
             # Exists interaction already or is the interaction a loop?
-            if str(feat_pair) in results["Pair"].values or rnd_feat_source == rnd_feat_target:
+            if str(feat_pair) in results["pair"].values or rnd_feat_source == rnd_feat_target:
                 continue
 
             # Get data
@@ -358,43 +358,121 @@ class Net(nn.Module):
                                       x_seq[:, :, feat_pair[1]].reshape(-1, x_seq.shape[1], 1)], dim=2)
 
             # iterate over time
-            measure = 0
-            max_measure = 0
+            max_auc = -np.inf
 
             x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(
                 x_seq_sample[:, :, :].reshape(-1, x_seq_sample.shape[1] * x_seq_sample.shape[2]),
                 y, train_size=0.8, shuffle=False)
 
-            import xgboost as xgb
             model = xgb.XGBRFClassifier()
             model.fit(x_seq_sample_train.numpy(), np.ravel(y_train.numpy()))
             preds_proba = model.predict_proba(x_seq_sample_test.numpy())
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
 
             try:
-                measure = roc_auc_score(y_true=y_test, y_score=preds_proba)
-                if np.isnan(measure):
-                    measure = 0
+                auc = roc_auc_score(y_true=y_test, y_score=preds_proba)
+                if np.isnan(auc):
+                    auc = 0
 
-                if measure > max_measure:
-                    max_measure = measure
             except:
-                pass
+                auc = 0
+
+            if auc > max_auc:
+                max_auc = auc
 
             # Save result
-            # results = results.append({'Pair': str(feat_pair), 'Measure': max_measure}, ignore_index=True)
+            # results = results.append({'Pair': str(feat_pair), 'Measure': max_auc}, ignore_index=True)
             # pandas 2.0 append removed
             # https://stackoverflow.com/questions/75956209/dataframe-object-has-no-attribute-append
-            results = pd.concat([results, pd.DataFrame([{'Pair': str(feat_pair), 'Measure': max_measure}])], ignore_index=True)
+            results = pd.concat([results, pd.DataFrame([{'pair': str(feat_pair), 'auc': max_auc}])], ignore_index=True)
 
         # Retrieve best interactions
-        results = results.nlargest(n=num_best_inters, columns=['Measure'])
+        results = results.nlargest(n=num_best_inters, columns=['auc'])
 
         if results.empty:
             print("No interactions found!!!")
             return []
         else:
-            return [tuple(eval(x)) for x in results["Pair"].values]
+            return [tuple(eval(x)) for x in results["pair"].values]
+
+    def get_interactions_seq_auto_hpo(self, x_seq, y):
+        """
+        Determines interactions automatically from data
+        :param x_seq:
+        :return:
+        """
+        import xgboost as xgb
+        import random
+        import pandas as pd
+        from sklearn.model_selection import train_test_split
+        from sklearn.metrics import roc_auc_score
+
+        x_seq_features = list(range(x_seq.shape[2]))
+        num_iters = self.interactions_seq_itr
+        num_best_inters = self.interactions_seq_best
+        results = pd.DataFrame({'pair': [], 'auc': []})
+        hpos = {"xgb": {"max_depth": [2, 6, 12], "learning_rate": [0.3, 0.1, 0.03]}}
+
+        for _ in range(0, num_iters):
+
+            print(f"Iteration: {_}")
+
+            # Get feature pair
+            rnd_feat_source = random.choice(x_seq_features)
+            rnd_feat_target = random.choice(x_seq_features)
+            feat_pair = [rnd_feat_target, rnd_feat_source]
+            feat_pair.sort()
+
+            # Blocks Future Warnings from Numpy (Elementwise Comparison failed; returning scalar but in-the future will perform elementwise comparison
+            warnings.simplefilter(action="ignore",category=FutureWarning)
+
+            # Exists interaction already or is the interaction a loop?
+            if str(feat_pair) in results["pair"].values or rnd_feat_source == rnd_feat_target:
+                continue
+
+            # Get data
+            x_seq_sample = torch.cat([x_seq[:, :, feat_pair[0]].reshape(-1, x_seq.shape[1], 1),
+                                      x_seq[:, :, feat_pair[1]].reshape(-1, x_seq.shape[1], 1)], dim=2)
+
+            # iterate over time
+            max_auc = -np.inf
+
+            x_seq_sample_train, x_seq_sample_test, y_train, y_test = train_test_split(
+                x_seq_sample[:, :, :].reshape(-1, x_seq_sample.shape[1] * x_seq_sample.shape[2]),
+                y, train_size=0.8, shuffle=False)
+
+            for max_depth in hpos["xgb"]["max_depth"]:
+                for learning_rate in hpos["xgb"]["learning_rate"]:
+
+                    model = xgb.XGBRFClassifier(max_depth=max_depth, learning_rate=learning_rate)
+                    model.fit(x_seq_sample_train.numpy(), np.ravel(y_train.numpy()))
+                    preds_proba = model.predict_proba(x_seq_sample_test.numpy())
+                    preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+
+                    try:
+                        auc = roc_auc_score(y_true=y_test, y_score=preds_proba)
+                        if np.isnan(auc):
+                            auc = 0
+                    except:
+                        auc = 0
+
+                    if auc > max_auc:
+                        max_auc = auc
+
+            # Save result
+            # results = results.append({'Pair': str(feat_pair), 'Measure': max_auc}, ignore_index=True)
+            # pandas 2.0 append removed
+            # https://stackoverflow.com/questions/75956209/dataframe-object-has-no-attribute-append
+            results = pd.concat([results, pd.DataFrame([{'pair': str(feat_pair), 'auc': max_auc}])], ignore_index=True)
+
+        # Retrieve best interactions
+        results = results.nlargest(n=num_best_inters, columns=['auc'])
+
+        if results.empty:
+            print("No interactions found!!!")
+            return []
+        else:
+            return [tuple(eval(x)) for x in results["pair"].values]
 
     def forward(self, x_seq, x_stat):
 
