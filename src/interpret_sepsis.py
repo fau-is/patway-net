@@ -7,7 +7,7 @@ import numpy as np
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-name = "1_15"
+name = "4_98"
 model = torch.load(os.path.join("../model", f"model_{name}"), map_location=torch.device('cpu'))
 interactions_seq = model.get_interactions_seq()
 number_interactions_seq = len(interactions_seq)
@@ -91,6 +91,13 @@ for idx, value in enumerate(static_features):
         a, b = zip(set(x), set(np.squeeze(out)))
         x = [list(a)[0], list(b)[0]]
         out = [list(a)[1], list(b)[1]]  # +1.3
+        plt.bar(x, out, color='steelblue')
+        plt.xticks(x, x)
+
+    elif value == "Oligurie":
+        a, b = zip(set(x), set(np.squeeze(out)))
+        x = [list(a)[0], list(b)[0]]
+        out = [list(a)[1] - list(a)[1] + 0.01, list(b)[1] - list(a)[1]]  # +1.3
         plt.bar(x, out, color='steelblue')
         plt.xticks(x, x)
 
@@ -230,7 +237,7 @@ for idx, value in enumerate(seq_features):
             else:
                 data_feature_values.append(x[-1])
 
-        plt.ylim(-0.65, 0.3)
+        # plt.ylim(-0.8, 0.1)
         # list(range(1, 12))
         # data_feature_values
         plt.plot(list(range(1, 12)), effect_feature_values, '--', label=value, linewidth=1.5)
