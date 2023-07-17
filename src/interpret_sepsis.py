@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import src.data as data
 from src.main import time_step_blow_up
 import numpy as np
+import pandas as pd
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
@@ -205,17 +206,21 @@ if number_interactions_seq > 0:
 plt.rcParams["figure.figsize"] = (9, 9)
 plt.rc('font', size=16)
 plt.rc('axes', titlesize=18)
-case =  8067 # id of prefix == 8067 for case 581
+case = 8067  # id of prefix == 8067 for case 581
 colors = ['steelblue', 'black', 'darkgrey']
 plt.gca().set_prop_cycle(color=colors)
 
-seq_features=['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
-                    'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
-                    'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
-                    'Release E']
+seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
+                'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
+                'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
+                'Release E']
 seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid']
 
-for idx, value in enumerate(seq_features):
+list_effect = []
+list_value = []
+list_time = []
+
+for idx, value in enumerate(seq_features_rel):
 
     effect_feature_values = []
     data_feature_values = []
@@ -223,15 +228,15 @@ for idx, value in enumerate(seq_features):
     if value in seq_features_rel:
         for t in range(0, 11):
             x, out, h_t, out_coef = model.plot_feat_seq_effect(
-                idx, torch.from_numpy(x_seqs_final[case, 0:t+1, idx].reshape(1, t+1, 1)).float(), history=True)
+                idx, torch.from_numpy(x_seqs_final[case, 0:t + 1, idx].reshape(1, t + 1, 1)).float(), history=True)
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
 
-            if t == 0:
-                # correction_value = 0 - out[0][0]
-                correction_value = 0
+            # if t == 0:
+            # correction_value = 0 - out[0][0]
+            # correction_value = 10
 
-            out_correction = out[0][0] + correction_value
+            out_correction = out[0][0]  # + correction_value
 
             effect_feature_values.append(out_correction)
             if t == 0:
@@ -240,10 +245,11 @@ for idx, value in enumerate(seq_features):
                 data_feature_values.append(x[-1])
 
         plt.ylim(-0.02, 0.85)
+
         # list(range(1, 12))
         # data_feature_values
         plt.plot(list(range(1, 12)), data_feature_values, '--', label=value, linewidth=1.5)
-        plt.scatter(list(range(1, 12)), data_feature_values, c=effect_feature_values, cmap='viridis')
+        # print(effect_feature_values)
 
         steps = list(range(1, 12))
         for i in range(len(steps)):
@@ -251,12 +257,20 @@ for idx, value in enumerate(seq_features):
             if i == 1:
                 pass
             else:
-                if data_feature_values[i-1] == data_feature_values[i]:
+                if effect_feature_values[i - 1] == effect_feature_values[i]:
                     pass
                 else:
-                    plt.annotate(round(effect_feature_values[i], 3), (steps[i], data_feature_values[i] + 0.02))
+                    pass
+                    # plt.annotate(round(effect_feature_values[i], 3), (steps[i], data_feature_values[i] + 0.02))
 
-plt.legend(loc='upper left', title='Sequential feature')  # adjust based on plot
+        list_effect = list_effect + effect_feature_values
+        list_value = list_value + data_feature_values
+        list_time = list_time + list(range(1, 12))
+
+df = pd.DataFrame({'x': list_time, 'y': list_value, 'z': list_effect})
+print(df)
+plt.scatter(df.x, df.y, c=df.z, cmap='viridis')
+plt.legend(title='Sequential feature')  # adjust based on plot
 plt.colorbar(label='Feature effect on model output')
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step", fontsize=16)
@@ -274,5 +288,5 @@ plt.xticks(np.arange(1, 12, 1))
 # plt.rc('legend', title_fontsize=19)
 plt.show()
 plt.draw()
-fig1.savefig(f'../plots/sepsis/seq_feat_case_{case}_single.with_hist.pdf', dpi=100, bbox_inches="tight")
+# fig1.savefig(f'../plots/sepsis/seq_feat_case_{case}_single.with_hist.pdf', dpi=100, bbox_inches="tight")
 plt.close(fig1)
