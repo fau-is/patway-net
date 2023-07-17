@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-model = torch.load(os.path.join("../model", f"model_sim_98"))
+model = torch.load(os.path.join("../model", f"model_sim"))
 x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
 
 # Create dataset without prefixes
@@ -92,7 +92,7 @@ for idx, feature in enumerate(seq_features):
     fig1 = plt.gcf()
     plt.show()
     plt.draw()
-    fig1.savefig(f'../plots/{feature}_no_history_diffs.pdf', dpi=100)
+    fig1.savefig(f'../plots/simulation/{feature}_no_history_diffs.pdf', dpi=100)
     plt.close(fig1)
 
 # (2) Print static features (global)
@@ -148,7 +148,7 @@ for idx, value in enumerate(static_features):
     fig1 = plt.gcf()
     plt.show()
     plt.draw()
-    fig1.savefig(f'../plots/{value}.', dpi=100)
+    fig1.savefig(f'../plots/simulation/{value}.', dpi=100)
     plt.close(fig1)
 
 
@@ -191,7 +191,7 @@ for t in range(0, 12):
             fig1 = plt.gcf()
             plt.show()
             plt.draw()
-            fig1.savefig(f'../plots/{value}_t{t + 1}.', dpi=100)
+            fig1.savefig(f'../plots/simulation/{value}_t{t + 1}.', dpi=100)
             plt.close(fig1)
 
 # (4) Print sequential features (local, no history)
@@ -244,5 +244,5 @@ plt.rcParams["figure.figsize"] = (9, 9)
 plt.show()
 plt.draw()
 plt.tight_layout()
-fig1.savefig(f'../plots/seq_features_case_{case}.pdf', dpi=100)
+fig1.savefig(f'../plots/simulation/seq_features_case_{case}.pdf', dpi=100)
 plt.close(fig1)

@@ -71,7 +71,7 @@ def get_sim_data(label, file):
 
 
 def get_sepsis_data(target_activity, max_len, min_len):
-    ds_path = '../data/Sepsis Cases - Event Log_sub.csv'
+    ds_path = '../data/Sepsis Cases - Event Log_end.csv'
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
@@ -224,16 +224,19 @@ def get_sepsis_data(target_activity, max_len, min_len):
             x_time_vals_.append(x_time_vals[i])
             acts_.append(acts[i])
 
-    """
+
     # Create event log
     f = open(f'../output/sepsis.txt', "w+")
-    f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])},Label \n')
+    f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])},'
+            f'{",".join([x for x in seq_features])},Label \n')
     for idx in range(0, len(x_seqs_)):
         for idx_ts in range(0, len(x_seqs_[idx])):
             f.write(f'{idx},{acts_[idx][idx_ts]},'
-                    f'{x_time_vals_[idx][idx_ts]},{",".join([str(x) for x in x_statics_[idx]])},{y_[idx]}\n')
+                    f'{x_time_vals_[idx][idx_ts]},'
+                    f'{",".join([str(x) for x in x_statics_[idx]])},'
+                    f'{",".join([str(x) for x in x_seqs_[idx][idx_ts]])},'
+                    f'{y_[idx]}\n')
     f.close()
-    """
 
     """
     from apyori import apriori

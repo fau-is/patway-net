@@ -155,7 +155,7 @@ for idx, value in enumerate(seq_features):
         plt.draw()
         fig1.savefig(f'../plots/sepsis/seq_feat_{value}.pdf', dpi=100, bbox_inches="tight")
         plt.close(fig1)
-
+        
 
 # (4) Print sequential feature interactions (global, no history)
 print(interactions_seq)
@@ -183,7 +183,7 @@ if number_interactions_seq > 0:
         plt.rc('font', size=16)
         plt.rc('axes', titlesize=18)
 
-        im = ax.imshow(grid_z.T.squeeze(), extent=(min(a), max(a), min(b), max(b)), origin='lower')
+        im = ax.imshow(grid_z.T.squeeze(), extent=(min(a), max(a), min(b), max(b)), origin='lower', cmap='magma')
         fig.colorbar(im, ax=ax, label='Interaction effect')
 
         plt.xlabel(f"Feature value {seq_features[interactions_seq[idx][0]]}")
@@ -199,6 +199,7 @@ if number_interactions_seq > 0:
                      dpi=100, bbox_inches="tight")
         plt.close(fig1)
 """
+
 
 # (5) Print sequential feature (local, history)
 plt.rcParams["figure.figsize"] = (9, 9)
@@ -227,7 +228,8 @@ for idx, value in enumerate(seq_features):
             out = out.detach().numpy()
 
             if t == 0:
-                correction_value = 0 - out[0][0]
+                # correction_value = 0 - out[0][0]
+                correction_value = 0
 
             out_correction = out[0][0] + correction_value
 
@@ -237,11 +239,11 @@ for idx, value in enumerate(seq_features):
             else:
                 data_feature_values.append(x[-1])
 
-        # plt.ylim(-0.8, 0.1)
+        plt.ylim(-0.02, 0.85)
         # list(range(1, 12))
         # data_feature_values
-        plt.plot(list(range(1, 12)), effect_feature_values, '--', label=value, linewidth=1.5)
-        plt.scatter(list(range(1, 12)), effect_feature_values, c=data_feature_values, cmap='viridis')
+        plt.plot(list(range(1, 12)), data_feature_values, '--', label=value, linewidth=1.5)
+        plt.scatter(list(range(1, 12)), data_feature_values, c=effect_feature_values, cmap='viridis')
 
         steps = list(range(1, 12))
         for i in range(len(steps)):
@@ -252,13 +254,13 @@ for idx, value in enumerate(seq_features):
                 if data_feature_values[i-1] == data_feature_values[i]:
                     pass
                 else:
-                    plt.annotate(round(data_feature_values[i], 3), (steps[i], effect_feature_values[i] + 0.02))
+                    plt.annotate(round(effect_feature_values[i], 3), (steps[i], data_feature_values[i] + 0.02))
 
-plt.legend(loc='lower left', title='Sequential feature')  # adjust based on plot
-plt.colorbar(label='Feature value')
+plt.legend(loc='upper left', title='Sequential feature')  # adjust based on plot
+plt.colorbar(label='Feature effect on model output')
 plt.axhline(y=0, color='grey', linewidth=0.6)
 plt.xlabel("Time step", fontsize=16)
-plt.ylabel("Feature effect on model output", fontsize=16)
+plt.ylabel("Feature value", fontsize=16)
 plt.title(f"Sequential feature effect over time of patient pathway 581", fontsize=16)
 fig1 = plt.gcf()
 # plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.07), ncol=7, fontsize=16)

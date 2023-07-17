@@ -23,7 +23,7 @@ min_size_prefix = 1
 val_size = 0.2
 train_size = 0.8
 hpo = True
-create_plot = False
+save_baseline_model = False
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
@@ -291,7 +291,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
     interactions_seq_itr = 100
     patience = 10
     epochs = 100
-    lstm_mode = ["pwn", "pwn_no_inter", "lstm", "pwn_all_feat_seq"][3]
+    lstm_mode = ["pwn", "pwn_no_inter", "lstm", "pwn_all_feat_seq"][0]
 
     if lstm_mode == "pwn":
         masking = True
@@ -504,7 +504,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
 
-        if create_plot:
+        if save_baseline_model:
             with open(f"../data_prediction_plot/test_data_{seed}", "ab") as output:
                 data_dictionary = {"fold": id, "x_test_seq": X_test_seq,
                                    "x_test_stat": X_test_stat, "label": y_test, "seed": seed}
@@ -589,7 +589,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             results['preds_test'] = [np.argmax(pred_proba) for pred_proba in preds_proba_test]
             results['preds_proba_test'] = [pred_proba[1] for pred_proba in preds_proba_test]
 
-            if create_plot:
+            if save_baseline_model:
                 torch.save(model, os.path.join("../model", f"model_{mode}_{id}_{seed}"))
 
         results['gts_train'] = [int(y) for y in y_train]
@@ -762,8 +762,8 @@ if __name__ == "__main__":
     data_set = "sepsis"  # bpi2012, hospital
 
     hpos = {
-        #"pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
-        "pwn": {"seq_feature_sz": [4, 32, 128], "stat_feature_sz": [0], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [0]},
+        # "pwn": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
@@ -774,8 +774,8 @@ if __name__ == "__main__":
     }
 
     if data_set == "sepsis":
-        for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
+        for seed in [98]:  # [15, 37, 98, 137, 245]:
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
                 procedure = mode
                 for target_activity in ['Admission IC']:
 
@@ -790,7 +790,7 @@ if __name__ == "__main__":
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
+            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
                 procedure = mode
 
                 np.random.seed(seed=seed)
@@ -803,7 +803,7 @@ if __name__ == "__main__":
 
     elif data_set == "hospital":
         for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
+            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
                 procedure = mode
 
                 np.random.seed(seed=seed)
