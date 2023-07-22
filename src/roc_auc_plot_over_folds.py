@@ -27,6 +27,11 @@ knn = np.array([0.63824740986324,0.63824740986324,0.63824740986324,0.63824740986
 
 nb = np.array([0.693075554289266,0.693075554289266,0.693075554289266,0.693075554289266,0.70029628358544,0.714990559132222,0.740870226500043,0.752764301066521,0.678054684380357,0.642271907731068,0.723071613557797,0.651721685719904])
 
+rf = np.array([0.735054936800663,0.735054936800663,0.735054936800663,0.735054936800663,0.742518104696205,0.760126898550519,0.785721439905015,0.790503266007631,0.71725718981768,0.690966106925083,0.782907365553645,0.72340103243218]
+)
+
+xgb = np.array([0.72370067084542,0.72370067084542,0.72370067084542,0.72370067084542,0.729803538486554,0.740814489558287,0.760372560992544,0.759416033611361,0.663363743513919,0.632228174838559,0.744686718659706,0.6931294130336])
+
 bar_height = np.array([147, 147, 147, 147, 147, 145, 144, 140, 129, 123, 113, 105])
 bar_name = bars = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12')
 
@@ -44,7 +49,11 @@ def plot_line_plots(cut_lengths, means_auc, mins_auc, maxes_auc, labels):
 
     def plot_on_axes(ax, m, a, b, title):
         for i, (mean, a, b, l) in enumerate(zip(means_auc, mins_auc, maxes_auc, labels)):
-            ax.plot(cut_lengths, mean, color=palet[i], label=l, linewidth=2.0, linestyle='--', marker='o')
+
+            if l == "PatWay-Net (with interaction)" or l == "PatWay-Net (without interaction)":
+                ax.plot(cut_lengths, mean, color=palet[i], label=l, linewidth=5.0, linestyle='--', marker='o')
+            else:
+                ax.plot(cut_lengths, mean, color=palet[i], label=l, linewidth=2.0, linestyle='--', marker='o')
 
         ax.set_xlabel('Size of patient pathway prefix')
         ax.set_xticks(np.arange(1, 13, step=1))
@@ -71,13 +80,15 @@ def plot_line_plots(cut_lengths, means_auc, mins_auc, maxes_auc, labels):
 
 
 plot_line_plots(cut_lengths,
-                means_auc=[pwn, pwn_no_inter, lstm, lr, dt, knn, nb],
-                mins_auc=[pwn_min, [], [], [], [], [], []],
-                maxes_auc=[pwn_max, [], [], [], [], [], []],
+                means_auc=[pwn, pwn_no_inter, lstm, lr, dt, knn, nb, rf, xgb],
+                mins_auc=[pwn_min, [], [], [], [], [], [], [], []],
+                maxes_auc=[pwn_max, [], [], [], [], [], [], [], []],
                 labels=['PatWay-Net (with interaction)',
                         'PatWay-Net (without interaction)',
                         'LSTM network (with static module)',
                         'Logistic regression',
                         'Decision tree',
                         r'$K$-nearest neighbor',
-                        r'Naïve Bayes'])
+                        r'Naïve Bayes',
+                        'Random forest',
+                        'XGBoost'])

@@ -285,10 +285,14 @@ if __name__ == "__main__":
 
     clear_plot_data_file()
 
-    seed = 15  # [15, 37, 98, 137, 245]:
+    seed = 245  # [15, 37, 98, 137, 245]:
     dir_pairs = [(f"../data_prediction_plot/test_data_{seed}", f"../model")]
     max_prefix_size = 30
 
+    model_names = ["lstm"]
+    model_names_paper = ["LSTM network (with static module)"]
+
+    """
     model_names = ["pwn_one_inter", "pwn_no_inter", "lstm", "lr", "dt", "knn", "nb", "xgb", "rf"]
     model_names_paper = ["PatWay-Net (with interaction)",
                          "PatWay-Net (without interaction)",
@@ -296,6 +300,7 @@ if __name__ == "__main__":
                          "Logistic regression", "Decision tree",
                          "K-nearest neighbor", "Naive Bayes",
                          "XGBoost", "Random forest"]
+    """
 
     for pair in dir_pairs:
         for i, model_name in enumerate(model_names):
