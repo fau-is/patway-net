@@ -132,7 +132,6 @@ for idx, value in enumerate(static_features):
     fig1.savefig(f'../plots/sepsis/stat_feat_{value}.pdf', dpi=100, bbox_inches="tight")
     plt.close(fig1)
 
-
 # (3) Print sequential features (global, no history)
 for idx, value in enumerate(seq_features):
     plt.rcParams["figure.figsize"] = (7.5, 5)
