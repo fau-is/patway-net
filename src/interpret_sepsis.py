@@ -200,20 +200,18 @@ if number_interactions_seq > 0:
         plt.close(fig1)
 """
 
-
 # (5) Print sequential feature (local, history)
-plt.rcParams["figure.figsize"] = (9, 9)
+plt.rcParams["figure.figsize"] = (20, 15)
 plt.rc('font', size=16)
 plt.rc('axes', titlesize=18)
 case = 8067  # id of prefix == 8067 for case 581
-colors = ['steelblue', 'black', 'darkgrey']
-plt.gca().set_prop_cycle(color=colors)
 
-seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
-                'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
-                'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
-                'Release E']
-seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid']
+# max_leucocytes = 24.729999999999972
+# max_lacticacid = 4.4
+# max_crp = 282.8499999999999
+
+seq_features_rel = ['Leucocytes', 'LacticAcid', 'CRP']  # 'CRP'
+max_values = [24.729999999999972, 4.4, 282.8499999999999]
 
 list_effect = []
 list_value = []
@@ -231,10 +229,6 @@ for idx, value in enumerate(seq_features_rel):
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
 
-            # if t == 0:
-            # correction_value = 0 - out[0][0]
-            # correction_value = 10
-
             out_correction = out[0][0]  # + correction_value
 
             effect_feature_values.append(out_correction)
@@ -242,13 +236,6 @@ for idx, value in enumerate(seq_features_rel):
                 data_feature_values.append(x.item())
             else:
                 data_feature_values.append(x[-1])
-
-        plt.ylim(-0.02, 0.85)
-
-        # list(range(1, 12))
-        # data_feature_values
-        plt.plot(list(range(1, 12)), data_feature_values, '--', label=value, linewidth=1.5)
-        # print(effect_feature_values)
 
         steps = list(range(1, 12))
         for i in range(len(steps)):
@@ -260,32 +247,64 @@ for idx, value in enumerate(seq_features_rel):
                     pass
                 else:
                     pass
-                    # plt.annotate(round(effect_feature_values[i], 3), (steps[i], data_feature_values[i] + 0.02))
 
         list_effect = list_effect + effect_feature_values
         list_value = list_value + data_feature_values
         list_time = list_time + list(range(1, 12))
 
 df = pd.DataFrame({'x': list_time, 'y': list_value, 'z': list_effect})
-print(df)
-plt.scatter(df.x, df.y, c=df.z, cmap='viridis')
-plt.legend(title='Sequential feature')  # adjust based on plot
-plt.colorbar(label='Feature effect on model output')
-plt.axhline(y=0, color='grey', linewidth=0.6)
-plt.xlabel("Time step", fontsize=16)
-plt.ylabel("Feature value", fontsize=16)
-plt.title(f"Sequential feature effect over time of patient pathway 581", fontsize=16)
-fig1 = plt.gcf()
-# plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.07), ncol=7, fontsize=16)
-# plt.legend(loc='lower right', title='Sequential feature')  # adjust based on plot
-plt.xticks(np.arange(1, 12, 1))
-# plt.rc('axes', titlesize=20)
-# plt.rc('axes', labelsize=17)
-# plt.rc('xtick', labelsize=17)
-# plt.rc('ytick', labelsize=17)
-# plt.rc('legend', fontsize=19)
-# plt.rc('legend', title_fontsize=19)
-plt.show()
-plt.draw()
-# fig1.savefig(f'../plots/sepsis/seq_feat_case_{case}_single.with_hist.pdf', dpi=100, bbox_inches="tight")
-plt.close(fig1)
+
+clim_max = df['z'].max()
+clim_min = df['z'].min()
+
+fig, axes = plt.subplots(nrows=3, ncols=1, sharex=True)
+idx = 0
+
+for ax in axes.flat:
+    plt.sca(ax)
+    effect_feature_values = []
+    data_feature_values = []
+
+    for t in range(0, 11):
+        x, out, h_t, out_coef = model.plot_feat_seq_effect(
+            idx, torch.from_numpy(x_seqs_final[case, 0:t + 1, idx].reshape(1, t + 1, 1)).float(), history=True)
+        x = x.detach().numpy().squeeze()
+        out = out.detach().numpy()
+
+        out_correction = out[0][0]
+        effect_feature_values.append(out_correction)
+        if t == 0:
+            data_feature_values.append(x.item())
+        else:
+            data_feature_values.append(x[-1])
+
+    feature_name = seq_features_rel[idx]
+
+    max_value_feature = max_values[idx]
+    data_feature_values = [i * max_value_feature for i in data_feature_values]
+
+    plt.plot(list(range(1, 12)), data_feature_values, linewidth=1, color='grey')
+    plt.scatter(list(range(1, 12)), data_feature_values, c=effect_feature_values, cmap='viridis')
+    # plt.ylim(-0.02, 0.85)
+    plt.clim(clim_min, clim_max)
+    plt.ylabel("Feature value of " + feature_name, fontsize=16)
+
+    steps = list(range(1, 12))
+    for i in range(len(steps)):
+        plt.annotate(round(effect_feature_values[i], 3), (steps[i], data_feature_values[i]), xytext=(10, -5),
+                     textcoords='offset points')
+
+    plt.axhline(y=0, color='grey', linewidth=0.6)
+
+    if idx == 2:
+        plt.xlabel("Time step", fontsize=16)
+        plt.xticks(np.arange(1, 12, 1))
+
+    if idx == 0:
+        plt.title(f"Sequential feature effect over time for individual patient pathway", fontsize=16)
+    idx = idx + 1
+
+plt.colorbar(ax=axes.ravel().tolist(), label='Feature effect on model output', location='right', shrink=0.8)
+# plt.show()
+fig.savefig(f'../plots/sepsis/seq_feat_case_{case}_single.with_hist.pdf', dpi=100, bbox_inches="tight")
+plt.close(fig)
