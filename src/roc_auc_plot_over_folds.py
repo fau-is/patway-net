@@ -41,7 +41,7 @@ def addlabels(x,y):
 
 def plot_line_plots(cut_lengths, means_auc, mins_auc, maxes_auc, labels):
     palet = sns.color_palette()
-    matplotlib.rcParams.update({'font.size': 22})
+    matplotlib.rcParams.update({'font.size': 24})
 
     fig, axs = plt.subplots(2, 1, figsize=(20, 16), height_ratios=[6,2])
     ax1 = axs[0]
@@ -55,10 +55,11 @@ def plot_line_plots(cut_lengths, means_auc, mins_auc, maxes_auc, labels):
             else:
                 ax.plot(cut_lengths, mean, color=palet[i], label=l, linewidth=2.0, linestyle='--', marker='o')
 
-        ax.set_xlabel('Size of patient pathway prefix')
+        # ax.set_xlabel('Size of patient pathway prefix')
         ax.set_xticks(np.arange(1, 13, step=1))
         ax.set_ylabel(r'$AUC_{ROC}$')
         ax.set_ylim(0.57, 0.81)
+
 
     plot_on_axes(ax1, means_auc, mins_auc, maxes_auc, title='Prediction performance over time')
 
@@ -68,7 +69,7 @@ def plot_line_plots(cut_lengths, means_auc, mins_auc, maxes_auc, labels):
                fancybox=False, shadow=False)
 
     ax2.bar(bar_name, bar_height, width = 0.3, color="grey")
-    ax2.set_xlabel('Size of patient pathway prefix')
+    ax2.set_xlabel('Time step')
     ax2.set_xticks(np.arange(len(bar_name)))
     ax2.set_ylabel(f'Number of\n patient pathway prefixes')
     addlabels(bar_name, bar_height)
