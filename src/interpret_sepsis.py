@@ -211,7 +211,7 @@ case = 8067  # id of prefix == 8067 for case 581
 # max_crp = 282.8499999999999
 
 seq_features_rel = ['Leucocytes', 'LacticAcid', 'CRP']  # 'CRP'
-max_values = [24.729999999999972, 4.4, 282.8499999999999]
+# max_values = [24.729999999999972, 4.4, 282.8499999999999]
 
 list_effect = []
 list_value = []
@@ -280,8 +280,8 @@ for ax in axes.flat:
 
     feature_name = seq_features_rel[idx]
 
-    max_value_feature = max_values[idx]
-    data_feature_values = [i * max_value_feature for i in data_feature_values]
+    # max_value_feature = max_values[idx]
+    # data_feature_values = [i * max_value_feature for i in data_feature_values]
 
     plt.plot(list(range(1, 12)), data_feature_values, linewidth=1, color='grey')
     plt.scatter(list(range(1, 12)), data_feature_values, c=effect_feature_values, cmap='viridis')
