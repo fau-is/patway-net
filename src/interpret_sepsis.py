@@ -248,9 +248,13 @@ for idx, value in enumerate(seq_features_rel):
                     pass
                     if value == 'LacticAcid':
                         y_up = 0.08 if i < 3 else -0.04
+                        #plt.annotate(round(effect_feature_values[i], 3),
+                        #             (steps[i] - 0.2, data_feature_values[i] + y_up), color= colors[idx])
                     elif value == "Leucocytes":
                         y_up = 0.05 if i < 4 else 0.02
+                        #plt.annotate(round(effect_feature_values[i], 3), (steps[i] -0.2, data_feature_values[i] + y_up), color= colors[idx])
                     else:
+                        #plt.annotate(round(effect_feature_values[i], 3), (steps[i] -0.2, data_feature_values[i] + 0.02), color= colors[idx])
                         pass
 
         list_effect = list_effect + effect_feature_values
@@ -258,6 +262,7 @@ for idx, value in enumerate(seq_features_rel):
         list_time = list_time + list(range(1, 12))
 
 df = pd.DataFrame({'x': list_time, 'y': list_value, 'z': list_effect})
+
 clim_max = df['z'].max()
 clim_min = df['z'].min()
 
@@ -304,16 +309,17 @@ for ax in axes.flat:
 
         plt.annotate(round(effect_feature_values[i], 3), (steps[i] - 0.3, data_feature_values[i] + y_up))
 
-        #plt.annotate(round(effect_feature_values[i], 3), (steps[i], data_feature_values[i]), xytext=(10, -5),
-        #             textcoords='offset points')
-
     plt.axhline(y=0, color='grey', linewidth=0.6)
 
     if idx == 2:
         plt.xlabel("Time step", fontsize=16)
         plt.xticks(np.arange(1, 12, 1))
 
+    if idx == 0:
+        plt.title(f"Sequential feature effect over time for individual patient pathway", fontsize=16)
+    idx = idx + 1
+
 plt.colorbar(ax=axes.ravel().tolist(), label='Feature effect on model output', location='right', shrink=0.8)
 plt.show()
-fig.savefig(f'../plots/sepsis/seq_feat_case_{case}_single.with_hist.pdf', dpi=100, bbox_inches="tight")
+fig.savefig(f'../plots/sepsis/seq_feat_case_{case}_single_with_hist.pdf', dpi=100, bbox_inches="tight")
 plt.close(fig)

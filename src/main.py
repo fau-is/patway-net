@@ -16,6 +16,7 @@ from src.interpret_LSTM import Net
 from sklearn.model_selection import StratifiedKFold
 import pickle
 import xgboost as xgb
+import time
 
 max_len = 50
 min_len = 3
@@ -23,7 +24,7 @@ min_size_prefix = 1
 val_size = 0.2
 train_size = 0.8
 hpo = True
-save_baseline_model = True
+save_baseline_model = False
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
@@ -487,6 +488,10 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
 
         id += 1
 
+        if id == 0:
+            results['training_time'] = list()
+            results['inference_time'] = list()
+
         train_index = train_index_[0: int(len(train_index_) * (1 - val_size))]
         val_index = train_index_[int(len(train_index_) * (1 - val_size)):]
 
@@ -513,8 +518,12 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                 print("Test data from fold " + str(id) + " saved to " + str(output))
 
         if mode == "pwn":
+            training_start_time = time.time()
+
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat,
                                           y_val.reshape(-1, 1), hpos, hpo, mode, data_set, target_activity=target_activity)
+
+            results['training_time'].append(time.time() - training_start_time)
 
             X_train_seq = torch.from_numpy(X_train_seq)
             X_train_stat = torch.from_numpy(X_train_stat)
@@ -529,7 +538,10 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             with torch.no_grad():
                 preds_proba_train = torch.sigmoid(model(X_train_seq, X_train_stat))
                 preds_proba_val = torch.sigmoid(model(X_val_seq, X_val_stat))
+
+                inference_start_time = time.time()
                 preds_proba_test = torch.sigmoid(model(X_test_seq, X_test_stat))
+                results['inference_time'].append(time.time() - inference_start_time)
 
             def map_value(value):
                 if value >= 0.5:
@@ -736,6 +748,9 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                     "f1_neg_train", "f1_neg_val", "f1_neg_test",
                     "support_train", "support_val", "support_test"]
 
+        if mode == "pwn":
+            metrics_ = metrics_ + ["training_time", "inference_time"]
+
         for metric_ in metrics_:
             vals = []
             try:
@@ -776,7 +791,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
         for seed in [15, 37, 98, 137, 245]:  # [15, 37, 98, 137, 245]:
-            for mode in ['xgb']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
                 procedure = mode
                 for target_activity in ['Admission IC']:
 
