@@ -295,7 +295,7 @@ class Net(nn.Module):
         self.all_feat_seq = all_feat_seq
 
         if self.interactions_seq_auto and self.interactions_seq == [] and self.masking:
-            self.interactions_seq = self.get_interactions_seq_auto_hpo(x_seq, y)
+            self.interactions_seq = self.get_interactions_seq_auto(x_seq, y)
 
         if only_static:
             self.mlps = nn.ModuleList([MLP(1, mlp_hidden_size) for i in range(input_sz_stat)])

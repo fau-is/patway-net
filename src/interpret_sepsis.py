@@ -201,12 +201,16 @@ if number_interactions_seq > 0:
 """
 
 # (5) Print sequential feature (local, history)
-plt.rcParams["figure.figsize"] = (20, 15)
+plt.rcParams["figure.figsize"] = (16, 16)
 plt.rc('font', size=16)
 plt.rc('axes', titlesize=18)
 case = 8067  # id of prefix == 8067 for case 581
 
-seq_features_rel = ['Leucocytes', 'LacticAcid', 'CRP']  # 'CRP'
+seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
+                'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
+                'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
+                'Release E']
+seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid']
 
 list_effect = []
 list_value = []
@@ -242,13 +246,18 @@ for idx, value in enumerate(seq_features_rel):
                     pass
                 else:
                     pass
+                    if value == 'LacticAcid':
+                        y_up = 0.08 if i < 3 else -0.04
+                    elif value == "Leucocytes":
+                        y_up = 0.05 if i < 4 else 0.02
+                    else:
+                        pass
 
         list_effect = list_effect + effect_feature_values
         list_value = list_value + data_feature_values
         list_time = list_time + list(range(1, 12))
 
 df = pd.DataFrame({'x': list_time, 'y': list_value, 'z': list_effect})
-
 clim_max = df['z'].max()
 clim_min = df['z'].min()
 
@@ -283,8 +292,20 @@ for ax in axes.flat:
 
     steps = list(range(1, 12))
     for i in range(len(steps)):
-        plt.annotate(round(effect_feature_values[i], 3), (steps[i], data_feature_values[i]), xytext=(10, -5),
-                     textcoords='offset points')
+
+        if feature_name == "Leucocytes": #Done
+            y_up = 0.05 if data_feature_values[i] < 0.2 else -0.09
+
+        elif feature_name == "CRP": #WIP
+            y_up = 0.08 if data_feature_values[i] < 0.4 else -0.15
+
+        elif feature_name == 'LacticAcid': #Done
+            y_up = 0.04 if data_feature_values[i] < 0.2 else -0.07
+
+        plt.annotate(round(effect_feature_values[i], 3), (steps[i] - 0.3, data_feature_values[i] + y_up))
+
+        #plt.annotate(round(effect_feature_values[i], 3), (steps[i], data_feature_values[i]), xytext=(10, -5),
+        #             textcoords='offset points')
 
     plt.axhline(y=0, color='grey', linewidth=0.6)
 
@@ -292,11 +313,7 @@ for ax in axes.flat:
         plt.xlabel("Time step", fontsize=16)
         plt.xticks(np.arange(1, 12, 1))
 
-    if idx == 0:
-        plt.title(f"Sequential feature effect over time for individual patient pathway", fontsize=16)
-    idx = idx + 1
-
 plt.colorbar(ax=axes.ravel().tolist(), label='Feature effect on model output', location='right', shrink=0.8)
-# plt.show()
+plt.show()
 fig.savefig(f'../plots/sepsis/seq_feat_case_{case}_single.with_hist.pdf', dpi=100, bbox_inches="tight")
 plt.close(fig)
