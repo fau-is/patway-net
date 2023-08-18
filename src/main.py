@@ -354,7 +354,9 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
                                         y=y_train)
 
                             criterion = nn.BCEWithLogitsLoss()
-                            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+                            # optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+                            # optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
+                            optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0) # weight_decay = 0.002
                             # optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
                             idx = np.arange(len(x_train_seq))
 
@@ -565,8 +567,10 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                                         y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
 
         elif mode == "lr":
+            training_start_time = time.time()
             model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
                                          y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+            results['training_time'].append(time.time() - training_start_time)
 
         elif mode == "nb":
             model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
@@ -592,7 +596,9 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                                          y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
 
         if mode in ["rf", "xgb", "dt", "knn", "nb", "lr"]:
+            inference_start_time = time.time()
             preds_proba_train = model.predict_proba(X_train_stat)
+            results['inference_time'].append(time.time() - inference_start_time)
             results['preds_train'] = [np.argmax(pred_proba) for pred_proba in preds_proba_train]
             results['preds_proba_train'] = [pred_proba[1] for pred_proba in preds_proba_train]
             preds_proba_val = model.predict_proba(X_val_stat)
@@ -748,7 +754,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                     "f1_neg_train", "f1_neg_val", "f1_neg_test",
                     "support_train", "support_val", "support_test"]
 
-        if mode == "pwn":
+        if mode in ["pwn", "lr"]:
             metrics_ = metrics_ + ["training_time", "inference_time"]
 
         for metric_ in metrics_:
@@ -778,7 +784,7 @@ if __name__ == "__main__":
     data_set = "sepsis"  # bpi2012, hospital
 
     hpos = {
-        "pwn": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [1]},
         # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
@@ -790,7 +796,7 @@ if __name__ == "__main__":
     }
 
     if data_set == "sepsis":
-        for seed in [15, 37, 98, 137, 245]:  # [15, 37, 98, 137, 245]:
+        for seed in [15]:  # [15, 37, 98, 137, 245]:
             for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
                 procedure = mode
                 for target_activity in ['Admission IC']:

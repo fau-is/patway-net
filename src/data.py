@@ -17,8 +17,8 @@ def get_sim_data(label, file):
     bmi_max = max(df['BMI'])
     df['BMI'] = df['BMI'].apply(lambda x: x / bmi_max)
 
-    max_lacticacid = np.percentile(df['Blood Pressure'].dropna(), 100)  # remove outliers
-    max_crp = np.percentile(df['Heart Rate'].dropna(), 100)  # remove outliers
+    max_blood_pressure = np.percentile(df['Blood Pressure'].dropna(), 100)  # remove outliers
+    max_heart_rate = np.percentile(df['Heart Rate'].dropna(), 100)  # remove outliers
 
     x_seqs = []
     x_statics = []
@@ -30,8 +30,8 @@ def get_sim_data(label, file):
         after_registration_flag = False
         df_tmp = df[df['Case ID'] == case]
         idx = -1
-        current_crp_value = 0
-        current_lacticacid_value = 0
+        current_heart_rate_value = 0
+        current_blood_pressure_value = 0
 
         for _, x in df_tmp.iterrows():
             idx = idx + 1
@@ -42,12 +42,13 @@ def get_sim_data(label, file):
                 after_registration_flag = True
 
             if after_registration_flag:
-                one_hot, current_crp_value, current_lacticacid_value = util.get_one_hot_of_activity_sim(x, max_lacticacid, max_crp, current_crp_value, current_lacticacid_value)
+                one_hot, current_heart_rate_value, current_blood_pressure_value = util.get_one_hot_of_activity_sim(x, max_blood_pressure, max_heart_rate, current_blood_pressure_value, current_heart_rate_value)
                 x_seqs[-1].append(one_hot)
                 x_time_vals[-1].append(x['Timestamp'])
 
         if after_registration_flag:
             y.append(x[label])
+
 
     assert len(x_seqs) == len(x_statics) == len(y) == len(x_time_vals)
 
