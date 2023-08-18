@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def get_one_hot_of_activity_sim(x, max_blood_pressure, max_heart_rate, current_blood_pressure_value, heart_rate_value):
+def get_one_hot_of_activity_sim(x, max_blood_pressure, max_heart_rate, current_blood_pressure_value, current_heart_rate_value):
     if x['Activity'] == 'ER Registration':
         ret = [0, 1]  # No additional information, so normal one hot
     elif x['Activity'] == 'Medication B':
@@ -22,7 +22,7 @@ def get_one_hot_of_activity_sim(x, max_blood_pressure, max_heart_rate, current_b
 
     # Set last value of seq features
     if np.isnan(x['Heart Rate']):
-        one_hot[3] = heart_rate_value
+        one_hot[3] = current_heart_rate_value
     if np.isnan(x['Blood Pressure']):
         one_hot[4] = current_blood_pressure_value
 
