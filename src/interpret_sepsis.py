@@ -16,8 +16,8 @@ number_interactions_seq = len(interactions_seq)
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
-"""
-# (1) Sequential feature transition (2 time steps, no history)
+
+# (1) Print sequential feature transition (2 time steps, no history)
 plt.rcParams["figure.figsize"] = (7.5, 5)
 for idx, feature in enumerate(seq_features):
 
@@ -132,6 +132,7 @@ for idx, value in enumerate(static_features):
     fig1.savefig(f'../plots/sepsis/stat_feat_{value}.pdf', dpi=100, bbox_inches="tight")
     plt.close(fig1)
 
+
 # (3) Print sequential features (global, no history)
 for idx, value in enumerate(seq_features):
     plt.rcParams["figure.figsize"] = (7.5, 5)
@@ -198,8 +199,8 @@ if number_interactions_seq > 0:
         fig1.savefig(f'../plots/sepsis/seq_feat_inter_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}.pdf',
                      dpi=100, bbox_inches="tight")
         plt.close(fig1)
-"""
 
+"""
 # (5) Print sequential feature (local, history)
 plt.rcParams["figure.figsize"] = (16, 16)
 plt.rc('font', size=16)
@@ -323,3 +324,4 @@ plt.colorbar(ax=axes.ravel().tolist(), label='Feature effect on model output', l
 plt.show()
 fig.savefig(f'../plots/sepsis/seq_feat_case_{case}_single_with_hist.pdf', dpi=100, bbox_inches="tight")
 plt.close(fig)
+"""
