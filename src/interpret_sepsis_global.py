@@ -6,7 +6,7 @@ import src.data as data
 from src.main import time_step_blow_up
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-name = "4_98"
+name = "2_15"
 # Map location param is required as the model was trained on gpu
 model = torch.load(os.path.join("../model", f"model_{name}"), map_location=torch.device('cpu'))
 interactions_seq = model.get_interactions_seq()
@@ -89,8 +89,8 @@ plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 
 # filter
-feat_names_sorted = feat_names_sorted[19:]  # total 39 features
-feat_imports_sorted = feat_imports_sorted[19:]
+feat_names_sorted = feat_names_sorted # [19:]  # total 39 features
+feat_imports_sorted = feat_imports_sorted # [19:]
 
 y_pos = np.arange(len(feat_names_sorted))
 plot = plt.barh(y_pos, feat_imports_sorted, color='lightblue')
