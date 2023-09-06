@@ -141,7 +141,7 @@ for t in range(1, 13):
 #                          torch.from_numpy(x_statics_final[case, :].reshape(1, 23)))))
 """
 
-
+"""
 # (3) Print sequential feature transition (local, history, manipulated sequence)
 case = -1
 for t in range(3, 13):
@@ -204,7 +204,7 @@ for t in range(3, 13):
             plt.draw()
             f.savefig(f'../plots/sepsis/seq_feat_diffs_{value}_{t}.pdf', dpi=100, bbox_inches="tight")
             plt.close(f)
-
+"""
         
 """
 # (4) Print sequential feature interactions (global, no history)
@@ -248,17 +248,73 @@ if number_interactions_seq > 0:
         fig1.savefig(f'../plots/sepsis/seq_feat_inter_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}.pdf',
                      dpi=100, bbox_inches="tight")
         plt.close(fig1)
+"""
 
+# (5) Print sequential feature (local, history)
+case = -1
+max_len = 12
+seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid']
+
+for idx, value in enumerate(seq_features_rel):
+    if value in seq_features_rel:
+
+        list_effect, list_value, list_time = [], [], []
+        effect_feature_values, data_feature_values = [], []
+
+        plt.rcParams["figure.figsize"] = (16, 5)
+        plt.rc('font', size=14)
+        plt.rc('axes', titlesize=16)
+
+        for t in range(1, max_len+1):
+
+            x, out, h_t, out_coef = model.plot_feat_seq_effect(
+                idx, torch.from_numpy(x_seqs_final[case, 0:t, idx].reshape(1, t, 1)).float(), history=True)
+            x = x.detach().numpy().squeeze()
+            out = out.detach().numpy()
+
+            # todo: correction
+            # out_correction = out[0][0]  # + correction_value
+
+            effect_feature_values.append(out)
+
+            if t == 1:
+                data_feature_values.append(x.item())
+            else:
+                data_feature_values.append(x[-1])
+
+
+        list_effect = list_effect + effect_feature_values
+        list_value = list_value + data_feature_values
+        list_time = list_time + list(range(1, max_len+1))
+
+        data = pd.DataFrame({'x': list_time, 'y': list_value, 'z': list_effect})
+
+        g = sns.lineplot(data=data, y="y", x="x", linewidth=2, color="steelblue")
+
+        g.axhline(y=0, color="grey", linestyle="--")
+
+        sc = plt.scatter(list(range(1, max_len+1)), data_feature_values, c=effect_feature_values, cmap='viridis')
+        
+        # todo: annotations
+
+        plt.colorbar(sc, label='Feature effect on model output')
+        plt.grid(True)
+        plt.ylabel("Feature value")
+        plt.xlabel("Time step")
+        plt.title("Sequential feature effect over time: %s" % (str(seq_features[idx])))
+
+        f = plt.gcf()
+        plt.show()
+        f.savefig(f'../plots/sepsis/seq_feat_case_{case}_{value}_time.pdf', dpi=100, bbox_inches="tight")
+        plt.close(f)
+
+"""
 # (5) Print sequential feature (local, history)
 plt.rcParams["figure.figsize"] = (16, 16)
 plt.rc('font', size=16)
 plt.rc('axes', titlesize=18)
-case = 8067  # id of prefix == 8067 for case 581
+case = -1
 
-seq_features = ['Leucocytes', 'CRP', 'LacticAcid', 'ER Registration', 'ER Triage', 'ER Sepsis Triage',
-                'IV Liquid', 'IV Antibiotics', 'Admission NC', 'Admission IC',
-                'Return ER', 'Release A', 'Release B', 'Release C', 'Release D',
-                'Release E']
 seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid']
 
 list_effect = []
