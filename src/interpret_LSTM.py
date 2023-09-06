@@ -113,6 +113,7 @@ class NaiveCustomLSTM(nn.Module):
                     x_t[:, feat_seq] @ (self.U_o * self.U_mask) + h_t @ (self.V_o * self.V_mask) + self.b_o)
                 c_t = f_t * c_t + i_t * g_t
                 h_t = o_t * torch.tanh(c_t)
+
             else:
                 i_t = torch.sigmoid(x_t @ self.U_i + h_t @ self.V_i + self.b_i)
                 f_t = torch.sigmoid(x_t @ self.U_f + h_t @ self.V_f + self.b_f)
@@ -131,14 +132,13 @@ class NaiveCustomLSTM(nn.Module):
     def single_forward(self, x, feat_id, interaction=False, init_states=None, history=False):
 
         if history:
-            # todo: check interactions
             bs, seq_sz, feat = x.size()
             hidden_seq = []
 
             if init_states is None:
                 h_t, c_t = (
                     torch.zeros(bs, self.hidden_size).to(x.device),
-                    0  # torch.zeros(bs, self.hidden_size).to(x.device),
+                    0, # torch.zeros(bs, self.hidden_size).to(x.device),
                 )
             else:
                 h_t, c_t = init_states
@@ -273,8 +273,9 @@ class NaiveCustomLSTM(nn.Module):
 class Net(nn.Module):
     def __init__(self, input_sz_seq: int, hidden_per_seq_feat_sz: int, interactions_seq: list,
                  interactions_seq_itr: int, interactions_seq_best: int, interactions_seq_auto: bool,
-                 input_sz_stat: int, output_sz: int, only_static: bool, all_feat_seq: bool, masking: bool,
-                 mlp_hidden_size: int, x_seq: torch.Tensor, x_stat: torch.Tensor, y: torch.Tensor):
+                 input_sz_stat: int, output_sz: int, only_static: bool, masking: bool,
+                 mlp_hidden_size: int, x_seq: torch.Tensor, all_feat_seq: bool, x_stat: torch.Tensor, y: torch.Tensor):
+        # all_feat_seq: bool
         """
         :param input_sz_seq:
         :param hidden_per_seq_feat_sz:
@@ -474,7 +475,7 @@ class Net(nn.Module):
         else:
             return [tuple(eval(x)) for x in results["pair"].values]
 
-    def forward(self, x_seq, x_stat):
+    def forward(self, x_seq, x_stat, out_=False):
 
         if self.only_static:
             out_mlp = []
@@ -513,7 +514,10 @@ class Net(nn.Module):
 
             out = torch.cat((h_t, out_mlp), dim=1) @ self.output_coef.float() + self.output_bias
 
-        return out
+        if out_:
+            return out, out_mlp, h_t
+        else:
+            return out
 
     def plot_feat_seq_effect_custom(self, feat_id, min_v, max_v):
         x = torch.linspace(min_v, max_v).reshape(-1, 1, 1)

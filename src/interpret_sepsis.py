@@ -5,7 +5,7 @@ import src.data as data
 from src.main import time_step_blow_up
 import numpy as np
 import pandas as pd
-
+import seaborn as sns
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 name = "4_98"
@@ -17,147 +17,196 @@ x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.ge
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
 
-# (1) Print sequential feature transition (2 time steps, no history)
-plt.rcParams["figure.figsize"] = (7.5, 5)
-for idx, feature in enumerate(seq_features):
-
-    inputs = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
-    x_x, out_x, _, _ = model.plot_feat_seq_effect(idx, inputs, history=False)
-    x_x = x_x.detach().numpy().squeeze()
-    outputs = out_x.detach().numpy().squeeze()
-    diffs = np.empty((len(inputs), len(inputs)))
-
-    for i in range(200):
-        for j in range(200):
-            output1 = outputs[i]
-            output2 = outputs[j]
-            diffs[i, j] =  float(output2) - float(output1)
-
-    inputs = inputs.detach().numpy().squeeze()
-
-    plt.rc('font', size=16)
-    plt.rc('axes', titlesize=18)
-
-    plt.imshow(diffs, cmap='viridis', interpolation='nearest', origin='lower')
-    plt.colorbar(label='$\Delta$ Feature effect')
-
-    ticks = np.linspace(0, 1, 5)
-    tick_indices = np.linspace(0, len(inputs) - 1, len(ticks)).astype(int)
-
-    plt.xticks(ticks=tick_indices, labels=ticks)
-    plt.yticks(ticks=tick_indices, labels=ticks)
-
-    # if feature == 'CRP' :
-    #    plt.clim(-0.82, 0.82)
-
-    # elif feature == 'LacticAcid':
-    #    plt.clim(-0.03, 0.03)
-    # else:
-    #   plt.clim(-0.5, 0.5)
-    #plt.xlim(-0.05, 1.05)
-    #plt.ylim(-0.05, 1.05)
-    #plt.clim(-1.3, 2.7)
-
-    plt.xlabel("Feature value $t$")
-    plt.ylabel("Feature value $t+1$")
-    plt.title(f"Sequential feature: {seq_features[idx]}")
-    fig1 = plt.gcf()
-    plt.show()
-    plt.draw()
-    fig1.savefig(f'../plots/sepsis/seq_feat_diffs_{feature}.pdf', dpi=100, bbox_inches="tight")
-    plt.close(fig1)
-
-
-# (2) Print static features (global)
+"""
+# (1) Print static features (global, history)
+stat_numeric = ["Age"]
 for idx, value in enumerate(static_features):
-    plt.rcParams["figure.figsize"] = (7.5, 5)
-    plt.rc('font', size=16)
-    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
-    x = x.detach().numpy().squeeze()
-    out = out.detach().numpy()
 
-    if value == "Age":
-        sorted_indices = np.argsort(x)
-        sorted_x = x[sorted_indices]
-        sorted_out = out[sorted_indices]
-        plt.plot(sorted_x, sorted_out, linewidth=3, color='steelblue')  # + 1.6
-        # plt.ylim(0, 1.7)
-        # plt.yticks(np.arange(0, 1.7, step=0.2))
+	x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
+	x = x.detach().numpy().squeeze()
+	out = out.detach().numpy()
 
-    elif value == "Diagnose":
-        plt.scatter(x, out, color='steelblue')
-        # plt.ylim(0.19, 0.41)
+	f, axes = plt.subplots(2, 1, figsize=(7.5, 5), gridspec_kw={'height_ratios': [4, 1]})
+    plt.rc('font', size=14)
+    plt.rc('axes', titlesize=16)
 
-    elif value == "Hypotensie":
-        a, b = zip(set(x), set(np.squeeze(out)))
-        x = [list(a)[0], list(b)[0]]
-        out = [list(a)[1], list(b)[1]]  # +1.3
-        plt.bar(x, out, color='steelblue')
-        plt.xticks(x, x)
+	# correction
+	out = np.squeeze(out)
+	out_min = min(out)
+	out_delta = 0 - out_min
+	out = [x + out_delta for x in out]
 
-    elif value == "Oligurie":
-        a, b = zip(set(x), set(np.squeeze(out)))
-        x = [list(a)[0], list(b)[0]]
-        out = [list(a)[1] - list(a)[1] + 0.01, list(b)[1] - list(a)[1]]  # +1.3
-        plt.bar(x, out, color='steelblue')
-        plt.xticks(x, x)
+	data = pd.DataFrame({'x': x, 'y': out})
 
-    elif value == "DiagnosticBlood":
-        a, b = zip(set(x), set(np.squeeze(out)))
-        x = [list(a)[0], list(b)[0]]
-        if list(b)[1] < 0:
-            out = [list(a)[1] - list(b)[1], list(b)[1] - list(b)[1] - 0.001]   # + 1.35
-        else:
-            out = [list(a)[1] + list(b)[1], list(b)[1] + list(b)[1] - 0.001]
-        plt.bar(x, out, color='steelblue')
-        plt.ylim(-1.0, 0.01)
-        plt.xticks(x, x)
+	if len(data["y"].unique()) > 1:
 
-    else:
-        try:
-            a, b = zip(set(x), set(np.squeeze(out)))
-            x = [list(a)[0], list(b)[0]]
-            out = [list(a)[1], list(b)[1]]
-            plt.bar(x, out, color='steelblue')
-            plt.xticks(x, x)
-        except:
-            plt.scatter(x, out, color='steelblue')
+		data_agg = pd.DataFrame({'x_unique': data["x"].unique(), 'x_count': data["x"].value_counts(), 'y_unique': data["y"].unique()})
 
-    plt.xlabel("Feature value")
-    plt.ylabel("Feature effect on model output")
-    plt.title(f"Static feature: {static_features[idx]}")
-    fig1 = plt.gcf()
-    plt.show()
-    plt.draw()
-    fig1.savefig(f'../plots/sepsis/stat_feat_{value}.pdf', dpi=100, bbox_inches="tight")
-    plt.close(fig1)
+		if value in stat_numeric:
+			# numerical
+			g = sns.lineplot(data=data, y="y", x="x", linewidth=2, color="steelblue", ax=axes[0])
+			g.axhline(y=0, color="grey", linestyle="--")
+
+		else:
+			# categorical
+			g = sns.lineplot(data=data_agg, y="y_unique", x="x_unique", linewidth=2, drawstyle="steps-mid", color="steelblue", ax=axes[0])
+			g.axhline(y=0, color="grey", linestyle="--")
+			axes[0].set_xticks([0, 1])
+
+		g1 = sns.barplot(data=data_agg, y="x_count", x="x_unique", color="steelblue", ax=axes[1])
+		g1.tick_params(axis="x", bottom=False, labelbottom=False)
+
+		axes[0].set_title(f"Static feature: {static_features[idx]}")
+		axes[0].set_xlabel(None)
+		axes[0].grid(True)
+		axes[0].set_ylabel("Feature effect on model output")
+
+		axes[1].set_ylabel(None)
+		axes[1].set_xlabel("Feature value")
+
+		f.tight_layout(pad=1.0)
+		plt.savefig(f'../plots/sepsis/stat_feat_{value}.pdf', dpi=100, bbox_inches="tight")
+		plt.show()
+		plt.close(f)
+"""
+
+"""
+# (2) Print sequential features (local, history, manipulated sequence)
+case = -1
+for t in range(1, 13):
+    for idx, value in enumerate(seq_features):
+        if value == "Leucocytes" or value == "LacticAcid" or value == "CRP":
+
+            plt.plot(figsize=(7.5, 5))
+            plt.rc('font', size=14)
+            plt.rc('axes', titlesize=16)
+
+            if t == 1:
+                # step n
+                inputs_ = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
+                inputs = inputs_
+            else:
+                # step 1 to n-1
+                inputs_trace =  torch.from_numpy(x_seqs_final[case, 0:t-1, idx].reshape(1, t-1, 1)).float()
+                inputs_trace = inputs_trace.repeat(200, 1, 1)
+
+                # step n
+                inputs_ = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
+
+                # cat step n and steps 1 to n-1
+                inputs = torch.cat((inputs_trace, inputs_), 1)
+
+            x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, inputs, history=True)
+            x = x.detach().numpy().squeeze()
+            out = out.detach().numpy()
+
+            # correction
+            out = np.squeeze(out)
+            out_min = min(out)
+            out_delta = 0 - out_min
+            out = [x + out_delta for x in out]
+
+            inputs_ = inputs_.reshape(200,1)
+
+            # plot x values of step n
+            if len(x.shape) > 1:
+                x = x[:,-1]
+
+            data = pd.DataFrame({'x': x, 'y': out})
+
+            g = sns.lineplot(data=data, y="y", x="x", linewidth=2, color="steelblue")
+            g.axhline(y=0, color="grey", linestyle="--")
+
+            # add x value of step n
+            x_step_n = x_seqs_final[case, t - 1, idx]
+            y_step_n = torch.from_numpy(x_seqs_final[case, 0:t, idx].reshape(-1, t, 1)).float()
+            _, out_, _, _ = model.plot_feat_seq_effect(idx, y_step_n, history=True)
+            out_ = out_.detach().numpy()[0]
+
+            plt.plot(x_step_n, out_+out_delta, marker='s', ms=4, mew=2, ls='none', color='black')
+
+            plt.grid(True)
+
+            plt.xlabel("Feature value")
+            plt.ylabel("Feature effect on model output")
+            plt.title("Sequential feature: %s" % (str(seq_features[idx])))
+            f = plt.gcf()
+            plt.show()
+            plt.draw()
+            f.savefig(f'../plots/sepsis/seq_feat_{value}_{t}.pdf', dpi=100)
+            plt.close(f)
+
+# prediction at step n
+# print(torch.sigmoid(model(torch.from_numpy(x_seqs_final[case, :, :].reshape(1, 50, 16)),
+#                          torch.from_numpy(x_statics_final[case, :].reshape(1, 23)))))
+"""
 
 
-# (3) Print sequential features (global, no history)
-for idx, value in enumerate(seq_features):
-    plt.rcParams["figure.figsize"] = (7.5, 5)
-    plt.rc('font', size=16)
+# (3) Print sequential feature transition (local, history, manipulated sequence)
+case = -1
+for t in range(3, 13):
+    for idx, value in enumerate(seq_features):
 
-    if value == "CRP" or value == "Leucocytes" or value == "LacticAcid":
-        inputs = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, inputs, history=False)
-        x = x.detach().numpy().squeeze()
-        out = out.detach().numpy()
+        if value == "Leucocytes" or value == "LacticAcid" or value == "CRP":
 
-        plt.plot(x, out, linewidth=3, color='steelblue')
+            plt.plot(figsize=(7.5, 5))
+            plt.rc('font', size=14)
+            plt.rc('axes', titlesize=16)
 
-        #plt.xlim(-0.02, 1.02)
-        #plt.ylim(-0.02, 3.02)
-        plt.xlabel("Feature value")
-        plt.ylabel("Feature effect on model output")
-        plt.title("Sequential feature: %s" % (str(seq_features[idx])))
-        fig1 = plt.gcf()
-        plt.show()
-        plt.draw()
-        fig1.savefig(f'../plots/sepsis/seq_feat_{value}.pdf', dpi=100, bbox_inches="tight")
-        plt.close(fig1)
+
+            # steps 1 to n-2
+            x_n_min_2_ = torch.from_numpy(x_seqs_final[case, 0:t - 2, idx].reshape(1, t - 2, 1)).float()
+            x_n_min_2_ = x_n_min_2_.repeat(200, 1, 1)
+
+            # steps n-1 and n
+            x_n_min_1_ = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
+            x_n_ = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
+
+            # cat step n-1 and steps 1 to n-1
+            x_n_min_1 = torch.cat((x_n_min_2_, x_n_min_1_), 1)
+
+            # cat step n and step n-1 and steps 1 to n-2
+            x_n = torch.cat((x_n_min_2_, x_n_min_1_, x_n_), 1)
+
+            # n-1
+            x_n_min_1, out_n_min_1, _, _ = model.plot_feat_seq_effect(idx, x_n_min_1, history=True)
+            x_n_min_1 = x_n_min_1.detach().numpy().squeeze()
+            out_n_min_1 = out_n_min_1.detach().numpy().squeeze()
+
+            # n
+            x_n, out_n, _, _ = model.plot_feat_seq_effect(idx, x_n, history=True)
+            x_n = x_n.detach().numpy().squeeze()
+            out_n = out_n.detach().numpy().squeeze()
+
+            diffs = np.empty((len(out_n), len(out_n)))
+
+            for i in range(200):
+                for j in range(200):
+                    output1 = out_n_min_1[i]
+                    output2 = out_n[j]
+                    diffs[i, j] = float(output2) - float(output1)
+
+            plt.imshow(diffs, cmap='viridis', interpolation='nearest', origin='lower')
+            cbar = plt.colorbar(label='$\Delta$ Feature effect')
+
+
+            ticks = np.linspace(0, 1, 5)
+            tick_indices = np.linspace(0, len(x_n) - 1, len(ticks)).astype(int)
+
+            plt.xticks(ticks=tick_indices, labels=ticks)
+            plt.yticks(ticks=tick_indices, labels=ticks)
+
+            plt.xlabel("Feature value $(t=n)$", )
+            plt.ylabel("Feature value $(t=n-1)$")
+            plt.title(f"Sequential feature: {seq_features[idx]}")
+            f = plt.gcf()
+            plt.show()
+            plt.draw()
+            f.savefig(f'../plots/sepsis/seq_feat_diffs_{value}_{t}.pdf', dpi=100, bbox_inches="tight")
+            plt.close(f)
+
         
-
+"""
 # (4) Print sequential feature interactions (global, no history)
 print(interactions_seq)
 plt.rcParams["figure.figsize"] = (7.5, 5)
@@ -200,7 +249,6 @@ if number_interactions_seq > 0:
                      dpi=100, bbox_inches="tight")
         plt.close(fig1)
 
-"""
 # (5) Print sequential feature (local, history)
 plt.rcParams["figure.figsize"] = (16, 16)
 plt.rc('font', size=16)
