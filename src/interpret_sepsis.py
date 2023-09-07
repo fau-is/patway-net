@@ -17,58 +17,58 @@ x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.ge
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
 
-"""
 # (1) Print static features (global, history)
 stat_numeric = ["Age"]
 for idx, value in enumerate(static_features):
 
-	x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
-	x = x.detach().numpy().squeeze()
-	out = out.detach().numpy()
+    x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
+    x = x.detach().numpy().squeeze()
+    out = out.detach().numpy()
 
-	f, axes = plt.subplots(2, 1, figsize=(7.5, 5), gridspec_kw={'height_ratios': [4, 1]})
+    f, axes = plt.subplots(2, 1, figsize=(7.5, 5), gridspec_kw={'height_ratios': [4, 1]})
     plt.rc('font', size=14)
     plt.rc('axes', titlesize=16)
 
-	# correction
-	out = np.squeeze(out)
-	out_min = min(out)
-	out_delta = 0 - out_min
-	out = [x + out_delta for x in out]
+    # correction
+    out = np.squeeze(out)
+    out_min = min(out)
+    out_delta = 0 - out_min
+    out = [x + out_delta for x in out]
 
-	data = pd.DataFrame({'x': x, 'y': out})
+    data = pd.DataFrame({'x': x, 'y': out})
 
-	if len(data["y"].unique()) > 1:
+    if len(data["y"].unique()) > 1:
 
-		data_agg = pd.DataFrame({'x_unique': data["x"].unique(), 'x_count': data["x"].value_counts(), 'y_unique': data["y"].unique()})
+        data_agg = pd.DataFrame({'x_unique': data["x"].unique(), 'x_count': data["x"].value_counts(), 'y_unique': data["y"].unique()})
 
-		if value in stat_numeric:
-			# numerical
-			g = sns.lineplot(data=data, y="y", x="x", linewidth=2, color="steelblue", ax=axes[0])
-			g.axhline(y=0, color="grey", linestyle="--")
+        if value in stat_numeric:
+            # numerical
+            g = sns.lineplot(data=data, y="y", x="x", linewidth=2, color="steelblue", ax=axes[0])
+            g.axhline(y=0, color="grey", linestyle="--")
 
-		else:
-			# categorical
-			g = sns.lineplot(data=data_agg, y="y_unique", x="x_unique", linewidth=2, drawstyle="steps-mid", color="steelblue", ax=axes[0])
-			g.axhline(y=0, color="grey", linestyle="--")
-			axes[0].set_xticks([0, 1])
+        else:
+            # categorical
+            g = sns.lineplot(data=data_agg, y="y_unique", x="x_unique", linewidth=2, drawstyle="steps-mid", color="steelblue", ax=axes[0])
+            g.axhline(y=0, color="grey", linestyle="--")
+            axes[0].set_xticks([0, 1])
 
-		g1 = sns.barplot(data=data_agg, y="x_count", x="x_unique", color="steelblue", ax=axes[1])
-		g1.tick_params(axis="x", bottom=False, labelbottom=False)
+        g1 = sns.barplot(data=data_agg, y="x_count", x="x_unique", color="steelblue", ax=axes[1])
+        g1.tick_params(axis="x", bottom=False, labelbottom=False)
 
-		axes[0].set_title(f"Static feature: {static_features[idx]}")
-		axes[0].set_xlabel(None)
-		axes[0].grid(True)
-		axes[0].set_ylabel("Feature effect on model output")
+        axes[0].set_title(f"Static feature: {static_features[idx]}")
+        axes[0].set_xlabel(None)
+        axes[0].grid(True)
+        axes[0].set_ylabel("Feature effect on model output")
 
-		axes[1].set_ylabel(None)
-		axes[1].set_xlabel("Feature value")
+        axes[1].set_ylabel(None)
+        axes[1].set_xlabel("Feature value")
 
-		f.tight_layout(pad=1.0)
-		plt.savefig(f'../plots/sepsis/stat_feat_{value}.pdf', dpi=100, bbox_inches="tight")
-		plt.show()
-		plt.close(f)
-"""
+        f.tight_layout(pad=1.0)
+        plt.savefig(f'../plots/sepsis/stat_feat_{value}.pdf', dpi=100, bbox_inches="tight")
+        plt.show()
+        plt.close(f)
+
+
 
 """
 # (2) Print sequential features (local, history, manipulated sequence)
@@ -139,9 +139,9 @@ for t in range(1, 13):
 # prediction at step n
 # print(torch.sigmoid(model(torch.from_numpy(x_seqs_final[case, :, :].reshape(1, 50, 16)),
 #                          torch.from_numpy(x_statics_final[case, :].reshape(1, 23)))))
-"""
 
-"""
+
+
 # (3) Print sequential feature transition (local, history, manipulated sequence)
 case = -1
 for t in range(3, 13):
@@ -205,7 +205,7 @@ for t in range(3, 13):
             f.savefig(f'../plots/sepsis/seq_feat_diffs_{value}_{t}.pdf', dpi=100, bbox_inches="tight")
             plt.close(f)
 """
-        
+
 """
 # (4) Print sequential feature interactions (global, no history)
 print(interactions_seq)
@@ -250,6 +250,7 @@ if number_interactions_seq > 0:
         plt.close(fig1)
 """
 
+"""
 # (5) Print sequential feature (local, history)
 case = -1
 max_len = 12
@@ -327,3 +328,5 @@ for idx, value in enumerate(seq_features_rel):
         plt.show()
         f.savefig(f'../plots/sepsis/seq_feat_case_{case}_{value}_time.pdf', dpi=100, bbox_inches="tight")
         plt.close(f)
+
+"""

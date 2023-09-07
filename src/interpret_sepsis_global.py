@@ -1,3 +1,4 @@
+import pandas as pd
 import torch
 import numpy as np
 import os
@@ -49,17 +50,22 @@ for t in range(1, 13):
     # Sequential features
     for idx, value in enumerate(seq_features):
 
+        plt.figure(figsize=(5, 10))
+        plt.rc('font', size=14)
+        plt.rc('axes', titlesize=16)
+        # plt.rc('xtick', labelsize=10)
+        # plt.rc('ytick', labelsize=10)
+
         if t == 1:
-            inputs_ = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
-            inputs = inputs_
+            x_n = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
         else:
             # history of trace
-            inputs_trace = torch.from_numpy(x_seqs_final[case, 0:t - 1, idx].reshape(1, t - 1, 1)).float()
-            inputs_trace = inputs_trace.repeat(200, 1, 1)
-            inputs_ = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
-            inputs = torch.cat((inputs_trace, inputs_), 1)
+            x_hist = torch.from_numpy(x_seqs_final[case, 0:t - 1, idx].reshape(1, t - 1, 1)).float()
+            x_hist = x_hist.repeat(200, 1, 1)
+            x_n = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
+            x_n = torch.cat((x_hist, x_n), 1)
 
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(idx, inputs, history=True)
+        x, out, _, _ = model.plot_feat_seq_effect(idx, x_n, history=True)
         x = x.detach().numpy().squeeze()
         out = out.detach().numpy()
         out = np.ravel(out)
@@ -69,9 +75,9 @@ for t in range(1, 13):
         out_delta = 0 - out_min
         out = [o + out_delta for o in out]
 
-
+        # last data points
         if t > 1:
-            x = x[:, -1] # last data points
+            x = x[:, -1]
 
         if len(set(out)) <= 2:
             feat_imports.append(max(out))
@@ -91,23 +97,20 @@ for t in range(1, 13):
     feat_names_sorted = feat_names_sorted.tolist()
     feat_imports_sorted = feat_imports_sorted.tolist()
 
-    plt.figure(figsize=(12, 6))
-    plt.rc('font', size=10)
-    plt.rc('axes', titlesize=13)
-    plt.rc('axes', labelsize=10)
-    plt.rc('xtick', labelsize=10)
-    plt.rc('ytick', labelsize=10)
-
     # filter
     feat_names_sorted = feat_names_sorted[19:]  # total 39 features
     feat_imports_sorted = feat_imports_sorted[19:]
 
     y_pos = np.arange(len(feat_names_sorted))
-    plot = plt.barh(y_pos, feat_imports_sorted, color='lightblue')
+
+    data = pd.DataFrame({'x': feat_names_sorted, 'y': y_pos})
+
+    plot = plt.barh(y_pos, feat_imports_sorted, color='darkgrey')
+
     # plt.yticks(y_pos, feat_names_sorted)
     plt.tick_params(left=False, labelleft=False)
     plt.xticks(np.arange(0, 1.41, step=0.2))
-
+    plt.grid(True)
 
     def autolabel(plot):
         for idx, rect in enumerate(plot):
@@ -117,7 +120,7 @@ for t in range(1, 13):
 
     plt.xlabel("Feature importance")
     plt.ylabel("Feature")
-    plt.title(f"Global feature importance (t={t})")
+    plt.title(f"Overview feature importance")
     fig1 = plt.gcf()
     plt.show()
     plt.draw()
