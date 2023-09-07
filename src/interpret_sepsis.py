@@ -16,7 +16,7 @@ number_interactions_seq = len(interactions_seq)
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 
-
+"""
 # (1) Print static features (global, history)
 stat_numeric = ["Age"]
 for idx, value in enumerate(static_features):
@@ -67,7 +67,7 @@ for idx, value in enumerate(static_features):
         plt.savefig(f'../plots/sepsis/stat_feat_{value}.pdf', dpi=100, bbox_inches="tight")
         plt.show()
         plt.close(f)
-
+"""
 
 
 """
@@ -139,7 +139,7 @@ for t in range(1, 13):
 # prediction at step n
 # print(torch.sigmoid(model(torch.from_numpy(x_seqs_final[case, :, :].reshape(1, 50, 16)),
 #                          torch.from_numpy(x_statics_final[case, :].reshape(1, 23)))))
-
+"""
 
 
 # (3) Print sequential feature transition (local, history, manipulated sequence)
@@ -196,15 +196,14 @@ for t in range(3, 13):
             plt.xticks(ticks=tick_indices, labels=ticks)
             plt.yticks(ticks=tick_indices, labels=ticks)
 
-            plt.xlabel("Feature value $(t=n)$", )
-            plt.ylabel("Feature value $(t=n-1)$")
+            plt.xlabel("Feature value $(t=n-1)$", )
+            plt.ylabel("Feature value $(t=n)$")
             plt.title(f"Sequential feature: {seq_features[idx]}")
             f = plt.gcf()
             plt.show()
             plt.draw()
             f.savefig(f'../plots/sepsis/seq_feat_diffs_{value}_{t}.pdf', dpi=100, bbox_inches="tight")
             plt.close(f)
-"""
 
 """
 # (4) Print sequential feature interactions (global, no history)
