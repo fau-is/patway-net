@@ -267,13 +267,37 @@ for idx, value in enumerate(seq_features_rel):
 
         for t in range(1, max_len+1):
 
+
             x, out, h_t, out_coef = model.plot_feat_seq_effect(
                 idx, torch.from_numpy(x_seqs_final[case, 0:t, idx].reshape(1, t, 1)).float(), history=True)
             x = x.detach().numpy().squeeze()
             out = out.detach().numpy()
 
-            # todo: correction
-            # out_correction = out[0][0]  # + correction_value
+            # correction
+            if t == 1:
+                # step n
+                x_n = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
+
+            else:
+                # step 1 to n-1
+                x_hist = torch.from_numpy(x_seqs_final[case, 0:t - 1, idx].reshape(1, t - 1, 1)).float()
+                x_hist = x_hist.repeat(200, 1, 1)
+
+                # step n
+                x_n = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
+
+                # cat step n and steps 1 to n-1
+                x_n = torch.cat((x_hist, x_n), 1)
+
+            x_n, out_n, _, _ = model.plot_feat_seq_effect(idx, x_n, history=True)
+            x_n = x_n.detach().numpy().squeeze()
+            out_n = out_n.detach().numpy()
+
+            out = np.squeeze(out)
+            out_n = np.squeeze(out_n)
+            out_n_min = min(out_n)
+            out_n_delta = 0 - out_n_min
+            out = out + out_n_delta
 
             effect_feature_values.append(out)
 
@@ -282,7 +306,6 @@ for idx, value in enumerate(seq_features_rel):
             else:
                 data_feature_values.append(x[-1])
 
-
         list_effect = list_effect + effect_feature_values
         list_value = list_value + data_feature_values
         list_time = list_time + list(range(1, max_len+1))
@@ -290,12 +313,9 @@ for idx, value in enumerate(seq_features_rel):
         data = pd.DataFrame({'x': list_time, 'y': list_value, 'z': list_effect})
 
         g = sns.lineplot(data=data, y="y", x="x", linewidth=2, color="steelblue")
-
         g.axhline(y=0, color="grey", linestyle="--")
 
         sc = plt.scatter(list(range(1, max_len+1)), data_feature_values, c=effect_feature_values, cmap='viridis')
-        
-        # todo: annotations
 
         plt.colorbar(sc, label='Feature effect on model output')
         plt.grid(True)
@@ -307,125 +327,3 @@ for idx, value in enumerate(seq_features_rel):
         plt.show()
         f.savefig(f'../plots/sepsis/seq_feat_case_{case}_{value}_time.pdf', dpi=100, bbox_inches="tight")
         plt.close(f)
-
-"""
-# (5) Print sequential feature (local, history)
-plt.rcParams["figure.figsize"] = (16, 16)
-plt.rc('font', size=16)
-plt.rc('axes', titlesize=18)
-case = -1
-
-seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid']
-
-list_effect = []
-list_value = []
-list_time = []
-
-for idx, value in enumerate(seq_features_rel):
-
-    effect_feature_values = []
-    data_feature_values = []
-
-    if value in seq_features_rel:
-        for t in range(0, 11):
-            x, out, h_t, out_coef = model.plot_feat_seq_effect(
-                idx, torch.from_numpy(x_seqs_final[case, 0:t + 1, idx].reshape(1, t + 1, 1)).float(), history=True)
-            x = x.detach().numpy().squeeze()
-            out = out.detach().numpy()
-
-            out_correction = out[0][0]  # + correction_value
-
-            effect_feature_values.append(out_correction)
-            if t == 0:
-                data_feature_values.append(x.item())
-            else:
-                data_feature_values.append(x[-1])
-
-        steps = list(range(1, 12))
-        for i in range(len(steps)):
-
-            if i == 1:
-                pass
-            else:
-                if effect_feature_values[i - 1] == effect_feature_values[i]:
-                    pass
-                else:
-                    pass
-                    if value == 'LacticAcid':
-                        y_up = 0.08 if i < 3 else -0.04
-                        #plt.annotate(round(effect_feature_values[i], 3),
-                        #             (steps[i] - 0.2, data_feature_values[i] + y_up), color= colors[idx])
-                    elif value == "Leucocytes":
-                        y_up = 0.05 if i < 4 else 0.02
-                        #plt.annotate(round(effect_feature_values[i], 3), (steps[i] -0.2, data_feature_values[i] + y_up), color= colors[idx])
-                    else:
-                        #plt.annotate(round(effect_feature_values[i], 3), (steps[i] -0.2, data_feature_values[i] + 0.02), color= colors[idx])
-                        pass
-
-        list_effect = list_effect + effect_feature_values
-        list_value = list_value + data_feature_values
-        list_time = list_time + list(range(1, 12))
-
-df = pd.DataFrame({'x': list_time, 'y': list_value, 'z': list_effect})
-
-clim_max = df['z'].max()
-clim_min = df['z'].min()
-
-fig, axes = plt.subplots(nrows=3, ncols=1, sharex=True)
-idx = 0
-
-for ax in axes.flat:
-    plt.sca(ax)
-    effect_feature_values = []
-    data_feature_values = []
-
-    for t in range(0, 11):
-        x, out, h_t, out_coef = model.plot_feat_seq_effect(
-            idx, torch.from_numpy(x_seqs_final[case, 0:t + 1, idx].reshape(1, t + 1, 1)).float(), history=True)
-        x = x.detach().numpy().squeeze()
-        out = out.detach().numpy()
-
-        out_correction = out[0][0]
-        effect_feature_values.append(out_correction)
-        if t == 0:
-            data_feature_values.append(x.item())
-        else:
-            data_feature_values.append(x[-1])
-
-    feature_name = seq_features_rel[idx]
-
-    plt.plot(list(range(1, 12)), data_feature_values, linewidth=1, color='grey')
-    plt.scatter(list(range(1, 12)), data_feature_values, c=effect_feature_values, cmap='viridis')
-    # plt.ylim(-0.02, 0.85)
-    plt.clim(clim_min, clim_max)
-    plt.ylabel("Feature value of " + feature_name, fontsize=16)
-
-    steps = list(range(1, 12))
-    for i in range(len(steps)):
-
-        if feature_name == "Leucocytes": #Done
-            y_up = 0.05 if data_feature_values[i] < 0.2 else -0.09
-
-        elif feature_name == "CRP": #WIP
-            y_up = 0.08 if data_feature_values[i] < 0.4 else -0.15
-
-        elif feature_name == 'LacticAcid': #Done
-            y_up = 0.04 if data_feature_values[i] < 0.2 else -0.07
-
-        plt.annotate(round(effect_feature_values[i], 3), (steps[i] - 0.3, data_feature_values[i] + y_up))
-
-    plt.axhline(y=0, color='grey', linewidth=0.6)
-
-    if idx == 2:
-        plt.xlabel("Time step", fontsize=16)
-        plt.xticks(np.arange(1, 12, 1))
-
-    if idx == 0:
-        plt.title(f"Sequential feature effect over time for individual patient pathway", fontsize=16)
-    idx = idx + 1
-
-plt.colorbar(ax=axes.ravel().tolist(), label='Feature effect on model output', location='right', shrink=0.8)
-plt.show()
-fig.savefig(f'../plots/sepsis/seq_feat_case_{case}_single_with_hist.pdf', dpi=100, bbox_inches="tight")
-plt.close(fig)
-"""
