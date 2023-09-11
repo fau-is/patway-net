@@ -100,12 +100,16 @@ for t in range(1, 13):
     # filter
     feat_names_sorted = feat_names_sorted[19:]  # total 39 features
     feat_imports_sorted = feat_imports_sorted[19:]
-
     y_pos = np.arange(len(feat_names_sorted))
 
-    data = pd.DataFrame({'x': feat_names_sorted, 'y': y_pos})
+    # colouring depending on bar length
+    cmap = plt.get_cmap('Reds')
+    norm = plt.Normalize(min(feat_imports_sorted), max(feat_imports_sorted))
+    colors = cmap(norm(feat_imports_sorted))
 
-    plot = plt.barh(y_pos, feat_imports_sorted, color='darkgrey')
+
+    data = pd.DataFrame({'x': feat_names_sorted, 'y': y_pos})
+    plot = plt.barh(y_pos, feat_imports_sorted, color=colors)
 
     # plt.yticks(y_pos, feat_names_sorted)
     plt.tick_params(left=False, labelleft=False)
@@ -114,15 +118,18 @@ for t in range(1, 13):
 
     def autolabel(plot):
         for idx, rect in enumerate(plot):
-            plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='black')
+            if feat_imports_sorted[idx] > 0.7:
+                plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='white')
+            else:
+                plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='black')
 
     autolabel(plot)
 
-    plt.xlabel("Feature importance")
-    plt.ylabel("Feature")
-    plt.title(f"Overview feature importance")
+    plt.xlabel("Importance")
+    plt.ylabel("Medical indicator")
+    plt.title(f"Importance of medical indicators")
     fig1 = plt.gcf()
     plt.show()
     plt.draw()
-    fig1.savefig(f'../plots/sepsis/global_feat_importance_{t}.pdf', dpi=100, bbox_inches="tight")
+    fig1.savefig(f'../plots/sepsis/global_feat_importance_{t}.png', dpi=100, bbox_inches="tight")
     plt.close(fig1)
