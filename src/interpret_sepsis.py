@@ -145,7 +145,7 @@ for t in range(1, 13):
 # prediction at step n
 # print(torch.sigmoid(model(torch.from_numpy(x_seqs_final[case, :, :].reshape(1, 50, 16)),
 #                          torch.from_numpy(x_statics_final[case, :].reshape(1, 23)))))
-
+"""
 
 
 # (3) Print sequential feature transition (local, history, manipulated sequence)
@@ -167,7 +167,7 @@ for t in range(3, 13):
             x_n_min_1_ = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
             x_n_ = torch.linspace(0, 1, 200).reshape(200, 1, 1).float()
 
-            # cat step n-1 and steps 1 to n-1
+            # cat step n-1 and steps 1 to n-2
             x_n_min_1 = torch.cat((x_n_min_2_, x_n_min_1_), 1)
 
             # cat step n and step n-1 and steps 1 to n-2
@@ -203,8 +203,8 @@ for t in range(3, 13):
             plt.yticks(ticks=tick_indices, labels=ticks)
 
             # add current patient
-            x_n = np.ravel(x_seqs_final[case, t, idx].reshape(1, 1, 1))[0]
-            x_n_min_1 = np.ravel(x_seqs_final[case, t - 1, idx].reshape(1, 1, 1))[0]
+            x_n = np.ravel(x_seqs_final[case, t-1, idx].reshape(1, 1, 1))[0]
+            x_n_min_1 = np.ravel(x_seqs_final[case, t-2, idx].reshape(1, 1, 1))[0]
             plt.plot(x_n_min_1*(200-1), x_n*(200-1), marker='x', ms=10, mew=2, ls='none', color='black')
 
             plt.xlabel(f"{value} value (previous)", )
@@ -215,7 +215,7 @@ for t in range(3, 13):
             plt.draw()
             f.savefig(f'../plots/sepsis/seq_feat_diffs_{value}_{t}.png', dpi=100, bbox_inches="tight")
             plt.close(f)
-"""
+
 
 """
 # (4) Print sequential feature interactions (global, no history)
@@ -261,19 +261,19 @@ if number_interactions_seq > 0:
         plt.close(fig1)
 """
 
-
+"""
 # (5) Print sequential feature (local, history)
 max_len = 12
 last_step = 4
 seq_features_rel = ['Leucocytes', 'CRP', 'LacticAcid']
 
-for idx, value in enumerate(seq_features_rel):
+for idx, value in enumerate(seq_features):
     if value in seq_features_rel:
 
         list_effect, list_value, list_time = [], [], []
         effect_feature_values, data_feature_values = [], []
 
-        plt.rcParams["figure.figsize"] = (16, 5)
+        plt.rcParams["figure.figsize"] = (12, 5)
         plt.rc('font', size=14)
         plt.rc('axes', titlesize=16)
 
@@ -349,3 +349,4 @@ for idx, value in enumerate(seq_features_rel):
         f.savefig(f'../plots/sepsis/seq_feat_case_{case}_{value}_time.png', dpi=100, bbox_inches="tight")
 
         plt.close(f)
+"""
