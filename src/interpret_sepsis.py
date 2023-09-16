@@ -145,7 +145,6 @@ for t in range(1, 13):
 # prediction at step n
 # print(torch.sigmoid(model(torch.from_numpy(x_seqs_final[case, :, :].reshape(1, 50, 16)),
 #                          torch.from_numpy(x_statics_final[case, :].reshape(1, 23)))))
-"""
 
 
 # (3) Print sequential feature transition (local, history, manipulated sequence)
@@ -216,8 +215,6 @@ for t in range(3, 13):
             f.savefig(f'../plots/sepsis/seq_feat_diffs_{value}_{t}.png', dpi=100, bbox_inches="tight")
             plt.close(f)
 
-
-"""
 # (4) Print sequential feature interactions (global, no history)
 print(interactions_seq)
 plt.rcParams["figure.figsize"] = (7.5, 5)
@@ -259,9 +256,9 @@ if number_interactions_seq > 0:
         fig1.savefig(f'../plots/sepsis/seq_feat_inter_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}.png',
                      dpi=100, bbox_inches="tight")
         plt.close(fig1)
-"""
 
 """
+
 # (5) Print sequential feature (local, history)
 max_len = 12
 last_step = 4
@@ -319,28 +316,30 @@ for idx, value in enumerate(seq_features):
 
         list_effect = list_effect + effect_feature_values
         list_value = list_value + data_feature_values
-        list_time = list_time + list(range(1, max_len+1))
+        list_time = list_time + list(range(0, max_len))
 
         data = pd.DataFrame({'x': list_time, 'y': list_value, 'z': list_effect})
 
         g = sns.lineplot(data=data[0:last_step], y="y", x="x", linewidth=2, color="black", zorder=1, linestyle="--")
         g.axhline(y=0, color="grey", linestyle="--")
+        g.axvline(x=last_step-1, color="black", linestyle="solid")
+        plt.text(3.05, 0.15, "Measurement", color='black', rotation=90, size="x-small")
 
         cmap = plt.cm.get_cmap('RdBu')
         cmap = cmap.reversed()
 
-        sc = plt.scatter(list(range(1, max_len + 1))[0:last_step], data_feature_values[0:last_step], c=effect_feature_values[0:4], cmap=cmap,
+        sc = plt.scatter(list(range(0, max_len))[0:last_step], data_feature_values[0:last_step], c=effect_feature_values[0:last_step], cmap=cmap,
                          zorder=2, vmin=-2.5, vmax=2.5, edgecolors='black', s=100)
         plt.colorbar(sc, label='Effect on prediction')
 
         plt.grid(True)
         plt.ylabel(f"{str(seq_features[idx])} value")
-        plt.xlabel("Measurement date")
+        plt.xlabel("Date")
 
-        plt.xticks(np.arange(0, 12, step=1), ["2014-09-18 13:46", "2014-09-18 13:55", "2014-09-18 13:56", "2014-09-18 14:11",
+        plt.xticks(np.arange(0, 12, step=1), ["09-18 13:46", "09-18 13:55", "09-18 13:56", "09-18 14:11",
                                               "2014-09-18 14:12", "2014-09-18 14:14", "2014-09-18 15:44", "2014-09-18 17:57",
                                               "2014-09-18 17:59", "2014-09-18 18:15", "2014-09-18 18:17",
-                                              "2014-09-18 18:18"][0:last_step]+["..."]*(max_len-last_step), rotation=20)
+                                              "2014-09-18 18:18"][0:last_step]+["..."]*(max_len-last_step), rotation=90)
         plt.title(f"Recent development of {str(seq_features[idx])} values")
 
         f = plt.gcf()
@@ -349,4 +348,3 @@ for idx, value in enumerate(seq_features):
         f.savefig(f'../plots/sepsis/seq_feat_case_{case}_{value}_time.png', dpi=100, bbox_inches="tight")
 
         plt.close(f)
-"""
