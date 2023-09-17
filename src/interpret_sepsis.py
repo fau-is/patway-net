@@ -16,6 +16,7 @@ number_interactions_seq = len(interactions_seq)
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
 x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y, 50)
 case = -1
+file_format="png"  # pdf, png
 
 """
 # (1) Print static features (global, history)
@@ -72,7 +73,7 @@ for idx, value in enumerate(static_features):
         axes[1].set_xlabel(f"{static_features[idx]}")
 
         f.tight_layout(pad=1.0)
-        plt.savefig(f'../plots/sepsis/stat_feat_{value}.png', dpi=100, bbox_inches="tight")
+        plt.savefig(f'../plots/sepsis/stat_feat_{value}.{file_format}', dpi=100, bbox_inches="tight")
         plt.show()
         plt.close(f)
 
@@ -139,13 +140,13 @@ for t in range(1, 13):
             f = plt.gcf()
             plt.show()
             plt.draw()
-            f.savefig(f'../plots/sepsis/seq_feat_{value}_{t}.png', dpi=100)
+            f.savefig(f'../plots/sepsis/seq_feat_{value}_{t}.{file_format}', dpi=100)
             plt.close(f)
 
 # prediction at step n
 # print(torch.sigmoid(model(torch.from_numpy(x_seqs_final[case, :, :].reshape(1, 50, 16)),
 #                          torch.from_numpy(x_statics_final[case, :].reshape(1, 23)))))
-
+"""
 
 # (3) Print sequential feature transition (local, history, manipulated sequence)
 for t in range(3, 13):
@@ -186,8 +187,8 @@ for t in range(3, 13):
 
             for i in range(200):
                 for j in range(200):
-                    output1 = out_n_min_1[i]
-                    output2 = out_n[j]
+                    output1 = out_n_min_1[j]
+                    output2 = out_n[i]
                     diffs[i, j] = float(output2) - float(output1)
 
             cmap = plt.cm.get_cmap('RdBu')
@@ -212,9 +213,10 @@ for t in range(3, 13):
             f = plt.gcf()
             plt.show()
             plt.draw()
-            f.savefig(f'../plots/sepsis/seq_feat_diffs_{value}_{t}.png', dpi=100, bbox_inches="tight")
+            f.savefig(f'../plots/sepsis/seq_feat_diffs_{value}_{t}.{file_format}', dpi=100, bbox_inches="tight")
             plt.close(f)
 
+"""
 # (4) Print sequential feature interactions (global, no history)
 print(interactions_seq)
 plt.rcParams["figure.figsize"] = (7.5, 5)
@@ -253,11 +255,10 @@ if number_interactions_seq > 0:
         fig1 = plt.gcf()
         plt.show()
         plt.draw()
-        fig1.savefig(f'../plots/sepsis/seq_feat_inter_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}.png',
+        fig1.savefig(f'../plots/sepsis/seq_feat_inter_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}.{file_format}',
                      dpi=100, bbox_inches="tight")
         plt.close(fig1)
 
-"""
 
 # (5) Print sequential feature (local, history)
 max_len = 12
@@ -345,6 +346,8 @@ for idx, value in enumerate(seq_features):
         f = plt.gcf()
         f.tight_layout()
         plt.show()
-        f.savefig(f'../plots/sepsis/seq_feat_case_{case}_{value}_time.png', dpi=100, bbox_inches="tight")
+        f.savefig(f'../plots/sepsis/seq_feat_case_{case}_{value}_time.{file_format}', dpi=100, bbox_inches="tight")
 
         plt.close(f)
+
+"""

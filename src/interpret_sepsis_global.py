@@ -12,6 +12,7 @@ name = "4_98"
 model = torch.load(os.path.join("../model", f"model_{name}"), map_location=torch.device('cpu'))
 interactions_seq = model.get_interactions_seq()
 number_interactions_seq = len(interactions_seq)
+file_format="png"  # pdf, png
 
 # Note: static features include binary features created from the diagnosis feature or not
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
@@ -109,12 +110,12 @@ for t in range(1, 13):
 
 
     data = pd.DataFrame({'x': feat_names_sorted, 'y': y_pos})
-    plot = plt.barh(y_pos, feat_imports_sorted, color=colors)
+    plot = plt.barh(y_pos, feat_imports_sorted, color=colors, zorder=2)
 
     # plt.yticks(y_pos, feat_names_sorted)
     plt.tick_params(left=False, labelleft=False)
     plt.xticks(np.arange(0, 1.41, step=0.2))
-    plt.grid(True)
+    plt.grid(True, zorder=0)
 
     def autolabel(plot):
         for idx, rect in enumerate(plot):
@@ -131,5 +132,5 @@ for t in range(1, 13):
     fig1 = plt.gcf()
     plt.show()
     plt.draw()
-    fig1.savefig(f'../plots/sepsis/global_feat_importance_{t}.png', dpi=100, bbox_inches="tight")
+    fig1.savefig(f'../plots/sepsis/global_feat_importance_{t}.{file_format}', dpi=100, bbox_inches="tight")
     plt.close(fig1)

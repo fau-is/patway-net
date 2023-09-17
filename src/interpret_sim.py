@@ -10,6 +10,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 model = torch.load(os.path.join("../model", f"model_sim"))
 x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
 case = -1
+file_format="pdf"  # pdf, png
 
 # Create dataset without prefixes
 x_seqs_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
@@ -76,10 +77,9 @@ for idx, value in enumerate(static_features):
         axes[1].set_xlabel(f"{static_features[idx]}")
 
         f.tight_layout(pad=1.0)
-        plt.savefig(f'../plots/simulation/stat_feat_{value}.png', dpi=100, bbox_inches="tight")
+        plt.savefig(f'../plots/simulation/stat_feat_{value}.{file_format}', dpi=100, bbox_inches="tight")
         plt.show()
         plt.close(f)
-
 
 # (2) Print sequential features (local, history, manipulated sequence)
 for t in range(1, 13):
@@ -145,13 +145,13 @@ for t in range(1, 13):
             f = plt.gcf()
             plt.show()
             plt.draw()
-            f.savefig(f'../plots/simulation/seq_feat_{value}_{t}.png', dpi=100)
+            f.savefig(f'../plots/simulation/seq_feat_{value}_{t}.{file_format}', dpi=100)
             plt.close(f)
 
 # prediction at step n
 # print(torch.sigmoid(model(torch.from_numpy(x_seqs_final[case, :, :].reshape(1, 50, 16)),
 #                          torch.from_numpy(x_statics_final[case, :].reshape(1, 23)))))
-
+"""
 
 # (3) Print sequential feature transition (local, history, manipulated sequence)
 for t in range(3, 13):
@@ -192,8 +192,8 @@ for t in range(3, 13):
 
             for i in range(200):
                 for j in range(200):
-                    output1 = out_n_min_1[i]
-                    output2 = out_n[j]
+                    output1 = out_n_min_1[j]
+                    output2 = out_n[i]
                     diffs[i, j] = float(output2) - float(output1)
 
             cmap = plt.cm.get_cmap('RdBu')
@@ -218,13 +218,13 @@ for t in range(3, 13):
             f = plt.gcf()
             plt.show()
             plt.draw()
-            f.savefig(f'../plots/simulation/seq_feat_diffs_{value}_{t}.png', dpi=100, bbox_inches="tight")
+            f.savefig(f'../plots/simulation/seq_feat_diffs_{value}_{t}.{file_format}', dpi=100, bbox_inches="tight")
             plt.close(f)
-"""
 
+"""
 # (5) Print sequential feature (local, history)
 max_len = 12
-last_step = 4
+last_step = 12
 seq_features_rel = ['Blood Pressure', 'Heart Rate']
 
 for idx, value in enumerate(seq_features):
@@ -279,7 +279,7 @@ for idx, value in enumerate(seq_features):
 
         list_effect = list_effect + effect_feature_values
         list_value = list_value + data_feature_values
-        list_time = list_time + list(range(1, max_len+1))
+        list_time = list_time + list(range(0, max_len))
 
         data = pd.DataFrame({'x': list_time, 'y': list_value, 'z': list_effect})
 
@@ -291,23 +291,24 @@ for idx, value in enumerate(seq_features):
         cmap = plt.cm.get_cmap('RdBu')
         cmap = cmap.reversed()
 
-        sc = plt.scatter(list(range(1, max_len + 1))[0:last_step], data_feature_values[0:last_step], c=effect_feature_values[0:4], cmap=cmap,
-                         zorder=2, vmin=-2.5, vmax=2.5, edgecolors='black', s=100)
+        sc = plt.scatter(list(range(0, max_len))[0:last_step], data_feature_values[0:last_step], c=effect_feature_values[0:last_step], cmap=cmap,
+                         zorder=2, vmin=-0.3, vmax=0.3, edgecolors='black', s=100)
         plt.colorbar(sc, label='Effect on prediction')
 
         plt.grid(True)
         plt.ylabel(f"{str(seq_features[idx])} value")
-        plt.xlabel("Measurement date")
+        plt.xlabel("Date")
 
-        plt.xticks(np.arange(0, 12, step=1), ["2014-09-18 13:46", "2014-09-18 13:55", "2014-09-18 13:56", "2014-09-18 14:11",
-                                              "2014-09-18 14:12", "2014-09-18 14:14", "2014-09-18 15:44", "2014-09-18 17:57",
-                                              "2014-09-18 17:59", "2014-09-18 18:15", "2014-09-18 18:17",
-                                              "2014-09-18 18:18"][0:last_step]+["..."]*(max_len-last_step), rotation=20)
+        plt.xticks(np.arange(0, 12, step=1), ["09-26 08:01", "09-26 08:02", "09-26 08:03", "09-26 08:04",
+                                              "09-26 08:05", "09-26 08:06", "09-26 08:07", "09-26 08:08",
+                                              "09-26 08:09", "09-26 08:10", "09-26 08:11",
+                                              "09-26 08:12"][0:last_step]+["..."]*(max_len-last_step), rotation=90)
         plt.title(f"Recent development of {str(seq_features[idx])} values")
 
         f = plt.gcf()
         f.tight_layout()
         plt.show()
-        f.savefig(f'../plots/simulation/seq_feat_case_{case}_{value}_time.png', dpi=100, bbox_inches="tight")
+        f.savefig(f'../plots/simulation/seq_feat_case_{case}_{value}_time.{file_format}', dpi=100, bbox_inches="tight")
 
         plt.close(f)
+"""

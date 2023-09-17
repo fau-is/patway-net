@@ -8,6 +8,7 @@ from src.data import get_sim_data
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 model = torch.load(os.path.join("../model", f"model_sim"))
 x_seqs, x_statics, y, _, seq_features, static_features = get_sim_data('Label', 'Simulation_data_1000.csv')
+file_format="pdf"  # pdf, png
 
 # Create dataset without prefixes
 x_seqs_final = np.zeros((len(x_seqs), 12, len(x_seqs[0][0])))
@@ -108,19 +109,19 @@ for t in range(1, 13):
 
 
     data = pd.DataFrame({'x': feat_names_sorted, 'y': y_pos})
-    plot = plt.barh(y_pos, feat_imports_sorted, color=colors)
+    plot = plt.barh(y_pos, feat_imports_sorted, color=colors, zorder=2)
 
     # plt.yticks(y_pos, feat_names_sorted)
     plt.tick_params(left=False, labelleft=False)
     plt.xticks(np.arange(0, 0.2, step=0.05))
-    plt.grid(True)
+    plt.grid(True, zorder=0)
 
     def autolabel(plot):
         for idx, rect in enumerate(plot):
-            if feat_imports_sorted[idx] > 0.7:
-                plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='white')
+            if feat_imports_sorted[idx] > 0.1:
+                plt.text(0.005, idx - 0.1, feat_names_sorted[idx], color='white')
             else:
-                plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='black')
+                plt.text(0.005, idx - 0.1, feat_names_sorted[idx], color='black')
 
     autolabel(plot)
 
@@ -130,5 +131,5 @@ for t in range(1, 13):
     fig1 = plt.gcf()
     plt.show()
     plt.draw()
-    fig1.savefig(f'../plots/simulation/global_feat_importance_{t}.png', dpi=100, bbox_inches="tight")
+    fig1.savefig(f'../plots/simulation/global_feat_importance_{t}.{file_format}', dpi=100, bbox_inches="tight")
     plt.close(fig1)
