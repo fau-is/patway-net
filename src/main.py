@@ -522,52 +522,6 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
 
-        """
-        # backward imputation
-        num_train_pref = X_train_seq.shape[0]
-        num_val_pref = X_val_seq.shape[0]
-        num_test_pref = X_test_seq.shape[0]
-        seq_feat_mes = [0, 1, 2]  # 'Leucocytes', 'CRP', 'LacticAcid'
-        for i in range(0, num_train_pref):
-            for j in seq_feat_mes:
-                X_train_seq[i, :, j] = np.array(pd.Series(X_train_seq[i, :, j]).replace(to_replace=0, method='bfill'))
-        for i in range(0, num_val_pref):
-            for j in seq_feat_mes:
-                X_val_seq[i, :, j] = np.array(pd.Series(X_val_seq[i, :, j]).replace(to_replace=0, method='bfill'))
-        for i in range(0, num_test_pref):
-            for j in seq_feat_mes:
-                X_test_seq[i, :, j] = np.array(pd.Series(X_test_seq[i, :, j]).replace(to_replace=0, method='bfill'))
-
-        # backward imputation + avg (per prefix)
-        num_train_pref = X_train_seq.shape[0]
-        num_val_pref = X_val_seq.shape[0]
-        num_test_pref = X_test_seq.shape[0]
-        seq_feat_mes = [0, 1, 2]  # 'Leucocytes', 'CRP', 'LacticAcid'
-        for i in range(0, num_train_pref):
-            for j in seq_feat_mes:
-                X_train_seq[i, :, j] = np.array(pd.Series(X_train_seq[i, :, j]).replace(to_replace=0, method='bfill'))
-                count_vals = (X_train_seq[i, :, j] > 0).sum()
-                if count_vals > 0:
-                    avg_vals = sum(X_train_seq[i, :, j]) / count_vals
-                    X_train_seq[i, :, j] = [avg_vals] * count_vals + [0] * (max_len - count_vals)
-
-        for i in range(0, num_val_pref):
-            for j in seq_feat_mes:
-                X_val_seq[i, :, j] = np.array(pd.Series(X_val_seq[i, :, j]).replace(to_replace=0, method='bfill'))
-                count_vals = (X_val_seq[i, :, j] > 0).sum()
-                if count_vals > 0:
-                    avg_vals = sum(X_val_seq[i, :, j]) / count_vals
-                    X_val_seq[i, :, j] = [avg_vals] * count_vals + [0] * (max_len - count_vals)
-
-        for i in range(0, num_test_pref):
-            for j in seq_feat_mes:
-                X_test_seq[i, :, j] = np.array(pd.Series(X_test_seq[i, :, j]).replace(to_replace=0, method='bfill'))
-                count_vals = (X_test_seq[i, :, j] > 0).sum()
-                if count_vals > 0:
-                    avg_vals = sum(X_test_seq[i, :, j]) / count_vals
-                    X_test_seq[i, :, j] = [avg_vals] * count_vals + [0] * (50 - count_vals)
-        """
-
         if save_baseline_model:
             with open(f"../data_prediction_plot/test_data_{seed}", "ab") as output:
                 data_dictionary = {"fold": id, "x_test_seq": X_test_seq,
