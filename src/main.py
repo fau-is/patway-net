@@ -354,10 +354,11 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
                                         y=y_train)
 
                             criterion = nn.BCEWithLogitsLoss()
-                            # optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
-                            # optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
-                            optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0) # weight_decay = 0.002
+                            lamb_mlp = 0.0
+                            lamb_lstm = 0.0
+                            # optimizer = optim.SGD(model.parameters(), lr=learning_rate)
                             # optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
+                            optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.000) # weight_decay = 0.002, 0.001
                             idx = np.arange(len(x_train_seq))
 
                             import copy
@@ -376,14 +377,15 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 
                                 for i in range(number_batches):
                                     optimizer.zero_grad()  # clean up step for PyTorch
-                                    out = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
-                                                x_train_stat[i * batch_size:(i + 1) * batch_size])
-                                    loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
+                                    out, out_mlp, out_lstm = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
+                                                x_train_stat[i * batch_size:(i + 1) * batch_size], out_=True)
+                                    loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double()) + \
+                                           lamb_mlp * torch.mean(out_mlp ** 2) + lamb_lstm * torch.mean(out_lstm ** 2)
                                     loss.backward()  # compute updates for each parameter
                                     optimizer.step()  # make the updates for each parameter
 
                                 # Early stopping
-                                def validation(model, x_val_seq, x_val_stat, y_val, loss_function):
+                                def validation(model, x_val_seq, x_val_stat, y_val, loss_function, lamb, lamb2):
 
                                     x_val_stat = torch.from_numpy(x_val_stat)
                                     x_val_seq = torch.from_numpy(x_val_seq)
@@ -395,14 +397,14 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 
                                     with torch.no_grad():
                                         for i in range(number_batches):
-                                            out = model(x_val_seq[i * batch_size: (i + 1) * batch_size],
-                                                        x_val_stat[i * batch_size: (i + 1) * batch_size])
-                                            loss = loss_function(out, y_val[
-                                                                      i * batch_size:(i + 1) * batch_size].double())
+                                            out, out_mlp, out_lstm = model(x_val_seq[i * batch_size: (i + 1) * batch_size],
+                                                        x_val_stat[i * batch_size: (i + 1) * batch_size], out_=True)
+                                            loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double()) + \
+                                                   lamb * torch.mean(out_mlp ** 2) + lamb2 * torch.mean(out_lstm ** 2)
                                             loss_total += loss.item()
                                     return loss_total / number_batches
 
-                                current_val_loss = validation(model, x_val_seq, x_val_stat, y_val, criterion)
+                                current_val_loss = validation(model, x_val_seq, x_val_stat, y_val, criterion, lamb_mlp, lamb_lstm)
                                 print('Validation loss:', current_val_loss)
 
                                 if current_val_loss > best_val_loss:
@@ -428,7 +430,6 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 
                                 x_val_stat_ = torch.from_numpy(x_val_stat)
                                 x_val_seq_ = torch.from_numpy(x_val_seq)
-
                                 preds_proba = torch.sigmoid(model_best_es(x_val_seq_, x_val_stat_))
                                 preds_proba = [pred_proba[0] for pred_proba in preds_proba]
                                 try:
@@ -463,11 +464,20 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 def time_step_blow_up(X_seq, X_stat, y, max_len):
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
 
+    # prefix
     for idx_seq in range(0, len(X_seq)):
         for idx_ts in range(min_size_prefix, len(X_seq[idx_seq]) + 1):
             X_seq_prefix.append(X_seq[idx_seq][0:idx_ts])
             X_stat_prefix.append(X_stat[idx_seq])
             y_prefix.append(y[idx_seq])
+
+    """
+    # no prefix
+    for idx_seq in range(0, len(X_seq)):
+        X_seq_prefix.append(X_seq[idx_seq])
+        X_stat_prefix.append(X_stat[idx_seq])
+        y_prefix.append(y[idx_seq])
+    """
 
     X_seq_final = np.zeros((len(X_seq_prefix), max_len, len(X_seq_prefix[0][0])), dtype=np.float32)
     X_stat_final = np.zeros((len(X_seq_prefix), len(X_stat_prefix[0])))
@@ -512,6 +522,52 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             [x_statics[x] for x in test_index],
             [y[x] for x in test_index], max_len)
 
+        """
+        # backward imputation
+        num_train_pref = X_train_seq.shape[0]
+        num_val_pref = X_val_seq.shape[0]
+        num_test_pref = X_test_seq.shape[0]
+        seq_feat_mes = [0, 1, 2]  # 'Leucocytes', 'CRP', 'LacticAcid'
+        for i in range(0, num_train_pref):
+            for j in seq_feat_mes:
+                X_train_seq[i, :, j] = np.array(pd.Series(X_train_seq[i, :, j]).replace(to_replace=0, method='bfill'))
+        for i in range(0, num_val_pref):
+            for j in seq_feat_mes:
+                X_val_seq[i, :, j] = np.array(pd.Series(X_val_seq[i, :, j]).replace(to_replace=0, method='bfill'))
+        for i in range(0, num_test_pref):
+            for j in seq_feat_mes:
+                X_test_seq[i, :, j] = np.array(pd.Series(X_test_seq[i, :, j]).replace(to_replace=0, method='bfill'))
+
+        # backward imputation + avg (per prefix)
+        num_train_pref = X_train_seq.shape[0]
+        num_val_pref = X_val_seq.shape[0]
+        num_test_pref = X_test_seq.shape[0]
+        seq_feat_mes = [0, 1, 2]  # 'Leucocytes', 'CRP', 'LacticAcid'
+        for i in range(0, num_train_pref):
+            for j in seq_feat_mes:
+                X_train_seq[i, :, j] = np.array(pd.Series(X_train_seq[i, :, j]).replace(to_replace=0, method='bfill'))
+                count_vals = (X_train_seq[i, :, j] > 0).sum()
+                if count_vals > 0:
+                    avg_vals = sum(X_train_seq[i, :, j]) / count_vals
+                    X_train_seq[i, :, j] = [avg_vals] * count_vals + [0] * (max_len - count_vals)
+
+        for i in range(0, num_val_pref):
+            for j in seq_feat_mes:
+                X_val_seq[i, :, j] = np.array(pd.Series(X_val_seq[i, :, j]).replace(to_replace=0, method='bfill'))
+                count_vals = (X_val_seq[i, :, j] > 0).sum()
+                if count_vals > 0:
+                    avg_vals = sum(X_val_seq[i, :, j]) / count_vals
+                    X_val_seq[i, :, j] = [avg_vals] * count_vals + [0] * (max_len - count_vals)
+
+        for i in range(0, num_test_pref):
+            for j in seq_feat_mes:
+                X_test_seq[i, :, j] = np.array(pd.Series(X_test_seq[i, :, j]).replace(to_replace=0, method='bfill'))
+                count_vals = (X_test_seq[i, :, j] > 0).sum()
+                if count_vals > 0:
+                    avg_vals = sum(X_test_seq[i, :, j]) / count_vals
+                    X_test_seq[i, :, j] = [avg_vals] * count_vals + [0] * (50 - count_vals)
+        """
+
         if save_baseline_model:
             with open(f"../data_prediction_plot/test_data_{seed}", "ab") as output:
                 data_dictionary = {"fold": id, "x_test_seq": X_test_seq,
@@ -540,7 +596,6 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             with torch.no_grad():
                 preds_proba_train = torch.sigmoid(model(X_train_seq, X_train_stat))
                 preds_proba_val = torch.sigmoid(model(X_val_seq, X_val_stat))
-
                 inference_start_time = time.time()
                 preds_proba_test = torch.sigmoid(model(X_test_seq, X_test_stat))
                 results['inference_time'].append(time.time() - inference_start_time)
@@ -784,8 +839,8 @@ if __name__ == "__main__":
     data_set = "sepsis"  # bpi2012, hospital
 
     hpos = {
-        "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.001], "batch_size": [32], "inter_seq_best": [1]},
-        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        # "pwn": {"seq_feature_sz": [8], "stat_feature_sz": [8], "learning_rate": [0.01], "batch_size": [32], "inter_seq_best": [1]},
+        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
@@ -796,7 +851,7 @@ if __name__ == "__main__":
     }
 
     if data_set == "sepsis":
-        for seed in [15]:  # [15, 37, 98, 137, 245]:
+        for seed in [98]:  # [15, 37, 98, 137, 245]:
             for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
                 procedure = mode
                 for target_activity in ['Admission IC']:
