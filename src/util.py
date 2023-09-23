@@ -74,11 +74,12 @@ def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_crp, max_lacticacid, c
     one_hot = np.zeros(16, dtype=np.float32)
     one_hot[ret[0]] = ret[1]
 
+    """
     one_hot[0] = min(x['Leucocytes'], max_leucocytes) / max_leucocytes
     one_hot[1] = min(x['CRP'], max_crp) / max_crp
     one_hot[2] = min(x['LacticAcid'], max_lacticacid) / max_lacticacid
-
     """
+
     # Set last value of seq features
     if np.isnan(x['Leucocytes']):
         one_hot[0] = current_leucocytes_value
@@ -86,7 +87,6 @@ def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_crp, max_lacticacid, c
         one_hot[1] = current_crp_value
     if np.isnan(x['LacticAcid']):
         one_hot[2] = current_lacticacid_value
-    """
 
     return one_hot, one_hot[0], one_hot[1], one_hot[2]
 

@@ -186,11 +186,13 @@ def get_sepsis_data(target_activity, max_len, min_len):
         current_crp_value = 0
         current_lacticacid_value = 0
 
+        """
         df_tmp["Leucocytes"] = (df_tmp["Leucocytes"].replace(to_replace=np.nan, method='ffill')).replace(to_replace=np.nan, method='bfill')
         df_tmp["LacticAcid"] = (df_tmp["LacticAcid"].replace(to_replace=np.nan, method='ffill')).replace(
             to_replace=np.nan, method='bfill')
         df_tmp["CRP"] = (df_tmp["CRP"].replace(to_replace=np.nan, method='ffill')).replace(
             to_replace=np.nan, method='bfill')
+        """
 
         for _, x in df_tmp.iterrows():
             idx = idx + 1
