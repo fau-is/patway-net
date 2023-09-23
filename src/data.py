@@ -72,7 +72,7 @@ def get_sim_data(label, file):
 
 
 def get_sepsis_data(target_activity, max_len, min_len):
-    ds_path = '../data/Sepsis Cases - Event Log_end.csv'
+    ds_path = '../data/Sepsis Cases - Event Log_end2.csv'
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',
@@ -186,6 +186,12 @@ def get_sepsis_data(target_activity, max_len, min_len):
         current_crp_value = 0
         current_lacticacid_value = 0
 
+        df_tmp["Leucocytes"] = (df_tmp["Leucocytes"].replace(to_replace=np.nan, method='ffill')).replace(to_replace=np.nan, method='bfill')
+        df_tmp["LacticAcid"] = (df_tmp["LacticAcid"].replace(to_replace=np.nan, method='ffill')).replace(
+            to_replace=np.nan, method='bfill')
+        df_tmp["CRP"] = (df_tmp["CRP"].replace(to_replace=np.nan, method='ffill')).replace(
+            to_replace=np.nan, method='bfill')
+
         for _, x in df_tmp.iterrows():
             idx = idx + 1
             if x['Activity'] == 'ER Registration' and idx == 0:
@@ -200,10 +206,10 @@ def get_sepsis_data(target_activity, max_len, min_len):
 
             if after_registration_flag:
                 if not found_target_flag:
-                    one_hot, current_leucocytes_value, current_crp_value, current_lacticacid_value = \
+                    one_hot, current_leucocytes_value, current_crp_value, current_lacticacid_value = (
                         util.get_one_hot_of_activity_sepsis(x, max_leucocytes, max_crp, max_lacticacid,
                                                             current_leucocytes_value, current_crp_value,
-                                                            current_lacticacid_value)
+                                                            current_lacticacid_value))
                     x_seqs[-1].append(one_hot)
                     x_time_vals[-1].append(x['Complete Timestamp'])
                     acts[-1].append(x['Activity'])
@@ -225,7 +231,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
             x_time_vals_.append(x_time_vals[i])
             acts_.append(acts[i])
 
-
+    """
     # Create event log
     f = open(f'../output/sepsis.txt', "w+")
     f.write(f'Case ID, Activity, Timestamp,{",".join([x for x in static_features])},'
@@ -238,6 +244,7 @@ def get_sepsis_data(target_activity, max_len, min_len):
                     f'{",".join([str(x) for x in x_seqs_[idx][idx_ts]])},'
                     f'{y_[idx]}\n')
     f.close()
+    """
 
     """
     from apyori import apriori

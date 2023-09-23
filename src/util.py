@@ -74,6 +74,43 @@ def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_crp, max_lacticacid, c
     one_hot = np.zeros(16, dtype=np.float32)
     one_hot[ret[0]] = ret[1]
 
+    one_hot[0] = min(x['Leucocytes'], max_leucocytes) / max_leucocytes
+    one_hot[1] = min(x['CRP'], max_crp) / max_crp
+    one_hot[2] = min(x['LacticAcid'], max_lacticacid) / max_lacticacid
+
+    """
+    # Set last value of seq features
+    if np.isnan(x['Leucocytes']):
+        one_hot[0] = current_leucocytes_value
+    if np.isnan(x['CRP']):
+        one_hot[1] = current_crp_value
+    if np.isnan(x['LacticAcid']):
+        one_hot[2] = current_lacticacid_value
+    """
+
+    return one_hot, one_hot[0], one_hot[1], one_hot[2]
+
+
+def get_only_seq_measures_sepsis(x, max_leucocytes, max_crp, max_lacticacid, current_leucocytes_value,
+                                   current_crp_value, current_lacticacid_value):
+    ret = [0, 0]
+
+    if x['Activity'] == 'Leucocytes':
+        ret = [0, min(x['Leucocytes'], max_leucocytes) / max_leucocytes]
+        if np.isnan(ret[1]):
+            ret[1] = -1
+    elif x['Activity'] == 'CRP':
+        ret = [1, min(x['CRP'], max_crp) / max_crp]
+        if np.isnan(ret[1]):
+            ret[1] = -1
+    elif x['Activity'] == 'LacticAcid':
+        ret = [2, min(x['LacticAcid'], max_lacticacid) / max_lacticacid]
+        if np.isnan(ret[1]):
+            ret[1] = -1
+
+    one_hot = np.zeros(3, dtype=np.float32)
+    one_hot[ret[0]] = ret[1]
+
     # Set last value of seq features
     if np.isnan(x['Leucocytes']):
         one_hot[0] = current_leucocytes_value
