@@ -12,7 +12,7 @@ name = "4_98"
 model = torch.load(os.path.join("../model", f"model_{name}"), map_location=torch.device('cpu'))
 interactions_seq = model.get_interactions_seq()
 number_interactions_seq = len(interactions_seq)
-file_format="png"  # pdf, png
+file_format="pdf"  # pdf, png
 
 # Note: static features include binary features created from the diagnosis feature or not
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)

@@ -75,6 +75,7 @@ def get_one_hot_of_activity_sepsis(x, max_leucocytes, max_crp, max_lacticacid, c
     one_hot[ret[0]] = ret[1]
 
     """
+    # backward imputation
     one_hot[0] = min(x['Leucocytes'], max_leucocytes) / max_leucocytes
     one_hot[1] = min(x['CRP'], max_crp) / max_crp
     one_hot[2] = min(x['LacticAcid'], max_lacticacid) / max_lacticacid

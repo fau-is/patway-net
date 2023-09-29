@@ -168,6 +168,13 @@ def get_sepsis_data(target_activity, max_len, min_len):
     max_lacticacid = np.percentile(df['LacticAcid'].dropna(), 95)  # remove outliers
     max_crp = np.percentile(df['CRP'].dropna(), 95)  # remove outliers
 
+    """
+    mean_leucocytes = sum(df["Leucocytes"].loc[df['Leucocytes'] <= max_leucocytes]) / len(df["Leucocytes"].loc[df['Leucocytes'] <= max_leucocytes])
+    mean_lacticacid = sum(df["LacticAcid"].loc[df['LacticAcid'] <= max_lacticacid]) / len(
+        df["LacticAcid"].loc[df['LacticAcid'] <= max_lacticacid])
+    mean_crp = sum(df["CRP"].loc[df['CRP'] <= max_crp]) / len(df["CRP"].loc[df['CRP'] <= max_crp])
+    """
+
     x_seqs = []
     x_statics = []
     x_time_vals = []
@@ -187,11 +194,17 @@ def get_sepsis_data(target_activity, max_len, min_len):
         current_lacticacid_value = 0
 
         """
+        # backward imputation same value
         df_tmp["Leucocytes"] = (df_tmp["Leucocytes"].replace(to_replace=np.nan, method='ffill')).replace(to_replace=np.nan, method='bfill')
-        df_tmp["LacticAcid"] = (df_tmp["LacticAcid"].replace(to_replace=np.nan, method='ffill')).replace(
-            to_replace=np.nan, method='bfill')
-        df_tmp["CRP"] = (df_tmp["CRP"].replace(to_replace=np.nan, method='ffill')).replace(
-            to_replace=np.nan, method='bfill')
+        df_tmp["LacticAcid"] = (df_tmp["LacticAcid"].replace(to_replace=np.nan, method='ffill')).replace(to_replace=np.nan, method='bfill')
+        df_tmp["CRP"] = (df_tmp["CRP"].replace(to_replace=np.nan, method='ffill')).replace(to_replace=np.nan, method='bfill')
+        """
+
+        """
+        # backward imputation mean
+        df_tmp["Leucocytes"] = (df_tmp["Leucocytes"].replace(to_replace=np.nan, method='ffill')).fillna(mean_leucocytes)
+        df_tmp["LacticAcid"] = (df_tmp["LacticAcid"].replace(to_replace=np.nan, method='ffill')).fillna(mean_lacticacid)
+        df_tmp["CRP"] = (df_tmp["CRP"].replace(to_replace=np.nan, method='ffill')).fillna(mean_crp)
         """
 
         for _, x in df_tmp.iterrows():

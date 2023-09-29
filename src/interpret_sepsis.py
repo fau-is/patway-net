@@ -18,7 +18,7 @@ x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y,
 case = -1
 file_format="pdf"  # pdf, png
 
-
+"""
 # (1) Print static features (global, history)
 stat_numeric = ["Age"]
 plt.rc('font', size=14)
@@ -76,7 +76,6 @@ for idx, value in enumerate(static_features):
         plt.savefig(f'../plots/sepsis/stat_feat_{value}.{file_format}', dpi=100, bbox_inches="tight")
         plt.show()
         plt.close(f)
-
 
 # (2) Print sequential features (local, history, manipulated sequence)
 plt.rc('font', size=14)
@@ -149,13 +148,12 @@ for t in range(1, 13):
 # (3) Print sequential feature transition (local, history, manipulated sequence)
 plt.rc('font', size=14)
 plt.rc('axes', titlesize=16)
+plt.rcParams["figure.figsize"] = (7.5, 5)
 for t in range(3, 13):
     for idx, value in enumerate(seq_features):
 
         if value == "Leucocytes" or value == "LacticAcid" or value == "CRP":
-
-            plt.plot(figsize=(7.5, 5))
-
+        
             # steps 1 to n-2
             x_n_min_2_ = torch.from_numpy(x_seqs_final[case, 0:t - 2, idx].reshape(1, t - 2, 1)).float()
             x_n_min_2_ = x_n_min_2_.repeat(200, 1, 1)
@@ -212,10 +210,12 @@ for t in range(3, 13):
             plt.draw()
             f.savefig(f'../plots/sepsis/seq_feat_diffs_{value}_{t}.{file_format}', dpi=100, bbox_inches="tight")
             plt.close(f)
-
 """
+
 # (4) Print sequential feature interactions (global, no history)
 print(interactions_seq)
+plt.rc('font', size=14)
+plt.rc('axes', titlesize=16)
 plt.rcParams["figure.figsize"] = (7.5, 5)
 from scipy.interpolate import griddata
 
@@ -237,9 +237,6 @@ if number_interactions_seq > 0:
         grid_x, grid_y = np.mgrid[min(a):max(a):200j, min(b):max(b):200j]
         grid_z = griddata((a, b), out, (grid_x, grid_y), method="nearest")
 
-        plt.rc('font', size=16)
-        plt.rc('axes', titlesize=18)
-
         im = ax.imshow(grid_z.T.squeeze(), extent=(min(a), max(a), min(b), max(b)), origin='lower', cmap='magma')
         fig.colorbar(im, ax=ax, label='Interaction effect')
 
@@ -255,8 +252,8 @@ if number_interactions_seq > 0:
         fig1.savefig(f'../plots/sepsis/seq_feat_inter_{interactions_seq[idx][0]}-{interactions_seq[idx][1]}.{file_format}',
                      dpi=100, bbox_inches="tight")
         plt.close(fig1)
-"""
 
+"""
 # (5) Print sequential feature (local, history)
 max_len = 12
 last_step = 4
@@ -344,5 +341,6 @@ for idx, value in enumerate(seq_features):
         f.tight_layout()
         plt.show()
         f.savefig(f'../plots/sepsis/seq_feat_case_{case}_{value}_time.{file_format}', dpi=100, bbox_inches="tight")
-
         plt.close(f)
+
+"""

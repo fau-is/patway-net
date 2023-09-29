@@ -19,9 +19,12 @@ for i, x in enumerate(x_seqs):
     x_seqs_final[i, :len(x), :] = np.array(x)
     x_statics_final[i, :] = np.array(x_statics[i])
 
-"""
+
 # (1) Print static features (global, history)
 stat_numeric = ["Age", "BMI"]
+plt.rc('font', size=14)
+plt.rc('axes', titlesize=16)
+plt.rcParams["figure.figsize"] = (7.5, 5)
 for idx, value in enumerate(static_features):
 
     x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
@@ -29,8 +32,6 @@ for idx, value in enumerate(static_features):
     out = out.detach().numpy()
 
     f, axes = plt.subplots(2, 1, figsize=(7.5, 5), gridspec_kw={'height_ratios': [4, 1]})
-    plt.rc('font', size=14)
-    plt.rc('axes', titlesize=16)
 
     # correction
     out = np.squeeze(out)
@@ -81,14 +82,14 @@ for idx, value in enumerate(static_features):
         plt.show()
         plt.close(f)
 
+"""
 # (2) Print sequential features (local, history, manipulated sequence)
+plt.rc('font', size=14)
+plt.rc('axes', titlesize=16)
+plt.rcParams["figure.figsize"] = (7.5, 5)
 for t in range(1, 13):
     for idx, value in enumerate(seq_features):
         if value == "Heart Rate" or value == "Blood Pressure":
-
-            plt.plot(figsize=(7.5, 5))
-            plt.rc('font', size=14)
-            plt.rc('axes', titlesize=16)
 
             if t == 1:
                 # step n
@@ -138,31 +139,29 @@ for t in range(1, 13):
             g.plot(x_step_n, out_ + out_delta, marker='x', ms=10, mew=2, ls='none', color='red')
 
             plt.grid(True)
-
             plt.xlabel(f"{str(seq_features[idx])} value")
             plt.ylabel("Effect on prediction")
             plt.title("Sequential medical indicator: %s" % (str(seq_features[idx])))
             f = plt.gcf()
             plt.show()
             plt.draw()
-            f.savefig(f'../plots/simulation/seq_feat_{value}_{t}.{file_format}', dpi=100)
+            f.tight_layout(pad=1.0)
+            f.savefig(f'../plots/simulation/seq_feat_{value}_{t}.{file_format}', dpi=100, bbox_inches="tight")
             plt.close(f)
 
 # prediction at step n
 # print(torch.sigmoid(model(torch.from_numpy(x_seqs_final[case, :, :].reshape(1, 50, 16)),
 #                          torch.from_numpy(x_statics_final[case, :].reshape(1, 23)))))
-"""
+
 
 # (3) Print sequential feature transition (local, history, manipulated sequence)
+plt.rc('font', size=14)
+plt.rc('axes', titlesize=16)
+plt.rcParams["figure.figsize"] = (7.5, 5)
 for t in range(3, 13):
     for idx, value in enumerate(seq_features):
 
         if value == "Heart Rate" or value == "Blood Pressure":
-
-            plt.plot(figsize=(7.5, 5))
-            plt.rc('font', size=14)
-            plt.rc('axes', titlesize=16)
-
 
             # steps 1 to n-2
             x_n_min_2_ = torch.from_numpy(x_seqs_final[case, 0:t - 2, idx].reshape(1, t - 2, 1)).float()
@@ -218,24 +217,23 @@ for t in range(3, 13):
             f = plt.gcf()
             plt.show()
             plt.draw()
+            f.tight_layout(pad=1.0)
             f.savefig(f'../plots/simulation/seq_feat_diffs_{value}_{t}.{file_format}', dpi=100, bbox_inches="tight")
             plt.close(f)
 
-"""
+
 # (5) Print sequential feature (local, history)
 max_len = 12
 last_step = 12
 seq_features_rel = ['Blood Pressure', 'Heart Rate']
-
+plt.rc('font', size=14)
+plt.rc('axes', titlesize=16)
+plt.rcParams["figure.figsize"] = (12, 5)
 for idx, value in enumerate(seq_features):
     if value in seq_features_rel:
 
         list_effect, list_value, list_time = [], [], []
         effect_feature_values, data_feature_values = [], []
-
-        plt.rcParams["figure.figsize"] = (12, 5)
-        plt.rc('font', size=14)
-        plt.rc('axes', titlesize=16)
 
         for t in range(1, max_len+1):
 
@@ -309,6 +307,6 @@ for idx, value in enumerate(seq_features):
         f.tight_layout()
         plt.show()
         f.savefig(f'../plots/simulation/seq_feat_case_{case}_{value}_time.{file_format}', dpi=100, bbox_inches="tight")
-
         plt.close(f)
+
 """
