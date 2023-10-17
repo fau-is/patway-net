@@ -18,7 +18,7 @@ x_seqs_final, x_statics_final, y_final = time_step_blow_up(x_seqs, x_statics, y,
 case = -1
 file_format="pdf"  # pdf, png
 
-"""
+
 # (1) Print static features (global, history)
 stat_numeric = ["Age"]
 plt.rc('font', size=14)
@@ -29,7 +29,7 @@ for idx, value in enumerate(static_features):
     x = x.detach().numpy().squeeze()
     out = out.detach().numpy()
 
-    f, axes = plt.subplots(2, 1, figsize=(7.5, 5), gridspec_kw={'height_ratios': [4, 1]})
+    f, axes = plt.subplots(2, 1, figsize=(7.5, 5), gridspec_kw={'height_ratios': [5, 0]})
 
     # correction
     out = np.squeeze(out)
@@ -77,6 +77,7 @@ for idx, value in enumerate(static_features):
         plt.show()
         plt.close(f)
 
+"""
 # (2) Print sequential features (local, history, manipulated sequence)
 plt.rc('font', size=14)
 plt.rc('axes', titlesize=16)
@@ -212,6 +213,7 @@ for t in range(3, 13):
             plt.close(f)
 """
 
+"""
 # (4) Print sequential feature interactions (global, no history)
 print(interactions_seq)
 plt.rc('font', size=14)
@@ -253,7 +255,7 @@ if number_interactions_seq > 0:
                      dpi=100, bbox_inches="tight")
         plt.close(fig1)
 
-"""
+
 # (5) Print sequential feature (local, history)
 max_len = 12
 last_step = 4
@@ -342,5 +344,4 @@ for idx, value in enumerate(seq_features):
         plt.show()
         f.savefig(f'../plots/sepsis/seq_feat_case_{case}_{value}_time.{file_format}', dpi=100, bbox_inches="tight")
         plt.close(f)
-
 """

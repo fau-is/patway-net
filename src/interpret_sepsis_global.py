@@ -29,7 +29,7 @@ for t in range(1, 13):
 
         x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
         x = x.detach().numpy().squeeze()
-        out = out.detach().numpy()
+        out = out.detach(pip).numpy()
         out = np.ravel(out)
 
         out_min = min(out)
