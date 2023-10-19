@@ -82,7 +82,7 @@ for idx, value in enumerate(static_features):
         plt.show()
         plt.close(f)
 
-"""
+
 # (2) Print sequential features (local, history, manipulated sequence)
 plt.rc('font', size=14)
 plt.rc('axes', titlesize=16)
@@ -221,11 +221,10 @@ for t in range(3, 13):
             f.savefig(f'../plots/simulation/seq_feat_diffs_{value}_{t}.{file_format}', dpi=100, bbox_inches="tight")
             plt.close(f)
 
-
 # (5) Print sequential feature (local, history)
 max_len = 12
 last_step = 12
-seq_features_rel = ['Blood Pressure', 'Heart Rate']
+seq_features_rel = ['Heart Rate']
 plt.rc('font', size=14)
 plt.rc('axes', titlesize=16)
 plt.rcParams["figure.figsize"] = (12, 5)
@@ -308,5 +307,3 @@ for idx, value in enumerate(seq_features):
         plt.show()
         f.savefig(f'../plots/simulation/seq_feat_case_{case}_{value}_time.{file_format}', dpi=100, bbox_inches="tight")
         plt.close(f)
-
-"""

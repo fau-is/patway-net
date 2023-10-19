@@ -12,7 +12,7 @@ name = "4_98"
 model = torch.load(os.path.join("../model", f"model_{name}"), map_location=torch.device('cpu'))
 interactions_seq = model.get_interactions_seq()
 number_interactions_seq = len(interactions_seq)
-file_format="pdf"  # pdf, png
+file_format = "pdf"  # pdf, png
 
 # Note: static features include binary features created from the diagnosis feature or not
 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_sepsis_data('Admission IC', 50, 3)
@@ -29,7 +29,7 @@ for t in range(1, 13):
 
         x, out = model.plot_feat_stat_effect(idx, torch.from_numpy(x_statics_final[:, idx].reshape(-1, 1)).float())
         x = x.detach().numpy().squeeze()
-        out = out.detach(pip).numpy()
+        out = out.detach().numpy()
         out = np.ravel(out)
 
         out_min = min(out)
@@ -108,7 +108,6 @@ for t in range(1, 13):
     norm = plt.Normalize(min(feat_imports_sorted), max(feat_imports_sorted))
     colors = cmap(norm(feat_imports_sorted))
 
-
     data = pd.DataFrame({'x': feat_names_sorted, 'y': y_pos})
     plot = plt.barh(y_pos, feat_imports_sorted, color=colors, zorder=2)
 
@@ -117,12 +116,14 @@ for t in range(1, 13):
     plt.xticks(np.arange(0, 1.41, step=0.2))
     plt.grid(True, zorder=0)
 
+
     def autolabel(plot):
         for idx, rect in enumerate(plot):
             if feat_imports_sorted[idx] > 0.7:
                 plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='white')
             else:
                 plt.text(0.005, idx - 0.25, feat_names_sorted[idx], color='black')
+
 
     autolabel(plot)
 
