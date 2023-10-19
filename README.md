@@ -1,6 +1,6 @@
-# Interpretable recurrent deep neural networks: The case of patient pathway prediction
+# PatWay-Net: A machine learning framework for interpretable predictions in patient pathways
 
-# Setup of PatWay-Net
+# Setup
    1. Install Miniconda (https://docs.conda.io/en/latest/miniconda.html) 
    2. After setting up miniconda you can make use of the `conda` command in your command line (e.g. CMD or Bash)
    3. To install required packages run `pip install -r requirements.txt` inside the root directory.
