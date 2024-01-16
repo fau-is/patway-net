@@ -1,5 +1,5 @@
 from src.data import get_sim_data
-from src.interpret_LSTM import Net
+from src.model.pwn import Net
 import torch.nn as nn
 import torch
 import torch.optim as optim
@@ -7,7 +7,6 @@ import numpy as np
 import os
 import copy
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import math
 import matplotlib.pyplot as plt
 from typing import List
 

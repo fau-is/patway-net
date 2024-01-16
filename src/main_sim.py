@@ -7,7 +7,7 @@ from sklearn.tree import DecisionTreeRegressor
 import os
 from src.data import get_sim_data
 import torch
-from src.interpret_LSTM import Net
+from src.model.pwn import Net
 from sklearn.model_selection import KFold
 
 max_len = 12

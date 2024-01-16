@@ -12,7 +12,8 @@ from sklearn.ensemble import RandomForestClassifier
 import os
 import src.data as data
 import torch
-from src.interpret_LSTM import Net
+from src.model.pwn import Net
+from src.model.nns import MLP, SLP
 from sklearn.model_selection import StratifiedKFold
 import pickle
 import xgboost as xgb
@@ -475,6 +476,209 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
             pass
 
 
+def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False):
+
+    num_features_stat = x_train_stat.shape[1]
+
+    models = {"mlps": [], "slp": ""}
+
+    patience = 10
+    epochs = 1
+
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+
+    x_train_stat = torch.from_numpy(x_train_stat)
+    y_train = torch.from_numpy(y_train)
+
+    for j in range(0, num_features_stat):
+
+        best_model = ""
+        aucs = []
+
+        for learning_rate in hpos["pwn"]["learning_rate"]:
+            for batch_size in hpos["pwn"]["batch_size"]:
+                for stat_feature_sz in hpos["pwn"]["stat_feature_sz"]:
+
+                    model = MLP(input_size=1, hidden_size=stat_feature_sz)
+                    criterion = nn.BCEWithLogitsLoss()
+                    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.000)
+                    idx = np.arange(len(x_train_seq))
+
+                    import copy
+                    best_val_loss = np.inf
+                    trigger_times = 0
+                    model_best_es = copy.deepcopy(model)
+                    flag_es = False
+
+                    for epoch in range(epochs):
+                        print(f"Epoch: {epoch + 1}")
+                        np.random.shuffle(idx)
+                        x_train_stat = x_train_stat[idx]
+                        y_train = y_train[idx]
+                        number_batches = x_train_stat.shape[0] // batch_size
+
+                        for i in range(number_batches):
+                            optimizer.zero_grad()  # clean up step for PyTorch
+                            out = model(x_train_stat[i * batch_size:(i + 1) * batch_size, j].reshape(-1,1).float())
+                            loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
+                            loss.backward()  # compute updates for each parameter
+                            optimizer.step()  # make the updates for each parameter
+
+                        # Early stopping
+                        def validation(model, x_val_stat, y_val, loss_function):
+                            x_val_stat = torch.from_numpy(x_val_stat)
+                            y_val = torch.from_numpy(y_val)
+
+                            model.eval()
+                            loss_total = 0
+                            number_batches = x_val_stat.shape[0] // batch_size
+
+                            with torch.no_grad():
+                                for i in range(number_batches):
+                                    out = model(x_train_stat[i * batch_size:(i + 1) * batch_size, j].reshape(-1,1).float())
+                                    loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
+                                    loss_total += loss.item()
+                            return loss_total / number_batches
+
+                        current_val_loss = validation(model, x_val_stat, y_val, criterion)
+                        print('Validation loss:', current_val_loss)
+
+                        if current_val_loss > best_val_loss:
+                            trigger_times += 1
+                            print('trigger times:', trigger_times)
+
+                            if trigger_times >= patience:
+                                print('Early stopping!\nStart to test process.')
+                                flag_es = True
+                                break
+                        else:
+                            print('trigger times: 0')
+                            trigger_times = 0
+                            model_best_es = copy.deepcopy(model)
+                            best_val_loss = current_val_loss
+
+                        if flag_es:
+                            break
+
+                    # Select model based on val auc
+                    model_best_es.eval()
+                    with torch.no_grad():
+
+                        x_val_stat_update_ = torch.from_numpy(x_val_stat)
+                        preds_proba = torch.sigmoid(model_best_es(x_val_stat_update_.reshape(-1,1).float()))
+                        preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+                        try:
+                            auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                            if np.isnan(auc):
+                                auc = 0
+                        except:
+                            auc = 0
+                        aucs.append(auc)
+
+                        if auc >= max(aucs):
+                            best_model = copy.deepcopy(model_best_es)
+
+        models["mlps"].append(best_model)
+
+    # transform data
+    x_train_stat_update = x_train_stat
+    x_val_stat_update = torch.from_numpy(x_val_stat)
+    for c in range(0, num_features_stat):
+        x_train_stat_update[:, c] = torch.sigmoid(models["mlps"][c](x_train_stat_update[:, c].reshape(-1,1).float())).reshape(-1)
+        x_val_stat_update[:, c] = torch.sigmoid(models["mlps"][c](x_val_stat_update[:, c].reshape(-1, 1).float())).reshape(-1)
+
+    # fit mlp based on mlps
+    best_model = ""
+    aucs = []
+
+    for learning_rate in hpos["pwn"]["learning_rate"]:
+        for batch_size in hpos["pwn"]["batch_size"]:
+
+            model = SLP(input_size=num_features_stat)
+            criterion = nn.BCEWithLogitsLoss()
+            optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.000)
+            idx = np.arange(len(x_train_seq))
+
+            import copy
+            best_val_loss = np.inf
+            trigger_times = 0
+            model_best_es = copy.deepcopy(model)
+            flag_es = False
+
+            for epoch in range(epochs):
+                print(f"Epoch: {epoch + 1}")
+                np.random.shuffle(idx)
+                x_train_stat_update = x_train_stat_update[idx]
+                y_train = y_train[idx]
+                number_batches = x_train_stat_update.shape[0] // batch_size
+
+                for i in range(number_batches):
+                    optimizer.zero_grad()  # clean up step for PyTorch
+                    out = model(x_train_stat_update[i * batch_size:(i + 1) * batch_size].float())
+                    loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
+                    loss.backward(retain_graph=True)  # compute updates for each parameter
+                    optimizer.step()  # make the updates for each parameter
+
+                # Early stopping
+                def validation(model, x_val_stat, y_val, loss_function):
+
+                    y_val = torch.from_numpy(y_val)
+
+                    model.eval()
+                    loss_total = 0
+                    number_batches = x_val_stat.shape[0] // batch_size
+
+                    with torch.no_grad():
+                        for i in range(number_batches):
+                            out = model(x_train_stat[i * batch_size:(i + 1) * batch_size].float())
+                            loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
+                            loss_total += loss.item()
+                    return loss_total / number_batches
+
+                current_val_loss = validation(model, x_val_stat_update, y_val, criterion)
+                print('Validation loss:', current_val_loss)
+
+                if current_val_loss > best_val_loss:
+                    trigger_times += 1
+                    print('trigger times:', trigger_times)
+
+                    if trigger_times >= patience:
+                        print('Early stopping!\nStart to test process.')
+                        flag_es = True
+                        break
+                else:
+                    print('trigger times: 0')
+                    trigger_times = 0
+                    model_best_es = copy.deepcopy(model)
+                    best_val_loss = current_val_loss
+
+                if flag_es:
+                    break
+
+            # Select model based on val auc
+            model_best_es.eval()
+            with torch.no_grad():
+
+                x_val_stat_update_ = x_val_stat_update
+                preds_proba = torch.sigmoid(model_best_es(x_val_stat_update_.float()))
+                preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+                try:
+                    auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                    if np.isnan(auc):
+                        auc = 0
+                except:
+                    auc = 0
+                aucs.append(auc)
+
+                if auc >= max(aucs):
+                    best_model = copy.deepcopy(model_best_es)
+
+    models["slp"] = best_model
+
+    return models
+
 def time_step_blow_up(X_seq, X_stat, y, max_len):
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
 
@@ -566,6 +770,44 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                 preds_proba_val = torch.sigmoid(model(X_val_seq, X_val_stat))
                 inference_start_time = time.time()
                 preds_proba_test = torch.sigmoid(model(X_test_seq, X_test_stat))
+                results['inference_time'].append(time.time() - inference_start_time)
+
+            def map_value(value):
+                if value >= 0.5:
+                    return 1
+                else:
+                    return 0
+
+            results['preds_train'] = [map_value(pred[0]) for pred in preds_proba_train]
+            results['preds_proba_train'] = [pred_proba[0] for pred_proba in preds_proba_train]
+            results['preds_val'] = [map_value(pred[0]) for pred in preds_proba_val]
+            results['preds_proba_val'] = [pred_proba[0] for pred_proba in preds_proba_val]
+            results['preds_test'] = [map_value(pred[0]) for pred in preds_proba_test]
+            results['preds_proba_test'] = [pred_proba[0] for pred_proba in preds_proba_test]
+
+        elif mode == "mlps_sln":
+            training_start_time = time.time()
+
+            models = train_mlps_sln(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos)
+
+            results['training_time'].append(time.time() - training_start_time)
+
+            X_train_stat = torch.from_numpy(X_train_stat)
+            X_val_stat = torch.from_numpy(X_val_stat)
+            X_test_stat = torch.from_numpy(X_test_stat)
+
+            models["slp"].eval()
+            with torch.no_grad():
+                num_features_stat = X_train_stat.shape[1]
+                for c in range(0, num_features_stat):
+                    X_train_stat[:, c] = torch.sigmoid(models["mlps"][c](X_train_stat[:, c].reshape(-1, 1).float())).reshape(-1)
+                    X_val_stat[:, c] = torch.sigmoid(models["mlps"][c](X_val_stat[:, c].reshape(-1, 1).float())).reshape(-1)
+                    X_test_stat[:, c] = torch.sigmoid(models["mlps"][c](X_test_stat[:, c].reshape(-1, 1).float())).reshape(-1)
+
+                preds_proba_train = torch.sigmoid(models["slp"](X_train_stat.float()))
+                preds_proba_val = torch.sigmoid(models["slp"](X_val_stat.float()))
+                inference_start_time = time.time()
+                preds_proba_test = torch.sigmoid(models["slp"](X_test_stat.float()))
                 results['inference_time'].append(time.time() - inference_start_time)
 
             def map_value(value):
@@ -777,7 +1019,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                     "f1_neg_train", "f1_neg_val", "f1_neg_test",
                     "support_train", "support_val", "support_test"]
 
-        if mode in ["pwn", "lr"]:
+        if mode in ["pwn", "lr", "mlps_sln"]:
             metrics_ = metrics_ + ["training_time", "inference_time"]
 
         for metric_ in metrics_:
@@ -807,6 +1049,7 @@ if __name__ == "__main__":
     data_set = "sepsis"  # bpi2012, hospital
 
     hpos = {
+        "mlps_sln": {"stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [32]},
         "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [32], "inter_seq_best": [1]},
         # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
@@ -820,7 +1063,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
         for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
+            for mode in ['mlps2stage']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps2stage'
                 procedure = mode
                 for target_activity in ['Admission IC']:
 
@@ -835,7 +1078,7 @@ if __name__ == "__main__":
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
-            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
+            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps2stage'
                 procedure = mode
 
                 np.random.seed(seed=seed)
@@ -848,7 +1091,7 @@ if __name__ == "__main__":
 
     elif data_set == "hospital":
         for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf'
+            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps2stage'
                 procedure = mode
 
                 np.random.seed(seed=seed)
