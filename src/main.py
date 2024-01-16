@@ -292,30 +292,36 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
     interactions_seq_itr = 100
     patience = 10
     epochs = 100
-    lstm_mode = ["pwn", "pwn_no_inter", "lstm", "pwn_all_feat_seq"][0]
+    lstm_mode = ["pwn", "pwn_no_inter", "pwn_only_feat_static", "pwn_all_feat_seq", "lstm"][2]
 
     if lstm_mode == "pwn":
         masking = True
         interactions_seq_auto = True
-        only_static = False
+        only_feat_static = False
         all_feat_seq = False
 
     elif lstm_mode == "pwn_no_inter":
         masking = True
         interactions_seq_auto = False
-        only_static = False
+        only_feat_static = False
+        all_feat_seq = False
+
+    elif lstm_mode == "pwn_only_feat_static":
+        masking = False
+        interactions_seq_auto = False
+        only_feat_static = True
         all_feat_seq = False
 
     elif lstm_mode == "lstm":
         masking = False
         interactions_seq_auto = False
-        only_static = False
+        only_feat_static = False
         all_feat_seq = False
 
     elif lstm_mode == "pwn_all_feat_seq":
         masking = False
         interactions_seq_auto = False
-        only_static = False
+        only_feat_static = False
         all_feat_seq = True
 
     import torch
@@ -345,7 +351,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
                                         interactions_seq_auto=interactions_seq_auto,
                                         input_sz_stat=num_features_stat,
                                         output_sz=1,
-                                        only_static=only_static,
+                                        only_static=only_feat_static,
                                         all_feat_seq=all_feat_seq,
                                         masking=masking,
                                         mlp_hidden_size=stat_feature_sz,
@@ -358,7 +364,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
                             lamb_lstm = 0.0
                             # optimizer = optim.SGD(model.parameters(), lr=learning_rate)
                             # optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
-                            optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.000) # weight_decay = 0.002, 0.001
+                            optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.000)  # weight_decay = 0.002, 0.001
                             idx = np.arange(len(x_train_seq))
 
                             import copy
@@ -377,10 +383,14 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 
                                 for i in range(number_batches):
                                     optimizer.zero_grad()  # clean up step for PyTorch
+                                    """
                                     out, out_mlp, out_lstm = model(x_train_seq[i * batch_size:(i + 1) * batch_size],
                                                 x_train_stat[i * batch_size:(i + 1) * batch_size], out_=True)
                                     loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double()) + \
                                            lamb_mlp * torch.mean(out_mlp ** 2) + lamb_lstm * torch.mean(out_lstm ** 2)
+                                    """
+                                    out = model(x_train_seq[i * batch_size:(i + 1) * batch_size], x_train_stat[i * batch_size:(i + 1) * batch_size])
+                                    loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
                                     loss.backward()  # compute updates for each parameter
                                     optimizer.step()  # make the updates for each parameter
 
@@ -397,10 +407,14 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 
                                     with torch.no_grad():
                                         for i in range(number_batches):
+                                            """
                                             out, out_mlp, out_lstm = model(x_val_seq[i * batch_size: (i + 1) * batch_size],
                                                         x_val_stat[i * batch_size: (i + 1) * batch_size], out_=True)
                                             loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double()) + \
                                                    lamb * torch.mean(out_mlp ** 2) + lamb2 * torch.mean(out_lstm ** 2)
+                                            """
+                                            out = model(x_val_seq[i * batch_size: (i + 1) * batch_size], x_val_stat[i * batch_size: (i + 1) * batch_size])
+                                            loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
                                             loss_total += loss.item()
                                     return loss_total / number_batches
 
