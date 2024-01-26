@@ -497,9 +497,9 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
         best_model = ""
         aucs = []
 
-        for learning_rate in hpos["pwn"]["learning_rate"]:
-            for batch_size in hpos["pwn"]["batch_size"]:
-                for stat_feature_sz in hpos["pwn"]["stat_feature_sz"]:
+        for learning_rate in hpos["mlps_sln"]["learning_rate"]:
+            for batch_size in hpos["mlps_sln"]["batch_size"]:
+                for stat_feature_sz in hpos["mlps_sln"]["stat_feature_sz"]:
 
                     model = MLP(input_size=1, hidden_size=stat_feature_sz)
                     criterion = nn.BCEWithLogitsLoss()
@@ -513,7 +513,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
                     flag_es = False
 
                     for epoch in range(epochs):
-                        print(f"Epoch: {epoch + 1}")
+                        print(f"Epoch: {epoch + 1} --- MLP: {j + 1}")
                         np.random.shuffle(idx)
                         x_train_stat = x_train_stat[idx]
                         y_train = y_train[idx]
@@ -593,8 +593,8 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
     best_model = ""
     aucs = []
 
-    for learning_rate in hpos["pwn"]["learning_rate"]:
-        for batch_size in hpos["pwn"]["batch_size"]:
+    for learning_rate in hpos["mlps_sln"]["learning_rate"]:
+        for batch_size in hpos["mlps_sln"]["batch_size"]:
 
             model = SLP(input_size=num_features_stat)
             criterion = nn.BCEWithLogitsLoss()
@@ -608,7 +608,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
             flag_es = False
 
             for epoch in range(epochs):
-                print(f"Epoch: {epoch + 1}")
+                print(f"Epoch: {epoch + 1} --- SLP")
                 np.random.shuffle(idx)
                 x_train_stat_update = x_train_stat_update[idx]
                 y_train = y_train[idx]
@@ -1063,7 +1063,7 @@ if __name__ == "__main__":
 
     if data_set == "sepsis":
         for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['mlps2stage']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps2stage'
+            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps_sln'
                 procedure = mode
                 for target_activity in ['Admission IC']:
 
@@ -1078,7 +1078,7 @@ if __name__ == "__main__":
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
-            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps2stage'
+            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps_sln'
                 procedure = mode
 
                 np.random.seed(seed=seed)
@@ -1091,7 +1091,7 @@ if __name__ == "__main__":
 
     elif data_set == "hospital":
         for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps2stage'
+            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps_sln'
                 procedure = mode
 
                 np.random.seed(seed=seed)
