@@ -798,6 +798,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
 
             models["slp"].eval()
             with torch.no_grad():
+                inference_start_time = time.time()
                 num_features_stat = X_train_stat.shape[1]
                 for c in range(0, num_features_stat):
                     X_train_stat[:, c] = torch.sigmoid(models["mlps"][c](X_train_stat[:, c].reshape(-1, 1).float())).reshape(-1)
@@ -806,7 +807,6 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
 
                 preds_proba_train = torch.sigmoid(models["slp"](X_train_stat.float()))
                 preds_proba_val = torch.sigmoid(models["slp"](X_val_stat.float()))
-                inference_start_time = time.time()
                 preds_proba_test = torch.sigmoid(models["slp"](X_test_stat.float()))
                 results['inference_time'].append(time.time() - inference_start_time)
 
