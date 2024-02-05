@@ -29,6 +29,18 @@ save_baseline_model = False
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
+    """
+    This function reshapes a 3D tensor 'x_seq' into a 2D matrix and then concatenates it with another 2D matrix 'x_stat'.
+    The reshaping of 'x_seq' is done such that the second and third dimensions are flattened into a single dimension.
+    The concatenation is performed along the second axis (columns).
+
+    Parameters:
+    x_seq (numpy.ndarray): The 3D input tensor.
+    x_stat (numpy.ndarray): The 2D matrix to be concatenated with 'x_seq'.
+
+    Returns:
+    numpy.ndarray: The resulting 2D matrix after reshaping and concatenation.
+    """
     x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
     x_concat = np.concatenate((x_train_seq_, x_stat), axis=1)
 
