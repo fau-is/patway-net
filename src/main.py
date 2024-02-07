@@ -35,11 +35,11 @@ def concatenate_tensor_matrix(x_seq, x_stat):
     The concatenation is performed along the second axis (columns).
 
     Parameters:
-    x_seq (numpy.ndarray): The 3D input tensor.
-    x_stat (numpy.ndarray): The 2D matrix to be concatenated with 'x_seq'.
+    x_seq (array_like): The 3D input tensor.
+    x_stat (array_like): The 2D matrix to be concatenated with 'x_seq'.
 
     Returns:
-    numpy.ndarray: The resulting 2D matrix after reshaping and concatenation.
+    x_concat(array_like): The resulting 2D matrix after reshaping and concatenation.
     """
     x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
     x_concat = np.concatenate((x_train_seq_, x_stat), axis=1)
@@ -48,11 +48,40 @@ def concatenate_tensor_matrix(x_seq, x_stat):
 
 
 def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+    This function trains a Random Forest Classifier with or without hyperparameter optimization.
+    If hyperparameter, optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as depth of the trees(max_depth), number of trees(n_estimators) or maximum number of leaf nodes(max_leaf_nodes) and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+    x_train_seq (?): The training sequences.
+    x_train_stat (array_like): The training input static features.
+    y_train (array_like): The training target labels.
+    x_val_seq (?): The validation sequences.
+    x_val_stat (array_like): The validation input static features.
+    y_val (array_like): The validation target labels.
+    hpo (bool): Whether to perform hyperparameter optimization.
+                Defaults to False.
+    hpos (dict): The hyperparameter optimization space.
+                 Defaults to None.
+    data_set (str): The name of the dataset.
+    target_activity (str): The target activity.
+                            Defaults to None.
+    Returns:
+    If hpo is True:
+        best_model (RandomForestClassifier): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (RandomForestClassifier): The trained model, without hyperparameter optimization.
+
+    """
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of hyperparameters
         for max_depth in hpos["rf"]["max_depth"]:
             for n_estimators in hpos["rf"]["n_estimators"]:
                 for max_leaf_nodes in hpos["rf"]["max_leaf_nodes"]:
@@ -63,6 +92,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
                     preds_proba = model.predict_proba(x_val_stat)
                     preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                    #calculate the AUC
                     try:
                         auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                         if np.isnan(auc):
@@ -70,12 +100,12 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                     except:
                         auc = 0
                     aucs.append(auc)
-
+                    #select the best model based on the AUC
                     if auc >= max(aucs):
                         best_model = model
                         best_hpos = {"max_depth": max_depth, "n_estimators": n_estimators,
                                      "max_leaf_nodes": max_leaf_nodes}
-
+        #write the best hyperparameters and the AUCs to a file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -84,7 +114,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = RandomForestClassifier()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -93,15 +123,40 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
     
-    '''
-    This function trains an XGBoost model using the training data and hyperparameters provided.aa
-    '''
+    """
+    This function trains an XGBoost Classifier with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as max_depth and learning_rate and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+   Parameters:
+    x_train_seq (?): The training sequences.
+    x_train_stat (array_like): The training input static features.
+    y_train (array_like): The training target labels.
+    x_val_seq (?): The validation sequences.
+    x_val_stat (array_like): The validation input static features.
+    y_val (array_like): The validation target labels.
+    hpo (bool): Whether to perform hyperparameter optimization.
+                Defaults to False.
+    hpos (dict): The hyperparameter optimization space.
+                 Defaults to None.
+    data_set (str): The name of the dataset.
+    target_activity (str): The target activity.
+                            Defaults to None.
+    Returns:
+    If hpo is True:
+        best_model (XGBClassifier): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (XGBClassifier): The trained model, without hyperparameter optimization.
+    """
 
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of hyperparameters
         for max_depth in hpos["xgb"]["max_depth"]:
             for learning_rate in hpos["xgb"]["learning_rate"]:
 
@@ -110,6 +165,7 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
                 preds_proba = model.predict_proba(x_val_stat)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                #calculate the AUC
                 try:
                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     if np.isnan(auc):
@@ -117,11 +173,11 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
                 except:
                     auc = 0
                 aucs.append(auc)
-
+                #select the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = model
                     best_hpos = {"max_depth": max_depth, "learning_rate": learning_rate}
-
+        #write the best hyperparameters and the AUCs to a file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -130,7 +186,7 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = xgb.XGBClassifier()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -139,11 +195,42 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
 
 def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+    This function trains a Logistic Regression Classifier with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+    x_train_seq (?): The training sequences.
+    x_train_stat (array_like): The training input static features.
+    y_train (array_like): The training target labels.
+    x_val_seq (?): The validation sequences.
+    x_val_stat (array_like): The validation input static features.
+    y_val (array_like): The validation target labels.
+    hpo (bool): Whether to perform hyperparameter optimization.
+                Defaults to False.
+    hpos (dict): The hyperparameter optimization space.
+                 Defaults to None.
+    data_set (str): The name of the dataset.
+    target_activity (str): The target activity.
+                            Defaults to None.
+    Returns:
+    If hpo is True:
+        best_model (LogisticRegression): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (LogisticRegression): The trained model, without hyperparameter optimization.
+
+
+    """
+
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of hyperparameters
         for c in hpos["lr"]["reg_strength"]:
             for solver in hpos["lr"]["solver"]:
 
@@ -151,6 +238,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 model.fit(x_train_stat, np.ravel(y_train))
                 preds_proba = model.predict_proba(x_val_stat)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                #calculate the AUC
                 try:
                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     if np.isnan(auc):
@@ -158,11 +246,11 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 except:
                     auc = 0
                 aucs.append(auc)
-
+                #select the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = model
                     best_hpos = {"c": c, "solver": solver}
-
+        #write the best hyperparameters and the AUCs to a file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -171,7 +259,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = LogisticRegression()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -180,17 +268,46 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 
 def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+    This function trains a Naive Bayes Classifier with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+    x_train_seq (?): The training sequences.
+    x_train_stat (array_like): The training input static features.
+    y_train (array_like): The training target labels.
+    x_val_seq (?): The validation sequences.
+    x_val_stat (array_like): The validation input static features.
+    y_val (array_like): The validation target labels.
+    hpo (bool): Whether to perform hyperparameter optimization.
+                Defaults to False.
+    hpos (dict): The hyperparameter optimization space.
+                 Defaults to None.
+    data_set (str): The name of the dataset.
+    target_activity (str): The target activity.
+                            Defaults to None.
+    Returns:
+    If hpo is True:
+        best_model (GaussianNB): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (GaussianNB): The trained model, without hyperparameter optimization.
+    """
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of hyperparameters
         for var_smoothing in hpos["nb"]["var_smoothing"]:
 
             model = GaussianNB(var_smoothing=var_smoothing)
             model.fit(x_train_stat, np.ravel(y_train))
             preds_proba = model.predict_proba(x_val_stat)
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+            #calculate the AUC
             try:
                 auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                 if np.isnan(auc):
@@ -198,11 +315,11 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
             except:
                 auc = 0
             aucs.append(auc)
-
+            #select the best model based on the AUC
             if auc >= max(aucs):
                 best_model = model
                 best_hpos = {"var_smoothing": var_smoothing}
-
+        #write the best hyperparameters and the AUCs to a file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -211,7 +328,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = GaussianNB()
         model.fit(x_train_stat, np.ravel(y_train))
