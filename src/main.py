@@ -92,6 +92,11 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    
+    '''
+    This function trains an XGBoost model using the training data and hyperparameters provided.aa
+    '''
+
     if hpo:
         best_model = ""
         best_hpos = ""
