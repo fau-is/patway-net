@@ -81,7 +81,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         best_model = ""
         best_hpos = ""
         aucs = []
-        #loop through all possible combinations of hyperparameters
+        #loop through all possible combinations of max_depth, n_estimators, max_leaf_nodes hyperparameters
         for max_depth in hpos["rf"]["max_depth"]:
             for n_estimators in hpos["rf"]["n_estimators"]:
                 for max_leaf_nodes in hpos["rf"]["max_leaf_nodes"]:
@@ -300,7 +300,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         best_model = ""
         best_hpos = ""
         aucs = []
-        #loop through all possible combinations of hyperparameters
+        #loop through all possible var_smoothing values
         for var_smoothing in hpos["nb"]["var_smoothing"]:
 
             model = GaussianNB(var_smoothing=var_smoothing)
@@ -337,11 +337,42 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 
 def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+     This function trains a Decision Tree Classifier with or without hyperparameter optimization.
+    If hyperparameter, optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as depth of the trees(max_depth), minimum number of samples required to split an internal node(min_samples_split) 
+    and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+    x_train_seq (?): The training sequences.
+    x_train_stat (array_like): The training input static features.
+    y_train (array_like): The training target labels.
+    x_val_seq (?): The validation sequences.
+    x_val_stat (array_like): The validation input static features.
+    y_val (array_like): The validation target labels.
+    hpo (bool): Whether to perform hyperparameter optimization.
+                Defaults to False.
+    hpos (dict): The hyperparameter optimization space.
+                 Defaults to None.
+    data_set (str): The name of the dataset.
+    target_activity (str): The target activity.
+                            Defaults to None.
+
+    Returns:
+    If hpo is True:
+        best_model (DecisionTreeClassifier): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (DecisionTreeClassifier): The trained model, without hyperparameter optimization.
+
+    """
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of max_depth and min_samples_split hyperparameters
         for max_depth in hpos["dt"]["max_depth"]:
             for min_samples_split in hpos["dt"]["min_samples_split"]:
 
@@ -349,6 +380,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 model.fit(x_train_stat, np.ravel(y_train))
                 preds_proba = model.predict_proba(x_val_stat)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                #calculate the AUC
                 try:
                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     if np.isnan(auc):
@@ -357,11 +389,11 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                     auc = 0
 
                 aucs.append(auc)
-
+                #select the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = model
                     best_hpos = {"max_depth": max_depth, "min_samples_split": min_samples_split}
-
+        #write the best hyperparameters and the AUCs to a text file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -370,7 +402,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = DecisionTreeClassifier()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -379,17 +411,47 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 
 def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+    This function trains a K-Nearest Neighbors Classifier with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as number of neighbors(n_neighbors) and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+    x_train_seq (?): The training sequences.
+    x_train_stat (array_like): The training input static features.
+    y_train (array_like): The training target labels.
+    x_val_seq (?): The validation sequences.
+    x_val_stat (array_like): The validation input static features.
+    y_val (array_like): The validation target labels.
+    hpo (bool): Whether to perform hyperparameter optimization.
+                Defaults to False.
+    hpos (dict): The hyperparameter optimization space.
+                    Defaults to None.
+    data_set (str): The name of the dataset.
+    target_activity (str): The target activity.
+                            Defaults to None.
+
+    Returns:
+    If hpo is True:
+        best_model (KNeighborsClassifier): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (KNeighborsClassifier): The trained model, without hyperparameter optimization.
+    """
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of hyperparameters
         for n_neighbors in hpos["knn"]["n_neighbors"]:
 
             model = KNeighborsClassifier(n_neighbors=n_neighbors)
             model.fit(x_train_stat, np.ravel(y_train))
             preds_proba = model.predict_proba(x_val_stat)
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+            #calculate the AUC
             try:
                 auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                 if np.isnan(auc):
@@ -397,11 +459,11 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
             except:
                 auc = 0
             aucs.append(auc)
-
+            #select the best model based on the AUC
             if auc >= max(aucs):
                 best_model = model
                 best_hpos = {"n_eighbors": n_neighbors}
-
+        #write the best hyperparameters and the AUCs to a text file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -410,7 +472,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = KNeighborsClassifier()
         model.fit(x_train_stat, np.ravel(y_train))
