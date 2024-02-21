@@ -12,12 +12,13 @@ from sklearn.ensemble import RandomForestClassifier
 import os
 import src.data as data
 import torch
-from src.model.pwn import Net
-from src.model.nns import MLP, SLP
+from src.interpret_LSTM import Net
+from src.nns import MLP, SLP, LSTM
 from sklearn.model_selection import StratifiedKFold
 import pickle
 import xgboost as xgb
 import time
+import copy
 
 max_len = 50
 min_len = 3
@@ -285,7 +286,145 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
 
 def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
-               hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
+              hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
+
+    max_case_len = x_train_seq.shape[1]
+    num_features_seq = x_train_seq.shape[2]
+    num_features_stat = x_train_stat.shape[1]
+
+    import torch
+    import copy
+    x_train_stat_ = torch.reshape(x_train_stat, (-1, 1, x_train_stat.shape[1]))
+    x_train_stats = copy.copy(x_train_stat_)
+    T = x_train_seq.shape[1]
+    for t in range(1, T):
+        x_train_stats = torch.concat((x_train_stats, x_train_stat_), 1)
+    x_train_seq = torch.concat((x_train_seq, x_train_stats), 2).float()
+
+    if x_val_seq is not False:
+        x_val_stat_ = torch.reshape(x_val_stat, (-1, 1, x_val_stat.shape[1]))
+        x_val_stats = copy.copy(x_val_stat_)
+        T = x_val_seq.shape[1]
+        for t in range(1, T):
+            x_val_stats = torch.concat((x_val_stats, x_val_stat_), 1)
+        x_val_seq = torch.concat((x_val_seq, x_val_stats), 2).float()
+
+    patience = 10
+    epochs = 100
+
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+
+    if hpo:
+        best_model = ""
+        best_hpos = ""
+        aucs = []
+
+        # x_train_seq = torch.from_numpy(x_train_seq)
+        y_train = torch.from_numpy(y_train)
+
+        for learning_rate in hpos["lstm"]["learning_rate"]:
+            for batch_size in hpos["lstm"]["batch_size"]:
+                for hidden_sz in hpos["lstm"]["hidden_sz"]:
+
+                    model = LSTM(input_size=num_features_seq+num_features_stat, hidden_size=hidden_sz)
+                    criterion = nn.BCEWithLogitsLoss()
+                    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.000)
+                    idx = np.arange(len(x_train_seq))
+
+                    import copy
+                    best_val_loss = np.inf
+                    trigger_times = 0
+                    model_best_es = copy.deepcopy(model)
+                    flag_es = False
+
+                    for epoch in range(epochs):
+                        print(f"Epoch: {epoch + 1}")
+                        np.random.shuffle(idx)
+                        x_train_seq = x_train_seq[idx]
+                        y_train = y_train[idx]
+                        number_batches = x_train_seq.shape[0] // batch_size
+
+                        for i in range(number_batches):
+                            optimizer.zero_grad()  # clean up step for PyTorch
+                            out = model(x_train_seq[i * batch_size:(i + 1) * batch_size])
+                            loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
+                            loss.backward()  # compute updates for each parameter
+                            optimizer.step()  # make the updates for each parameter
+
+                        # Early stopping
+                        def validation(model, x_val_seq, y_val, loss_function):
+
+                            # x_val_seq = torch.from_numpy(x_val_seq)
+                            y_val = torch.from_numpy(y_val)
+
+                            model.eval()
+                            loss_total = 0
+                            number_batches = x_val_seq.shape[0] // batch_size
+
+                            with torch.no_grad():
+                                for i in range(number_batches):
+                                    out = model(x_val_seq[i * batch_size: (i + 1) * batch_size])
+                                    loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
+                                    loss_total += loss.item()
+                            return loss_total / number_batches
+
+                        current_val_loss = validation(model, x_val_seq, y_val, criterion)
+                        print('Validation loss:', current_val_loss)
+
+                        if current_val_loss > best_val_loss:
+                            trigger_times += 1
+                            print('trigger times:', trigger_times)
+
+                            if trigger_times >= patience:
+                                print('Early stopping!\nStart to test process.')
+                                flag_es = True
+                                break
+                        else:
+                            print('trigger times: 0')
+                            trigger_times = 0
+                            model_best_es = copy.deepcopy(model)
+                            best_val_loss = current_val_loss
+
+                        if flag_es:
+                            break
+
+                    # Select model based on val auc
+                    model_best_es.eval()
+                    with torch.no_grad():
+
+                        # x_val_seq_ = torch.from_numpy(x_val_seq)
+                        preds_proba = torch.sigmoid(model_best_es(x_val_seq))
+                        preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+                        try:
+                            auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
+                            if np.isnan(auc):
+                                auc = 0
+                        except:
+                            auc = 0
+                        aucs.append(auc)
+
+                        if auc >= max(aucs):
+                            best_model = copy.deepcopy(model_best_es)
+                            best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
+                                         "hidden_sz": hidden_sz}
+
+            f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
+            f.write(str(best_hpos) + '\n')
+            f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
+            f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
+            f.write(f'Std,{np.std(aucs, ddof=1)}\n')
+            f.close()
+
+            torch.save(model, os.path.join("../model", f"model_{mode}_{id}_{seed}"))
+
+            return best_model, best_hpos
+        else:
+            pass
+
+def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
+              hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
@@ -483,7 +622,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
     models = {"mlps": [], "slp": ""}
 
     patience = 10
-    epochs = 1
+    epochs = 100
 
     import torch
     import torch.nn as nn
@@ -747,11 +886,71 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                 pickle.dump(data_dictionary, output)
                 print("Test data from fold " + str(id) + " saved to " + str(output))
 
-        if mode == "pwn":
+        if mode == "lstm":
             training_start_time = time.time()
 
+            X_train_seq = torch.from_numpy(X_train_seq)
+            X_train_stat = torch.from_numpy(X_train_stat)
+
+            X_val_seq = torch.from_numpy(X_val_seq)
+            X_val_stat = torch.from_numpy(X_val_stat)
+
+            X_test_seq = torch.from_numpy(X_test_seq)
+            X_test_stat = torch.from_numpy(X_test_stat)
+
             model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat,
-                                          y_val.reshape(-1, 1), hpos, hpo, mode, data_set, target_activity=target_activity)
+                                         y_val.reshape(-1, 1), hpos, hpo, mode, data_set, target_activity=target_activity)
+
+            results['training_time'].append(time.time() - training_start_time)
+
+            X_train_stat_ = torch.reshape(X_train_stat, (-1, 1, X_train_stat.shape[1]))
+            X_train_stats = copy.copy(X_train_stat_)
+            T = X_train_seq.shape[1]
+            for t in range(1, T):
+                X_train_stats = torch.concat((X_train_stats, X_train_stat_), 1)
+            X_train_seq = torch.concat((X_train_seq, X_train_stats), 2).float()
+
+            X_val_stat_ = torch.reshape(X_val_stat, (-1, 1, X_val_stat.shape[1]))
+            X_val_stats = copy.copy(X_val_stat_)
+            T = X_val_seq.shape[1]
+            for t in range(1, T):
+                X_val_stats = torch.concat((X_val_stats, X_val_stat_), 1)
+            X_val_seq = torch.concat((X_val_seq, X_val_stats), 2).float()
+
+            X_test_stat_ = torch.reshape(X_test_stat, (-1, 1, X_test_stat.shape[1]))
+            X_test_stats = copy.copy(X_test_stat_)
+            T = X_test_seq.shape[1]
+            for t in range(1, T):
+                X_test_stats = torch.concat((X_test_stats, X_test_stat_), 1)
+            X_test_seq = torch.concat((X_test_seq, X_test_stats), 2).float()
+
+            model.eval()
+            with torch.no_grad():
+                preds_proba_train = torch.sigmoid(model(X_train_seq))
+                preds_proba_val = torch.sigmoid(model(X_val_seq))
+                inference_start_time = time.time()
+                preds_proba_test = torch.sigmoid(model(X_test_seq))
+                results['inference_time'].append(time.time() - inference_start_time)
+
+            def map_value(value):
+                if value >= 0.5:
+                    return 1
+                else:
+                    return 0
+
+            results['preds_train'] = [map_value(pred[0]) for pred in preds_proba_train]
+            results['preds_proba_train'] = [pred_proba[0] for pred_proba in preds_proba_train]
+            results['preds_val'] = [map_value(pred[0]) for pred in preds_proba_val]
+            results['preds_proba_val'] = [pred_proba[0] for pred_proba in preds_proba_val]
+            results['preds_test'] = [map_value(pred[0]) for pred in preds_proba_test]
+            results['preds_proba_test'] = [pred_proba[0] for pred_proba in preds_proba_test]
+
+
+        elif mode == "pwn":
+            training_start_time = time.time()
+
+            model, best_hpos = train_pwn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat,
+                                         y_val.reshape(-1, 1), hpos, hpo, mode, data_set, target_activity=target_activity)
 
             results['training_time'].append(time.time() - training_start_time)
 
@@ -1049,9 +1248,11 @@ if __name__ == "__main__":
     data_set = "sepsis"  # bpi2012, hospital
 
     hpos = {
-        "mlps_sln": {"stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [32]},
-        "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [32], "inter_seq_best": [1]},
-        # "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
+        # "mlps_sln": {"stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [32]},
+        # "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [32], "inter_seq_best": [1]},
+        "lstm": {"hidden_sz": [4, 32, 128], "learning_rate": [0.001, 0.01], "batch_size": [32, 128]},
+        # "lstm": {"hidden_sz": [4], "learning_rate": [0.001], "batch_size": [32]},
+        "pwn": {"seq_feature_sz": [4, 8], "stat_feature_sz": [4, 8], "learning_rate": [0.001, 0.01], "batch_size": [32, 128], "inter_seq_best": [1]},
         "lr": {"reg_strength": [pow(10, -3), pow(10, -2), pow(10, -1), pow(10, 0), pow(10, 1), pow(10, 2), pow(10, 3)],
                "solver": ["lbfgs"]},
         "nb": {"var_smoothing": np.logspace(0, -9, num=10)},
@@ -1062,8 +1263,8 @@ if __name__ == "__main__":
     }
 
     if data_set == "sepsis":
-        for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['pwn']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps_sln'
+        for seed in [98]:  # [15, 37, 98, 137, 245]:
+            for mode in ['lstm']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps_sln', 'lstm'
                 procedure = mode
                 for target_activity in ['Admission IC']:
 
@@ -1078,7 +1279,7 @@ if __name__ == "__main__":
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
-            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps_sln'
+            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps_sln', 'lstm'
                 procedure = mode
 
                 np.random.seed(seed=seed)
@@ -1091,7 +1292,7 @@ if __name__ == "__main__":
 
     elif data_set == "hospital":
         for seed in [15]:  # [15, 37, 98, 137, 245]:
-            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps_sln'
+            for mode in ['rf']:  # 'pwn', 'lr', 'dt', 'knn', 'nb', 'xgb', 'rf', 'mlps_sln', 'lstm'
                 procedure = mode
 
                 np.random.seed(seed=seed)

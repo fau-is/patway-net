@@ -1,5 +1,5 @@
 from src.data import get_sim_data
-from src.model.pwn import Net
+from src.interpret_LSTM import Net
 import torch.nn as nn
 import torch
 import torch.optim as optim

@@ -72,7 +72,7 @@ def get_sim_data(label, file):
 
 
 def get_sepsis_data(target_activity, max_len, min_len):
-    ds_path = '../data/Sepsis Cases - Event Log_end2.csv'
+    ds_path = '../../data/Sepsis Cases - Event Log_end2.csv'
 
     static_features = ['InfectionSuspected', 'DiagnosticBlood', 'DisfuncOrg',
                        'SIRSCritTachypnea', 'Hypotensie',

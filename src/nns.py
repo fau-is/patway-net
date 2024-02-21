@@ -8,8 +8,10 @@ class LSTM(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=1, batch_first=True)
-        self.fc = nn.Linear(self.hidden_size, 1)
-        self.act = torch.nn.Sigmoid()
+        self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size, 1))
+        self.output_bias = nn.Parameter(torch.randn(1))
+        # self.fc = nn.Linear(self.hidden_size, 1)
+        # self.act = torch.nn.Sigmoid()
 
     def forward(self, x):
         # h0 = torch.zeros(self.hidden_size, x.size(0), self.hidden_size).requires_grad_()
@@ -18,12 +20,11 @@ class LSTM(nn.Module):
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x).float()
 
-        out, _ = self.lstm(x)
+        hidden_seq, (h_t, c_t) = self.lstm(x)
 
-        out = self.fc(out[:, -1, :])
-        out = self.act(out)
+        out = h_t @ self.output_coef.float() + self.output_bias
 
-        return out
+        return torch.reshape(out, (-1, 1))
 
 
 class MLP(nn.Module):

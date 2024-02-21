@@ -39,10 +39,11 @@ explainer = lime_tabular.RecurrentTabularExplainer(x_seqs_final, training_labels
                                                    class_names=['Yes', 'No'])
                                                    # kernel_width=0.01)
 
-exp = explainer.explain_instance(x_seqs_final[case], model, num_features=50*39,
+exp = explainer.explain_instance(x_seqs_final[case], model, num_features=20,
                                  labels=(0,), num_samples=5000,
                                  model_regressor=Ridge(alpha=1.0, fit_intercept=True, random_state=None))
 
+"""
 # retrieve values
 feat_names = []
 feat_imports = []
@@ -112,5 +113,6 @@ for t in range(0, 50):
     plt.draw()
     fig1.savefig(f'../../plots/global_feat_importance_lime_{t}.{file_format}', dpi=100, bbox_inches="tight")
     plt.close(fig1)
+"""
 
 exp.save_to_file("output.html")
