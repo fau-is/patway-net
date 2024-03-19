@@ -1026,7 +1026,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
     Evaluate the performance of different machine learning models.
 
     Parameters:
-        x_seqs (list): List of input sequences.
+         x_seqs (list): List of input sequences.
          x_statics (list): List of static features.
          y (list): List of target labels.
          mode (str): Mode of evaluation (e.g., "pwn", "mlps_sln", "rf", "xgb", "lr", "nb", "dt", "knn").
@@ -1253,7 +1253,17 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             results['support_val'] = list()
             results['support_test'] = list()
         
-        def calc_roc_auc(gts, probs): # Calculate the ROC AUC
+        def calc_roc_auc(gts, probs):
+            """
+            This function calculates the ROC AUC score
+
+            Parameters:
+                gts (array-like): Ground truth (correct) target values.
+                probs (array-like): Target scores
+
+            Returns:
+                float: The ROC AUC score as a float in the range [0, 1]
+            """
             try:
                 auc = metrics.roc_auc_score(gts, probs)
                 if np.isnan(auc):
@@ -1262,7 +1272,17 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             except:
                 return 0
 
-        def calc_pr_auc(gts, probs): # Calculate the PR AUC
+        def calc_pr_auc(gts, probs):
+            """
+            This function calculates the PR AUC (Precision-Recall Area Under the Curve)
+
+            Parameters:
+                gts (array-like): Ground truth (correct) target values.
+                probs (array-like): Target scores
+
+            Returns:
+                float: The PR AUC score as a float in the range [0, 1]
+            """
             try:
                 precision, recall, thresholds = metrics.precision_recall_curve(gts, probs)
                 auc = metrics.auc(recall, precision)
@@ -1272,13 +1292,43 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             except:
                 return 0
 
-        def calc_mcc(gts, preds): # Calculate the Matthews correlation coefficient
+        def calc_mcc(gts, preds):
+            """
+            This function calculates the Matthews correlation coefficient (MCC)
+
+            Parameters:
+                gts (array-like): Ground truth (correct) target values.
+                preds (array-like): Predictions, expected to be a binary vector corresponding to the predicted class (0 or 1) for each sample.
+
+            Returns:
+                float: The MCC score as a float in the range [-1, 1]. A higher absolute value indicates a better prediction.
+            """
             try:
                 return metrics.matthews_corrcoef(gts, preds)
             except:
                 return 0
 
-        def calc_f1(gts, preds, proba, label_id, corr=False): # Calculate the F1 score
+        def calc_f1(gts, preds, proba, label_id, corr=False):
+            """
+            This function calculates the F1 score, which is the harmonic mean of precision and recall,
+            and optionally adjusts the threshold for prediction based on maximizing the difference
+            between the True Positive Rate (TPR) and False Positive Rate (FPR) if correction is applied.
+
+            Parameters:
+                gts (array-like): Ground truth (correct) target values.
+                preds (array-like): Predictions, expected to be a binary vector corresponding to the predicted class (0 or 1) for each sample.
+                proba (array-like): Probability estimates of the positive class. This parameter is used
+                                    only if `corr` is True to adjust the prediction threshold.
+                label_id (int or string): The label of the positive class which `f1_score` and
+                                          `precision_score` will consider as the positive label.
+                corr (bool, optional): If True, the function will adjust the prediction threshold to maximize
+                                       the difference between TPR and FPR before calculating the F1 score.
+                                       Default is False.
+
+            Returns:
+                float: The calculated F1 score as a float. If `corr` is True, the score is calculated using
+                       the adjusted threshold that maximizes the difference between TPR and FPR.
+            """
             try:
                 if corr:
                     fpr, tpr, thresholds = metrics.roc_curve(y_true=gts, y_score=proba)
