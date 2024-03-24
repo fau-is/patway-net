@@ -92,6 +92,7 @@ for t in range(1, 13):
 
         feat_names.append(value)
 
+    # sorting
     sorted_index = np.argsort(np.array(feat_imports))
     feat_imports_sorted = np.array(feat_imports)[sorted_index]
     feat_names_sorted = np.array(feat_names)[sorted_index]
