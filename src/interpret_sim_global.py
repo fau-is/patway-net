@@ -116,14 +116,14 @@ for t in range(1, 13):
     plt.xticks(np.arange(0, 0.2, step=0.05))
     plt.grid(True, zorder=0)
 
-    def autolabel(plot):
+    def auto_label(plot):
         for idx, rect in enumerate(plot):
             if feat_imports_sorted[idx] > 0.1:
                 plt.text(0.005, idx - 0.1, feat_names_sorted[idx], color='white')
             else:
                 plt.text(0.005, idx - 0.1, feat_names_sorted[idx], color='black')
 
-    autolabel(plot)
+    auto_label(plot)
 
     plt.xlabel("Importance")
     plt.ylabel("Medical indicator")

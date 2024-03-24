@@ -35,7 +35,7 @@ xgb = np.array([0.72370067084542,0.72370067084542,0.72370067084542,0.72370067084
 bar_height = np.array([147, 147, 147, 147, 147, 145, 144, 140, 129, 123, 113, 105])
 bar_name = bars = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12')
 
-def addlabels(x,y):
+def add_labels(x, y):
     for i in range(len(x)):
         plt.text(i,y[i],y[i])
 
@@ -72,7 +72,7 @@ def plot_line_plots(cut_lengths, means_auc, mins_auc, maxes_auc, labels):
     ax2.set_xlabel('Time step')
     ax2.set_xticks(np.arange(len(bar_name)))
     ax2.set_ylabel(f'Number of\n patient pathway prefixes')
-    addlabels(bar_name, bar_height)
+    add_labels(bar_name, bar_height)
     ax2.set_ylim(0, 165)
 
     plt.tight_layout()

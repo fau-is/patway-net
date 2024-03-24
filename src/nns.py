@@ -10,13 +10,8 @@ class LSTM(nn.Module):
         self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=1, batch_first=True)
         self.output_coef = nn.Parameter(torch.randn(self.lstm.hidden_size, 1))
         self.output_bias = nn.Parameter(torch.randn(1))
-        # self.fc = nn.Linear(self.hidden_size, 1)
-        # self.act = torch.nn.Sigmoid()
 
     def forward(self, x):
-        # h0 = torch.zeros(self.hidden_size, x.size(0), self.hidden_size).requires_grad_()
-        # c0 = torch.zeros(self.hidden_size, x.size(0), self.hidden_size).requires_grad_()
-
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x).float()
 
