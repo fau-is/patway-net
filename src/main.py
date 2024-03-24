@@ -30,6 +30,19 @@ save_baseline_model = False
 
 
 def concatenate_tensor_matrix(x_seq, x_stat):
+    """
+    This function reshapes a 3D tensor 'x_seq' into a 2D matrix and then concatenates it with another 2D matrix 'x_stat'.
+    The reshaping of 'x_seq' is done such that the second and third dimensions are flattened into a single dimension.
+    The concatenation is performed along the second axis (columns).
+
+    Parameters:
+        x_seq (array_like): The 3D input tensor.
+        x_stat (array_like): The 2D matrix to be concatenated with 'x_seq'.
+
+    Returns:
+        x_concat(array_like): The resulting 2D matrix after reshaping and concatenation.
+        
+    """
     x_train_seq_ = x_seq.reshape(-1, x_seq.shape[1] * x_seq.shape[2])
     x_concat = np.concatenate((x_train_seq_, x_stat), axis=1)
 
@@ -37,11 +50,40 @@ def concatenate_tensor_matrix(x_seq, x_stat):
 
 
 def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+    This function trains a Random Forest Classifier with or without hyperparameter optimization.
+    If hyperparameter, optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as depth of the trees(max_depth), number of trees(n_estimators) or maximum number of leaf nodes(max_leaf_nodes) and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+        x_train_seq (?): The training sequences.
+        x_train_stat (array_like): The training input static features.
+        y_train (array_like): The training target labels.
+        x_val_seq (?): The validation sequences.
+        x_val_stat (array_like): The validation input static features.
+        y_val (array_like): The validation target labels.
+        hpo (bool): Whether to perform hyperparameter optimization.
+                    Defaults to False.
+        hpos (dict): The hyperparameter optimization space.
+                     Defaults to None.
+        data_set (str): The name of the dataset.
+        arget_activity (str): The target activity.
+                                Defaults to None.
+    Returns:
+    If hpo is True:
+        best_model (RandomForestClassifier): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (RandomForestClassifier): The trained model, without hyperparameter optimization.
+
+    """
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of max_depth, n_estimators, max_leaf_nodes hyperparameters
         for max_depth in hpos["rf"]["max_depth"]:
             for n_estimators in hpos["rf"]["n_estimators"]:
                 for max_leaf_nodes in hpos["rf"]["max_leaf_nodes"]:
@@ -52,6 +94,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
                     preds_proba = model.predict_proba(x_val_stat)
                     preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                    #calculate the AUC
                     try:
                         auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                         if np.isnan(auc):
@@ -59,12 +102,12 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                     except:
                         auc = 0
                     aucs.append(auc)
-
+                    #select the best model based on the AUC
                     if auc >= max(aucs):
                         best_model = model
                         best_hpos = {"max_depth": max_depth, "n_estimators": n_estimators,
                                      "max_leaf_nodes": max_leaf_nodes}
-
+        #write the best hyperparameters and the AUCs to a file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -73,7 +116,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = RandomForestClassifier()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -81,11 +124,41 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    
+    """
+    This function trains an XGBoost Classifier with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as max_depth and learning_rate and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+   Parameters:
+        x_train_seq (?): The training sequences.
+        x_train_stat (array_like): The training input static features.
+        y_train (array_like): The training target labels.
+        x_val_seq (?): The validation sequences.
+        x_val_stat (array_like): The validation input static features.
+        y_val (array_like): The validation target labels.
+        hpo (bool): Whether to perform hyperparameter optimization.
+                Defaults to False.
+        hpos (dict): The hyperparameter optimization space.
+                     Defaults to None.
+        data_set (str): The name of the dataset.
+        target_activity (str): The target activity.
+                                Defaults to None.
+    Returns:
+    If hpo is True:
+        best_model (XGBClassifier): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (XGBClassifier): The trained model, without hyperparameter optimization.
+    """
+
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of hyperparameters
         for max_depth in hpos["xgb"]["max_depth"]:
             for learning_rate in hpos["xgb"]["learning_rate"]:
 
@@ -94,6 +167,7 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
                 preds_proba = model.predict_proba(x_val_stat)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                #calculate the AUC
                 try:
                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     if np.isnan(auc):
@@ -101,11 +175,11 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
                 except:
                     auc = 0
                 aucs.append(auc)
-
+                #select the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = model
                     best_hpos = {"max_depth": max_depth, "learning_rate": learning_rate}
-
+        #write the best hyperparameters and the AUCs to a file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -114,7 +188,7 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = xgb.XGBClassifier()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -123,11 +197,42 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
 
 def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+    This function trains a Logistic Regression Classifier with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+        x_train_seq (?): The training sequences.
+        x_train_stat (array_like): The training input static features.
+        y_train (array_like): The training target labels.
+        x_val_seq (?): The validation sequences.
+        x_val_stat (array_like): The validation input static features.
+        y_val (array_like): The validation target labels.
+        hpo (bool): Whether to perform hyperparameter optimization.
+                    Defaults to False.
+        hpos (dict): The hyperparameter optimization space.
+                    Defaults to None.
+        data_set (str): The name of the dataset.
+        target_activity (str): The target activity.
+                                Defaults to None.
+    Returns:
+    If hpo is True:
+        best_model (LogisticRegression): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (LogisticRegression): The trained model, without hyperparameter optimization.
+
+
+    """
+
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of hyperparameters
         for c in hpos["lr"]["reg_strength"]:
             for solver in hpos["lr"]["solver"]:
 
@@ -135,6 +240,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 model.fit(x_train_stat, np.ravel(y_train))
                 preds_proba = model.predict_proba(x_val_stat)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                #calculate the AUC
                 try:
                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     if np.isnan(auc):
@@ -142,11 +248,11 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 except:
                     auc = 0
                 aucs.append(auc)
-
+                #select the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = model
                     best_hpos = {"c": c, "solver": solver}
-
+        #write the best hyperparameters and the AUCs to a file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -155,7 +261,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = LogisticRegression()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -164,17 +270,46 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 
 def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+    This function trains a Naive Bayes Classifier with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+        x_train_seq (?): The training sequences.
+        x_train_stat (array_like): The training input static features.
+        y_train (array_like): The training target labels.
+        x_val_seq (?): The validation sequences.
+        x_val_stat (array_like): The validation input static features.
+        y_val (array_like): The validation target labels.
+        hpo (bool): Whether to perform hyperparameter optimization.
+                    Defaults to False.
+        hpos (dict): The hyperparameter optimization space.
+                     Defaults to None.
+        data_set (str): The name of the dataset.
+        target_activity (str): The target activity.
+                            Defaults to None.
+    Returns:
+    If hpo is True:
+        best_model (GaussianNB): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (GaussianNB): The trained model, without hyperparameter optimization.
+    """
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible var_smoothing values
         for var_smoothing in hpos["nb"]["var_smoothing"]:
 
             model = GaussianNB(var_smoothing=var_smoothing)
             model.fit(x_train_stat, np.ravel(y_train))
             preds_proba = model.predict_proba(x_val_stat)
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+            #calculate the AUC
             try:
                 auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                 if np.isnan(auc):
@@ -182,11 +317,11 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
             except:
                 auc = 0
             aucs.append(auc)
-
+            #select the best model based on the AUC
             if auc >= max(aucs):
                 best_model = model
                 best_hpos = {"var_smoothing": var_smoothing}
-
+        #write the best hyperparameters and the AUCs to a file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -195,7 +330,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = GaussianNB()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -204,11 +339,42 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 
 def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+    This function trains a Decision Tree Classifier with or without hyperparameter optimization.
+    If hyperparameter, optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as depth of the trees(max_depth), minimum number of samples required to split an internal node(min_samples_split) 
+    and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+        x_train_seq (?): The training sequences.
+        x_train_stat (array_like): The training input static features.
+        y_train (array_like): The training target labels.
+        x_val_seq (?): The validation sequences.
+        x_val_stat (array_like): The validation input static features.
+        y_val (array_like): The validation target labels.
+        hpo (bool): Whether to perform hyperparameter optimization.
+                    Defaults to False.
+        hpos (dict): The hyperparameter optimization space.
+                    Defaults to None.
+        data_set (str): The name of the dataset.
+        target_activity (str): The target activity.
+                                Defaults to None.
+
+    Returns:
+    If hpo is True:
+        best_model (DecisionTreeClassifier): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (DecisionTreeClassifier): The trained model, without hyperparameter optimization.
+
+    """
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of max_depth and min_samples_split hyperparameters
         for max_depth in hpos["dt"]["max_depth"]:
             for min_samples_split in hpos["dt"]["min_samples_split"]:
 
@@ -216,6 +382,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 model.fit(x_train_stat, np.ravel(y_train))
                 preds_proba = model.predict_proba(x_val_stat)
                 preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+                #calculate the AUC
                 try:
                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     if np.isnan(auc):
@@ -224,11 +391,11 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                     auc = 0
 
                 aucs.append(auc)
-
+                #select the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = model
                     best_hpos = {"max_depth": max_depth, "min_samples_split": min_samples_split}
-
+        #write the best hyperparameters and the AUCs to a text file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -237,7 +404,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = DecisionTreeClassifier()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -246,17 +413,47 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
 
 def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+    """
+    This function trains a K-Nearest Neighbors Classifier with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as number of neighbors(n_neighbors) and select the best model based on the validation AUC.
+    If hyperparameter optimization is disabled(hpo=false), the function will train the model with the default hyperparameters.
+
+    Parameters:
+        x_train_seq (?): The training sequences.
+        x_train_stat (array_like): The training input static features.
+        y_train (array_like): The training target labels.
+        x_val_seq (?): The validation sequences.
+        x_val_stat (array_like): The validation input static features.
+        y_val (array_like): The validation target labels.
+        hpo (bool): Whether to perform hyperparameter optimization.
+                Defaults to False.
+        hpos (dict): The hyperparameter optimization space.
+                    Defaults to None.
+        data_set (str): The name of the dataset.
+        target_activity (str): The target activity.
+                            Defaults to None.
+
+    Returns:
+    If hpo is True:
+        best_model (KNeighborsClassifier): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    If hpo is False:
+        model (KNeighborsClassifier): The trained model, without hyperparameter optimization.
+    """
     if hpo:
         best_model = ""
         best_hpos = ""
         aucs = []
-
+        #loop through all possible combinations of hyperparameters
         for n_neighbors in hpos["knn"]["n_neighbors"]:
 
             model = KNeighborsClassifier(n_neighbors=n_neighbors)
             model.fit(x_train_stat, np.ravel(y_train))
             preds_proba = model.predict_proba(x_val_stat)
             preds_proba = [pred_proba[1] for pred_proba in preds_proba]
+            #calculate the AUC
             try:
                 auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                 if np.isnan(auc):
@@ -264,11 +461,11 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
             except:
                 auc = 0
             aucs.append(auc)
-
+            #select the best model based on the AUC
             if auc >= max(aucs):
                 best_model = model
                 best_hpos = {"n_eighbors": n_neighbors}
-
+        #write the best hyperparameters and the AUCs to a text file
         f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
         f.write(str(best_hpos) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -277,7 +474,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         f.close()
 
         return best_model, best_hpos
-
+    #default learning wthout hyperparameter optimization
     else:
         model = KNeighborsClassifier()
         model.fit(x_train_stat, np.ravel(y_train))
@@ -286,8 +483,37 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
 
 def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
-              hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
+    hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
+    """
+    This function trains a Long Short-Term Memory (LSTM) model with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled (hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as learning_rate, batch_size, seq_feature_sz, stat_feature_sz and select the best model based on the validation AUC.
 
+    Parameters:
+        x_train_seq (array_like): The training sequences.
+        x_train_stat (array_like): The training input static features.
+        y_train (array_like): The training target labels.
+        id (int): The id of the model.
+        x_val_seq (array_like): The validation sequences.
+        x_val_stat (array_like): The validation input static features.
+        y_val (array_like): The validation target labels.
+        hpo (bool): Whether to perform hyperparameter optimization.
+                    Defaults to False.
+        hpos (dict): The hyperparameter optimization space.
+                        Defaults to None.
+        mode (str): The mode of the LSTM model.
+                    Defaults to "pwn".
+        data_set (str): The name of the dataset.
+                        Defaults to "sepsis".
+        target_activity (str): The target activity.
+                                Defaults to None.
+
+    Returns:
+    If hpo is True:
+        best_model (Net): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    """
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
@@ -425,6 +651,36 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 
 def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
               hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
+    """
+    This function trains PatWay-Net with or without hyperparameter optimization.
+    If hyperparameter optimization is enabled (hpo=true), the function will train the model with all possible combinations of the
+    hyperparameters such as learning_rate, batch_size, seq_feature_sz, stat_feature_sz and select the best model based on the validation AUC.
+
+    Parameters:
+        x_train_seq (array_like): The training sequences.
+        x_train_stat (array_like): The training input static features.
+        y_train (array_like): The training target labels.
+        id (int): The id of the model.
+        x_val_seq (array_like): The validation sequences.
+        x_val_stat (array_like): The validation input static features.
+        y_val (array_like): The validation target labels.
+        hpo (bool): Whether to perform hyperparameter optimization.
+                    Defaults to False.
+        hpos (dict): The hyperparameter optimization space.
+                        Defaults to None.
+        mode (str): The mode of the LSTM model.
+                    Defaults to "pwn".
+        data_set (str): The name of the dataset.
+                        Defaults to "sepsis".
+        target_activity (str): The target activity.
+                                Defaults to None.
+
+    Returns:
+    If hpo is True:
+        best_model (Net): The best trained model.
+        best_hpos (dict): The best hyperparameters.
+
+    """
     max_case_len = x_train_seq.shape[1]
     num_features_seq = x_train_seq.shape[2]
     num_features_stat = x_train_stat.shape[1]
@@ -434,6 +690,7 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
     epochs = 100
     lstm_mode = ["pwn", "pwn_no_inter", "pwn_only_feat_static", "pwn_all_feat_seq", "lstm"][2]
 
+    # Check the mode of the LSTM model and set the corresponding settings
     if lstm_mode == "pwn":
         masking = True
         interactions_seq_auto = True
@@ -467,7 +724,7 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
     import torch
     import torch.nn as nn
     import torch.optim as optim
-
+    
     if hpo:
         best_model = ""
         best_hpos = ""
@@ -476,7 +733,8 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
         x_train_seq = torch.from_numpy(x_train_seq)
         x_train_stat = torch.from_numpy(x_train_stat)
         y_train = torch.from_numpy(y_train)
-
+        
+        #loop through all possible combinations of hyperparameters
         for learning_rate in hpos["pwn"]["learning_rate"]:
             for batch_size in hpos["pwn"]["batch_size"]:
                 for seq_feature_sz in hpos["pwn"]["seq_feature_sz"]:
@@ -506,13 +764,14 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
                             # optimizer = optim.NAdam(model.parameters(), lr=learning_rate)
                             optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.000)  # weight_decay = 0.002, 0.001
                             idx = np.arange(len(x_train_seq))
-
+                            
                             import copy
                             best_val_loss = np.inf
                             trigger_times = 0
                             model_best_es = copy.deepcopy(model)
                             flag_es = False
-
+                            
+                            # Shuffle the training data for each epoch
                             for epoch in range(epochs):
                                 print(f"Epoch: {epoch + 1}")
                                 np.random.shuffle(idx)
@@ -529,22 +788,41 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
                                     loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double()) + \
                                            lamb_mlp * torch.mean(out_mlp ** 2) + lamb_lstm * torch.mean(out_lstm ** 2)
                                     """
+                                    # Apply the model to the current batch of training data to get the prediction 'out'
                                     out = model(x_train_seq[i * batch_size:(i + 1) * batch_size], x_train_stat[i * batch_size:(i + 1) * batch_size])
+                                    # Calculate the loss by comparing the model's prediction 'out' with the corresponding target values in 'y_train'
                                     loss = criterion(out, y_train[i * batch_size:(i + 1) * batch_size].double())
                                     loss.backward()  # compute updates for each parameter
                                     optimizer.step()  # make the updates for each parameter
 
                                 # Early stopping
                                 def validation(model, x_val_seq, x_val_stat, y_val, loss_function, lamb, lamb2):
+                                    """
+                                    This function is used for early stopping during the training process.
+                                    It calculates the validation loss over the validation data. If the validation loss does not improve over a certain 
+                                    number of epochs, the training process will be stopped early. This helps to prevent overfitting 
+                                    by stopping the training when the model starts to perform worse on the validation data.
 
+                                    Parameters:
+                                        model: The model being trained.
+                                        x_val_seq, x_val_stat: The sequential and static validation data, respectively.
+                                        y_val: The target values for the validation data.
+                                        oss_function: The function used to calculate the loss.
+                                        amb, lamb2: Regularization parameters, used in the commented-out alternative loss calculation.
+
+                                    Returns:
+                                        loss_total / number_batches: The average validation loss per batch
+                                    """    
+                                
                                     x_val_stat = torch.from_numpy(x_val_stat)
                                     x_val_seq = torch.from_numpy(x_val_seq)
                                     y_val = torch.from_numpy(y_val)
-
-                                    model.eval()
+                                    
+                                    model.eval()# Set the model to evaluation mode
                                     loss_total = 0
                                     number_batches = x_val_seq.shape[0] // batch_size
 
+                                    # Calculate the validation loss for each batch
                                     with torch.no_grad():
                                         for i in range(number_batches):
                                             """
@@ -557,11 +835,13 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
                                             loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
                                             loss_total += loss.item()
                                     return loss_total / number_batches
-
+                                
+                                # Calculate the validation loss
                                 current_val_loss = validation(model, x_val_seq, x_val_stat, y_val, criterion, lamb_mlp, lamb_lstm)
                                 print('Validation loss:', current_val_loss)
 
-                                if current_val_loss > best_val_loss:
+                                # Early stopping mechanism
+                                if current_val_loss > best_val_loss: 
                                     trigger_times += 1
                                     print('trigger times:', trigger_times)
 
@@ -572,11 +852,11 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
                                 else:
                                     print('trigger times: 0')
                                     trigger_times = 0
-                                    model_best_es = copy.deepcopy(model)
+                                    model_best_es = copy.deepcopy(model) # Save the current model as the best model so far
                                     best_val_loss = current_val_loss
 
                                 if flag_es:
-                                    break
+                                    break 
 
                             # Select model based on val auc
                             model_best_es.eval()
@@ -586,6 +866,7 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
                                 x_val_seq_ = torch.from_numpy(x_val_seq)
                                 preds_proba = torch.sigmoid(model_best_es(x_val_seq_, x_val_stat_))
                                 preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+                                #calculate the AUC
                                 try:
                                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                                     if np.isnan(auc):
@@ -593,14 +874,15 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
                                 except:
                                     auc = 0
                                 aucs.append(auc)
-
+                                #saving the best model and hyperparameters based on the AUC
                                 if auc >= max(aucs):
                                     best_model = copy.deepcopy(model_best_es)
                                     best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
                                                  "seq_feature_sz": seq_feature_sz,
                                                  "stat_feature_sz": stat_feature_sz,
                                                  "inter_seq_best": inter_seq_best}
-
+                                    
+            #write the best hyperparameters and the AUCs to a text file
             f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
             f.write(str(best_hpos) + '\n')
             f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
@@ -616,10 +898,30 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
 
 
 def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False):
+    """
+    This function first trains per static feature a Multi-Layer Perceptron (MLP) model and 
+    trains based on the outputs of the MLPs a Single-Layer Perceptron (SLP).      
+
+    Parameters:
+        x_train_seq (array_like): The training sequences.
+        x_train_stat (array_like): The training input static features.
+        y_train (array_like): The training target labels.  
+        id (int): The id of the model.
+        x_val_seq (array_like): The validation sequences.
+                            Defaults to False.
+        x_val_stat (array_like): The validation input static features.
+                             Defaults to False.
+        y_val (array_like): The validation target labels.
+                        Defaults to False.
+        hpos (dict): The hyperparameter optimization space.
+                    Defaults to None.
+    Returns:
+        models (dict): The trained models.
+    """
 
     num_features_stat = x_train_stat.shape[1]
 
-    models = {"mlps": [], "slp": ""}
+    models = {"mlps": [], "slp": ""} # Initialize dictionary to store models
 
     patience = 10
     epochs = 100
@@ -631,26 +933,30 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
     x_train_stat = torch.from_numpy(x_train_stat)
     y_train = torch.from_numpy(y_train)
 
+    # Iterate through each static feature
     for j in range(0, num_features_stat):
 
         best_model = ""
         aucs = []
-
+        #loop through all possible combinations of hyperparameters
         for learning_rate in hpos["mlps_sln"]["learning_rate"]:
             for batch_size in hpos["mlps_sln"]["batch_size"]:
                 for stat_feature_sz in hpos["mlps_sln"]["stat_feature_sz"]:
-
+                    
+                    # Define the MLP model
                     model = MLP(input_size=1, hidden_size=stat_feature_sz)
                     criterion = nn.BCEWithLogitsLoss()
                     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.000)
                     idx = np.arange(len(x_train_seq))
 
+                    # Initialize variables for early stopping
                     import copy
                     best_val_loss = np.inf
                     trigger_times = 0
                     model_best_es = copy.deepcopy(model)
                     flag_es = False
 
+                    # Shuffle the training data for each epoch
                     for epoch in range(epochs):
                         print(f"Epoch: {epoch + 1} --- MLP: {j + 1}")
                         np.random.shuffle(idx)
@@ -658,6 +964,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
                         y_train = y_train[idx]
                         number_batches = x_train_stat.shape[0] // batch_size
 
+                        # Train the model for each batch
                         for i in range(number_batches):
                             optimizer.zero_grad()  # clean up step for PyTorch
                             out = model(x_train_stat[i * batch_size:(i + 1) * batch_size, j].reshape(-1,1).float())
@@ -667,23 +974,43 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
 
                         # Early stopping
                         def validation(model, x_val_stat, y_val, loss_function):
+                            """
+                            This function is used for early stopping during the training process.
+                            It calculates the validation loss over the validation data. If the validation loss does not improve over a certain 
+                            number of epochs, the training process will be stopped early. This helps to prevent overfitting 
+                            by stopping the training when the model starts to perform worse on the validation data.
+
+                            Parameters:
+                                model: The model being trained.
+                                x_val_seq, x_val_stat: The sequential and static validation data, respectively.
+                                y_val: The target values for the validation data.
+                                loss_function: The function used to calculate the loss.
+                                lamb, lamb2: Regularization parameters, used in the commented-out alternative loss calculation.
+
+                            Returns:
+                                loss_total / number_batches: The average validation loss per batch
+                            """ 
+
                             x_val_stat = torch.from_numpy(x_val_stat)
                             y_val = torch.from_numpy(y_val)
 
-                            model.eval()
+                            model.eval()# Set the model to evaluation mode
                             loss_total = 0
                             number_batches = x_val_stat.shape[0] // batch_size
 
+                            # Calculate the validation loss for each batch
                             with torch.no_grad():
                                 for i in range(number_batches):
                                     out = model(x_train_stat[i * batch_size:(i + 1) * batch_size, j].reshape(-1,1).float())
                                     loss = loss_function(out, y_val[i * batch_size:(i + 1) * batch_size].double())
                                     loss_total += loss.item()
                             return loss_total / number_batches
-
+                        
+                        # Calculate the validation loss
                         current_val_loss = validation(model, x_val_stat, y_val, criterion)
                         print('Validation loss:', current_val_loss)
 
+                        # Early stopping mechanism
                         if current_val_loss > best_val_loss:
                             trigger_times += 1
                             print('trigger times:', trigger_times)
@@ -695,7 +1022,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
                         else:
                             print('trigger times: 0')
                             trigger_times = 0
-                            model_best_es = copy.deepcopy(model)
+                            model_best_es = copy.deepcopy(model)# Save the current model as the best model so far
                             best_val_loss = current_val_loss
 
                         if flag_es:
@@ -721,17 +1048,18 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
 
         models["mlps"].append(best_model)
 
-    # transform data
+    # transform data 
     x_train_stat_update = x_train_stat
     x_val_stat_update = torch.from_numpy(x_val_stat)
     for c in range(0, num_features_stat):
         x_train_stat_update[:, c] = torch.sigmoid(models["mlps"][c](x_train_stat_update[:, c].reshape(-1,1).float())).reshape(-1)
         x_val_stat_update[:, c] = torch.sigmoid(models["mlps"][c](x_val_stat_update[:, c].reshape(-1, 1).float())).reshape(-1)
 
-    # fit mlp based on mlps
+    # Fit MLP based on models["mlps"]
     best_model = ""
     aucs = []
-
+    
+    #loop through all possible combinations of hyperparameters
     for learning_rate in hpos["mlps_sln"]["learning_rate"]:
         for batch_size in hpos["mlps_sln"]["batch_size"]:
 
@@ -746,6 +1074,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
             model_best_es = copy.deepcopy(model)
             flag_es = False
 
+            # Shuffle the training data for each epoch
             for epoch in range(epochs):
                 print(f"Epoch: {epoch + 1} --- SLP")
                 np.random.shuffle(idx)
@@ -760,7 +1089,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
                     loss.backward(retain_graph=True)  # compute updates for each parameter
                     optimizer.step()  # make the updates for each parameter
 
-                # Early stopping
+                # Early stopping mechanism
                 def validation(model, x_val_stat, y_val, loss_function):
 
                     y_val = torch.from_numpy(y_val)
@@ -776,6 +1105,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
                             loss_total += loss.item()
                     return loss_total / number_batches
 
+                 # Calculate validation loss
                 current_val_loss = validation(model, x_val_stat_update, y_val, criterion)
                 print('Validation loss:', current_val_loss)
 
@@ -803,6 +1133,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
                 x_val_stat_update_ = x_val_stat_update
                 preds_proba = torch.sigmoid(model_best_es(x_val_stat_update_.float()))
                 preds_proba = [pred_proba[0] for pred_proba in preds_proba]
+                #calculate the AUC
                 try:
                     auc = metrics.roc_auc_score(y_true=y_val, y_score=preds_proba)
                     if np.isnan(auc):
@@ -810,7 +1141,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
                 except:
                     auc = 0
                 aucs.append(auc)
-
+                #saving the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = copy.deepcopy(model_best_es)
 
@@ -819,6 +1150,18 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
     return models
 
 def time_step_blow_up(X_seq, X_stat, y, max_len):
+    """
+    Creates prefix sequences from the given input sequences and statistics.
+    
+    Parameters:
+         X_seq (list): List of input sequences.
+         X_stat (list): List of input statistics.
+         y (list): List of output labels.
+         max_len (int): Maximum length of the prefix sequences.
+        
+    Returns:
+         tuple: A tuple containing the final prefix sequences, input statistics, and output labels.
+    """
     X_seq_prefix, X_stat_prefix, y_prefix, x_time_vals_prefix, ts = [], [], [], [], []
 
     # prefix
@@ -836,9 +1179,9 @@ def time_step_blow_up(X_seq, X_stat, y, max_len):
         y_prefix.append(y[idx_seq])
     """
 
-    X_seq_final = np.zeros((len(X_seq_prefix), max_len, len(X_seq_prefix[0][0])), dtype=np.float32)
-    X_stat_final = np.zeros((len(X_seq_prefix), len(X_stat_prefix[0])))
-
+    X_seq_final = np.zeros((len(X_seq_prefix), max_len, len(X_seq_prefix[0][0])), dtype=np.float32) 
+    X_stat_final = np.zeros((len(X_seq_prefix), len(X_stat_prefix[0]))) 
+    
     for i, x in enumerate(X_seq_prefix):
         X_seq_final[i, :len(x), :] = np.array(x)
         X_stat_final[i, :] = np.array(X_stat_prefix[i])
@@ -848,11 +1191,36 @@ def time_step_blow_up(X_seq, X_stat, y, max_len):
 
 
 def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed):
+    """
+    Evaluate the performance of different machine learning models.
+
+    Parameters:
+         x_seqs (list): List of input sequences.
+         x_statics (list): List of static features.
+         y (list): List of target labels.
+         mode (str): Mode of evaluation (e.g., "pwn", "mlps_sln", "rf", "xgb", "lr", "nb", "dt", "knn").
+         target_activity (str): Target activity for evaluation.
+         data_set (str): Name of the dataset.
+         hpos (dict): Hyperparameters for the model.
+         hpo (bool): Flag indicating whether to perform hyperparameter optimization.
+         static_features (list): List of static feature names.
+         seed (int): Random seed for reproducibility.
+
+    Returns:
+         dict: Dictionary containing evaluation results.
+         x_test_seq (list): List of test sequences.
+         x_test_stat (list): List of test static features.
+         y_test (list): List of test target labels.
+         x_val_seq (list): List of validation sequences.
+         X_val_stat (list): List of validation static features.
+         y_val (list): List of validation target labels.
+    """
     k = 5
     results = {}
     id = -1
-
+    # Split the data into k folds
     skfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
+    # Iterate through each fold
     for train_index_, test_index in skfold.split(X=x_statics, y=y):
 
         id += 1
@@ -860,7 +1228,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
         if id == 0:
             results['training_time'] = list()
             results['inference_time'] = list()
-
+        # Split the data into training and validation sets
         train_index = train_index_[0: int(len(train_index_) * (1 - val_size))]
         val_index = train_index_[int(len(train_index_) * (1 - val_size)):]
 
@@ -885,7 +1253,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                                    "x_test_stat": X_test_stat, "label": y_test, "seed": seed}
                 pickle.dump(data_dictionary, output)
                 print("Test data from fold " + str(id) + " saved to " + str(output))
-
+                
         if mode == "lstm":
             training_start_time = time.time()
 
@@ -1113,8 +1481,18 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             results['support_train'] = list()
             results['support_val'] = list()
             results['support_test'] = list()
-
+        
         def calc_roc_auc(gts, probs):
+            """
+            This function calculates the ROC AUC score.
+
+            Parameters:
+                gts (array-like): Ground truth (correct) target values.
+                probs (array-like): Target scores.
+
+            Returns:
+                float: The ROC AUC score as a float in the range [0, 1].
+            """
             try:
                 auc = metrics.roc_auc_score(gts, probs)
                 if np.isnan(auc):
@@ -1124,6 +1502,16 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                 return 0
 
         def calc_pr_auc(gts, probs):
+            """
+            This function calculates the PR AUC (Precision-Recall Area Under the Curve).
+
+            Parameters:
+                gts (array-like): Ground truth (correct) target values.
+                probs (array-like): Target scores.
+
+            Returns:
+                float: The PR AUC score as a float in the range [0, 1].
+            """
             try:
                 precision, recall, thresholds = metrics.precision_recall_curve(gts, probs)
                 auc = metrics.auc(recall, precision)
@@ -1134,12 +1522,42 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
                 return 0
 
         def calc_mcc(gts, preds):
+            """
+            This function calculates the Matthews correlation coefficient (MCC).
+
+            Parameters:
+                gts (array-like): Ground truth (correct) target values.
+                preds (array-like): Predictions, expected to be a binary vector corresponding to the predicted class (0 or 1) for each sample.
+
+            Returns:
+                float: The MCC score as a float in the range [-1, 1]. A higher absolute value indicates a better prediction.
+            """
             try:
                 return metrics.matthews_corrcoef(gts, preds)
             except:
                 return 0
 
         def calc_f1(gts, preds, proba, label_id, corr=False):
+            """
+            This function calculates the F1 score, which is the harmonic mean of precision and recall,
+            and optionally adjusts the threshold for prediction based on maximizing the difference
+            between the True Positive Rate (TPR) and False Positive Rate (FPR) if correction is applied.
+
+            Parameters:
+                gts (array-like): Ground truth (correct) target values.
+                preds (array-like): Predictions, expected to be a binary vector corresponding to the predicted class (0 or 1) for each sample.
+                proba (array-like): Probability estimates of the positive class. This parameter is used
+                                    only if `corr` is True to adjust the prediction threshold.
+                label_id (int or string): The label of the positive class which `f1_score` and
+                                          `precision_score` will consider as the positive label.
+                corr (bool, optional): If True, the function will adjust the prediction threshold to maximize
+                                       the difference between TPR and FPR before calculating the F1 score.
+                                       Default is False.
+
+            Returns:
+                float: The calculated F1 score as a float. If `corr` is True, the score is calculated using
+                       the adjusted threshold that maximizes the difference between TPR and FPR.
+            """
             try:
                 if corr:
                     fpr, tpr, thresholds = metrics.roc_curve(y_true=gts, y_score=proba)
@@ -1220,7 +1638,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
 
         if mode in ["pwn", "lr", "mlps_sln"]:
             metrics_ = metrics_ + ["training_time", "inference_time"]
-
+        # Save the results to a file
         for metric_ in metrics_:
             vals = []
             try:
