@@ -19,3 +19,16 @@ For BPI2012 and Hospital Billing, we use the preprocessed versions, namely "bpic
 
 # Hyperparameter Settings for Hospital Billing (for seed 15)
 ![Hyperparameters](hospital_billing.JPG?raw=true "Hyperparameter settings")
+
+# Citations
+```latex
+@article{zilker2024machine,
+  title={A machine learning framework for interpretable predictions in patient pathways: The case of predicting ICU admission for patients with symptoms of sepsis},
+  author={Zilker, Sandra and Weinzierl, Sven and Kraus, Mathias and Zschech, Patrick and Matzner, Martin},
+  journal={Health Care Management Science},
+  volume={27},
+  number={2},
+  pages={136--167},
+  year={2024},
+  publisher={Springer}
+}
