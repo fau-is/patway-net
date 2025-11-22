@@ -49,7 +49,7 @@ def concatenate_tensor_matrix(x_seq, x_stat):
     return x_concat
 
 
-def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hps, hpo, data_set, target_activity=None):
     """
     This function trains a Random Forest Classifier with or without hyperparameter optimization.
     If hyperparameter, optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
@@ -65,7 +65,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         y_val (array_like): The validation target labels.
         hpo (bool): Whether to perform hyperparameter optimization.
                     Defaults to False.
-        hpos (dict): The hyperparameter optimization space.
+        hps (dict): The hyperparameter space.
                      Defaults to None.
         data_set (str): The name of the dataset.
         arget_activity (str): The target activity.
@@ -73,7 +73,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     Returns:
     If hpo is True:
         best_model (RandomForestClassifier): The best trained model.
-        best_hpos (dict): The best hyperparameters.
+        best_hps (dict): The best hyperparameters.
 
     If hpo is False:
         model (RandomForestClassifier): The trained model, without hyperparameter optimization.
@@ -81,12 +81,12 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     """
     if hpo:
         best_model = ""
-        best_hpos = ""
+        best_hps = ""
         aucs = []
         #loop through all possible combinations of max_depth, n_estimators, max_leaf_nodes hyperparameters
-        for max_depth in hpos["rf"]["max_depth"]:
-            for n_estimators in hpos["rf"]["n_estimators"]:
-                for max_leaf_nodes in hpos["rf"]["max_leaf_nodes"]:
+        for max_depth in hps["rf"]["max_depth"]:
+            for n_estimators in hps["rf"]["n_estimators"]:
+                for max_leaf_nodes in hps["rf"]["max_leaf_nodes"]:
 
                     model = RandomForestClassifier(max_depth=max_depth, n_estimators=n_estimators,
                                                    max_leaf_nodes=max_leaf_nodes)
@@ -105,17 +105,17 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                     #select the best model based on the AUC
                     if auc >= max(aucs):
                         best_model = model
-                        best_hpos = {"max_depth": max_depth, "n_estimators": n_estimators,
+                        best_hps = {"max_depth": max_depth, "n_estimators": n_estimators,
                                      "max_leaf_nodes": max_leaf_nodes}
         #write the best hyperparameters and the AUCs to a file
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
-        f.write(str(best_hpos))
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hps_{seed}.txt', 'a+')
+        f.write(str(best_hps))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
-        return best_model, best_hpos
+        return best_model, best_hps
     #default learning wthout hyperparameter optimization
     else:
         model = RandomForestClassifier()
@@ -123,7 +123,7 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
         return model
 
-def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hps, hpo, data_set, target_activity=None):
     
     """
     This function trains an XGBoost Classifier with or without hyperparameter optimization.
@@ -140,7 +140,7 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         y_val (array_like): The validation target labels.
         hpo (bool): Whether to perform hyperparameter optimization.
                 Defaults to False.
-        hpos (dict): The hyperparameter optimization space.
+        hps (dict): The hyperparameter space.
                      Defaults to None.
         data_set (str): The name of the dataset.
         target_activity (str): The target activity.
@@ -148,7 +148,7 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
     Returns:
     If hpo is True:
         best_model (XGBClassifier): The best trained model.
-        best_hpos (dict): The best hyperparameters.
+        best_hps (dict): The best hyperparameters.
 
     If hpo is False:
         model (XGBClassifier): The trained model, without hyperparameter optimization.
@@ -156,11 +156,11 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
 
     if hpo:
         best_model = ""
-        best_hpos = ""
+        best_hps = ""
         aucs = []
         #loop through all possible combinations of hyperparameters
-        for max_depth in hpos["xgb"]["max_depth"]:
-            for learning_rate in hpos["xgb"]["learning_rate"]:
+        for max_depth in hps["xgb"]["max_depth"]:
+            for learning_rate in hps["xgb"]["learning_rate"]:
 
                 model = xgb.XGBClassifier(max_depth=max_depth, learning_rate=learning_rate)
                 model.fit(x_train_stat, np.ravel(y_train))
@@ -178,16 +178,16 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
                 #select the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = model
-                    best_hpos = {"max_depth": max_depth, "learning_rate": learning_rate}
+                    best_hps = {"max_depth": max_depth, "learning_rate": learning_rate}
         #write the best hyperparameters and the AUCs to a file
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
-        f.write(str(best_hpos))
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hps_{seed}.txt', 'a+')
+        f.write(str(best_hps))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
-        return best_model, best_hpos
+        return best_model, best_hps
     #default learning wthout hyperparameter optimization
     else:
         model = xgb.XGBClassifier()
@@ -196,7 +196,7 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         return model
 
 
-def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hps, hpo, data_set, target_activity=None):
     """
     This function trains a Logistic Regression Classifier with or without hyperparameter optimization.
     If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
@@ -212,7 +212,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         y_val (array_like): The validation target labels.
         hpo (bool): Whether to perform hyperparameter optimization.
                     Defaults to False.
-        hpos (dict): The hyperparameter optimization space.
+        hps (dict): The hyperparameter space.
                     Defaults to None.
         data_set (str): The name of the dataset.
         target_activity (str): The target activity.
@@ -220,7 +220,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     Returns:
     If hpo is True:
         best_model (LogisticRegression): The best trained model.
-        best_hpos (dict): The best hyperparameters.
+        best_hps (dict): The best hyperparameters.
 
     If hpo is False:
         model (LogisticRegression): The trained model, without hyperparameter optimization.
@@ -230,11 +230,11 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
     if hpo:
         best_model = ""
-        best_hpos = ""
+        best_hps = ""
         aucs = []
         #loop through all possible combinations of hyperparameters
-        for c in hpos["lr"]["reg_strength"]:
-            for solver in hpos["lr"]["solver"]:
+        for c in hps["lr"]["reg_strength"]:
+            for solver in hps["lr"]["solver"]:
 
                 model = LogisticRegression(C=c, solver=solver)
                 model.fit(x_train_stat, np.ravel(y_train))
@@ -251,16 +251,16 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 #select the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = model
-                    best_hpos = {"c": c, "solver": solver}
+                    best_hps = {"c": c, "solver": solver}
         #write the best hyperparameters and the AUCs to a file
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
-        f.write(str(best_hpos))
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hps_{seed}.txt', 'a+')
+        f.write(str(best_hps))
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
-        return best_model, best_hpos
+        return best_model, best_hps
     #default learning wthout hyperparameter optimization
     else:
         model = LogisticRegression()
@@ -269,7 +269,7 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hps, hpo, data_set, target_activity=None):
     """
     This function trains a Naive Bayes Classifier with or without hyperparameter optimization.
     If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
@@ -285,7 +285,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         y_val (array_like): The validation target labels.
         hpo (bool): Whether to perform hyperparameter optimization.
                     Defaults to False.
-        hpos (dict): The hyperparameter optimization space.
+        hps (dict): The hyperparameter space.
                      Defaults to None.
         data_set (str): The name of the dataset.
         target_activity (str): The target activity.
@@ -293,17 +293,17 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     Returns:
     If hpo is True:
         best_model (GaussianNB): The best trained model.
-        best_hpos (dict): The best hyperparameters.
+        best_hps (dict): The best hyperparameters.
 
     If hpo is False:
         model (GaussianNB): The trained model, without hyperparameter optimization.
     """
     if hpo:
         best_model = ""
-        best_hpos = ""
+        best_hps = ""
         aucs = []
         #loop through all possible var_smoothing values
-        for var_smoothing in hpos["nb"]["var_smoothing"]:
+        for var_smoothing in hps["nb"]["var_smoothing"]:
 
             model = GaussianNB(var_smoothing=var_smoothing)
             model.fit(x_train_stat, np.ravel(y_train))
@@ -320,16 +320,16 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
             #select the best model based on the AUC
             if auc >= max(aucs):
                 best_model = model
-                best_hpos = {"var_smoothing": var_smoothing}
+                best_hps = {"var_smoothing": var_smoothing}
         #write the best hyperparameters and the AUCs to a file
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
-        f.write(str(best_hpos) + '\n')
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hps_{seed}.txt', 'a+')
+        f.write(str(best_hps) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
-        return best_model, best_hpos
+        return best_model, best_hps
     #default learning wthout hyperparameter optimization
     else:
         model = GaussianNB()
@@ -338,7 +338,7 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hps, hpo, data_set, target_activity=None):
     """
     This function trains a Decision Tree Classifier with or without hyperparameter optimization.
     If hyperparameter, optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
@@ -355,7 +355,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         y_val (array_like): The validation target labels.
         hpo (bool): Whether to perform hyperparameter optimization.
                     Defaults to False.
-        hpos (dict): The hyperparameter optimization space.
+        hps (dict): The hyperparameter space.
                     Defaults to None.
         data_set (str): The name of the dataset.
         target_activity (str): The target activity.
@@ -364,7 +364,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     Returns:
     If hpo is True:
         best_model (DecisionTreeClassifier): The best trained model.
-        best_hpos (dict): The best hyperparameters.
+        best_hps (dict): The best hyperparameters.
 
     If hpo is False:
         model (DecisionTreeClassifier): The trained model, without hyperparameter optimization.
@@ -372,11 +372,11 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     """
     if hpo:
         best_model = ""
-        best_hpos = ""
+        best_hps = ""
         aucs = []
         #loop through all possible combinations of max_depth and min_samples_split hyperparameters
-        for max_depth in hpos["dt"]["max_depth"]:
-            for min_samples_split in hpos["dt"]["min_samples_split"]:
+        for max_depth in hps["dt"]["max_depth"]:
+            for min_samples_split in hps["dt"]["min_samples_split"]:
 
                 model = DecisionTreeClassifier(max_depth=max_depth, min_samples_split=min_samples_split)
                 model.fit(x_train_stat, np.ravel(y_train))
@@ -394,16 +394,16 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
                 #select the best model based on the AUC
                 if auc >= max(aucs):
                     best_model = model
-                    best_hpos = {"max_depth": max_depth, "min_samples_split": min_samples_split}
+                    best_hps = {"max_depth": max_depth, "min_samples_split": min_samples_split}
         #write the best hyperparameters and the AUCs to a text file
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
-        f.write(str(best_hpos) + '\n')
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hps_{seed}.txt', 'a+')
+        f.write(str(best_hps) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
-        return best_model, best_hpos
+        return best_model, best_hps
     #default learning wthout hyperparameter optimization
     else:
         model = DecisionTreeClassifier()
@@ -412,7 +412,7 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         return model
 
 
-def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hpos, hpo, data_set, target_activity=None):
+def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, hps, hpo, data_set, target_activity=None):
     """
     This function trains a K-Nearest Neighbors Classifier with or without hyperparameter optimization.
     If hyperparameter optimization is enabled(hpo=true), the function will train the model with all possible combinations of the
@@ -428,7 +428,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         y_val (array_like): The validation target labels.
         hpo (bool): Whether to perform hyperparameter optimization.
                 Defaults to False.
-        hpos (dict): The hyperparameter optimization space.
+        hps (dict): The hyperparameter space.
                     Defaults to None.
         data_set (str): The name of the dataset.
         target_activity (str): The target activity.
@@ -437,17 +437,17 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
     Returns:
     If hpo is True:
         best_model (KNeighborsClassifier): The best trained model.
-        best_hpos (dict): The best hyperparameters.
+        best_hps (dict): The best hyperparameters.
 
     If hpo is False:
         model (KNeighborsClassifier): The trained model, without hyperparameter optimization.
     """
     if hpo:
         best_model = ""
-        best_hpos = ""
+        best_hps = ""
         aucs = []
         #loop through all possible combinations of hyperparameters
-        for n_neighbors in hpos["knn"]["n_neighbors"]:
+        for n_neighbors in hps["knn"]["n_neighbors"]:
 
             model = KNeighborsClassifier(n_neighbors=n_neighbors)
             model.fit(x_train_stat, np.ravel(y_train))
@@ -464,16 +464,16 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
             #select the best model based on the AUC
             if auc >= max(aucs):
                 best_model = model
-                best_hpos = {"n_eighbors": n_neighbors}
+                best_hps = {"n_eighbors": n_neighbors}
         #write the best hyperparameters and the AUCs to a text file
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
-        f.write(str(best_hpos) + '\n')
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hps_{seed}.txt', 'a+')
+        f.write(str(best_hps) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
         f.close()
 
-        return best_model, best_hpos
+        return best_model, best_hps
     #default learning wthout hyperparameter optimization
     else:
         model = KNeighborsClassifier()
@@ -482,7 +482,7 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         return model
 
 
-def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
+def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hps=False,
     hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
     """
     This function trains a Long Short-Term Memory (LSTM) model with or without hyperparameter optimization.
@@ -499,7 +499,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
         y_val (array_like): The validation target labels.
         hpo (bool): Whether to perform hyperparameter optimization.
                     Defaults to False.
-        hpos (dict): The hyperparameter optimization space.
+        hps (dict): The hyperparameter space.
                         Defaults to None.
         mode (str): The mode of the LSTM model.
                     Defaults to "pwn".
@@ -511,7 +511,7 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
     Returns:
     If hpo is True:
         best_model (Net): The best trained model.
-        best_hpos (dict): The best hyperparameters.
+        best_hps (dict): The best hyperparameters.
 
     """
     max_case_len = x_train_seq.shape[1]
@@ -544,15 +544,15 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 
     if hpo:
         best_model = ""
-        best_hpos = ""
+        best_hps = ""
         aucs = []
 
         # x_train_seq = torch.from_numpy(x_train_seq)
         y_train = torch.from_numpy(y_train)
 
-        for learning_rate in hpos["lstm"]["learning_rate"]:
-            for batch_size in hpos["lstm"]["batch_size"]:
-                for hidden_sz in hpos["lstm"]["hidden_sz"]:
+        for learning_rate in hps["lstm"]["learning_rate"]:
+            for batch_size in hps["lstm"]["batch_size"]:
+                for hidden_sz in hps["lstm"]["hidden_sz"]:
 
                     model = LSTM(input_size=num_features_seq+num_features_stat, hidden_size=hidden_sz)
                     criterion = nn.BCEWithLogitsLoss()
@@ -633,11 +633,11 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 
                         if auc >= max(aucs):
                             best_model = copy.deepcopy(model_best_es)
-                            best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
+                            best_hps = {"learning_rate": learning_rate, "batch_size": batch_size,
                                          "hidden_sz": hidden_sz}
 
-            f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
-            f.write(str(best_hpos) + '\n')
+            f = open(f'../output/{data_set}_{mode}_{target_activity}_hps_{seed}.txt', 'a+')
+            f.write(str(best_hps) + '\n')
             f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
             f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
             f.write(f'Std,{np.std(aucs, ddof=1)}\n')
@@ -645,11 +645,11 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
 
             torch.save(model, os.path.join("../model", f"model_{mode}_{id}_{seed}"))
 
-            return best_model, best_hpos
+            return best_model, best_hps
         else:
             pass
 
-def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False,
+def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hps=False,
               hpo=False, mode="pwn", data_set="sepsis", target_activity=None):
     """
     This function trains PatWay-Net with or without hyperparameter optimization.
@@ -666,7 +666,7 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
         y_val (array_like): The validation target labels.
         hpo (bool): Whether to perform hyperparameter optimization.
                     Defaults to False.
-        hpos (dict): The hyperparameter optimization space.
+        hps (dict): The hyperparameter space.
                         Defaults to None.
         mode (str): The mode of the LSTM model.
                     Defaults to "pwn".
@@ -678,7 +678,7 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
     Returns:
     If hpo is True:
         best_model (Net): The best trained model.
-        best_hpos (dict): The best hyperparameters.
+        best_hps (dict): The best hyperparameters.
 
     """
     max_case_len = x_train_seq.shape[1]
@@ -727,7 +727,7 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
     
     if hpo:
         best_model = ""
-        best_hpos = ""
+        best_hps = ""
         aucs = []
 
         x_train_seq = torch.from_numpy(x_train_seq)
@@ -735,11 +735,11 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
         y_train = torch.from_numpy(y_train)
         
         #loop through all possible combinations of hyperparameters
-        for learning_rate in hpos["pwn"]["learning_rate"]:
-            for batch_size in hpos["pwn"]["batch_size"]:
-                for seq_feature_sz in hpos["pwn"]["seq_feature_sz"]:
-                    for stat_feature_sz in hpos["pwn"]["stat_feature_sz"]:
-                        for inter_seq_best in hpos["pwn"]["inter_seq_best"]:
+        for learning_rate in hps["pwn"]["learning_rate"]:
+            for batch_size in hps["pwn"]["batch_size"]:
+                for seq_feature_sz in hps["pwn"]["seq_feature_sz"]:
+                    for stat_feature_sz in hps["pwn"]["stat_feature_sz"]:
+                        for inter_seq_best in hps["pwn"]["inter_seq_best"]:
 
                             model = Net(input_sz_seq=num_features_seq,
                                         hidden_per_seq_feat_sz=seq_feature_sz,
@@ -877,14 +877,14 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
                                 #saving the best model and hyperparameters based on the AUC
                                 if auc >= max(aucs):
                                     best_model = copy.deepcopy(model_best_es)
-                                    best_hpos = {"learning_rate": learning_rate, "batch_size": batch_size,
+                                    best_hps = {"learning_rate": learning_rate, "batch_size": batch_size,
                                                  "seq_feature_sz": seq_feature_sz,
                                                  "stat_feature_sz": stat_feature_sz,
                                                  "inter_seq_best": inter_seq_best}
                                     
         #write the best hyperparameters and the AUCs to a text file
-        f = open(f'../output/{data_set}_{mode}_{target_activity}_hpos_{seed}.txt', 'a+')
-        f.write(str(best_hpos) + '\n')
+        f = open(f'../output/{data_set}_{mode}_{target_activity}_hps_{seed}.txt', 'a+')
+        f.write(str(best_hps) + '\n')
         f.write("Validation aucs," + ",".join([str(x) for x in aucs]) + '\n')
         f.write(f'Avg,{sum(aucs) / len(aucs)}\n')
         f.write(f'Std,{np.std(aucs, ddof=1)}\n')
@@ -892,12 +892,12 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
 
         torch.save(model, os.path.join("../model", f"model_{lstm_mode}_{id}_{seed}"))
 
-        return best_model, best_hpos
+        return best_model, best_hps
     else:
         pass
 
 
-def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hpos=False):
+def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_stat=False, y_val=False, hps=False):
     """
     This function first trains per static feature a Multi-Layer Perceptron (MLP) model and 
     trains based on the outputs of the MLPs a Single-Layer Perceptron (SLP).      
@@ -913,7 +913,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
                              Defaults to False.
         y_val (array_like): The validation target labels.
                         Defaults to False.
-        hpos (dict): The hyperparameter optimization space.
+        hps (dict): The hyperparameter space.
                     Defaults to None.
     Returns:
         models (dict): The trained models.
@@ -939,9 +939,9 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
         best_model = ""
         aucs = []
         #loop through all possible combinations of hyperparameters
-        for learning_rate in hpos["mlps_sln"]["learning_rate"]:
-            for batch_size in hpos["mlps_sln"]["batch_size"]:
-                for stat_feature_sz in hpos["mlps_sln"]["stat_feature_sz"]:
+        for learning_rate in hps["mlps_sln"]["learning_rate"]:
+            for batch_size in hps["mlps_sln"]["batch_size"]:
+                for stat_feature_sz in hps["mlps_sln"]["stat_feature_sz"]:
                     
                     # Define the MLP model
                     model = MLP(input_size=1, hidden_size=stat_feature_sz)
@@ -1060,8 +1060,8 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
     aucs = []
     
     #loop through all possible combinations of hyperparameters
-    for learning_rate in hpos["mlps_sln"]["learning_rate"]:
-        for batch_size in hpos["mlps_sln"]["batch_size"]:
+    for learning_rate in hps["mlps_sln"]["learning_rate"]:
+        for batch_size in hps["mlps_sln"]["batch_size"]:
 
             model = SLP(input_size=num_features_stat)
             criterion = nn.BCEWithLogitsLoss()
@@ -1190,7 +1190,7 @@ def time_step_blow_up(X_seq, X_stat, y, max_len):
     return X_seq_final, X_stat_final, y_final
 
 
-def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed):
+def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hps, hpo, static_features, seed):
     """
     Evaluate the performance of different machine learning models.
 
@@ -1201,7 +1201,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
          mode (str): Mode of evaluation (e.g., "pwn", "mlps_sln", "rf", "xgb", "lr", "nb", "dt", "knn").
          target_activity (str): Target activity for evaluation.
          data_set (str): Name of the dataset.
-         hpos (dict): Hyperparameters for the model.
+         hps (dict): Hyperparameters for the model.
          hpo (bool): Flag indicating whether to perform hyperparameter optimization.
          static_features (list): List of static feature names.
          seed (int): Random seed for reproducibility.
@@ -1266,8 +1266,8 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             X_test_seq = torch.from_numpy(X_test_seq)
             X_test_stat = torch.from_numpy(X_test_stat)
 
-            model, best_hpos = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat,
-                                         y_val.reshape(-1, 1), hpos, hpo, mode, data_set, target_activity=target_activity)
+            model, best_hps = train_lstm(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat,
+                                         y_val.reshape(-1, 1), hps, hpo, mode, data_set, target_activity=target_activity)
 
             results['training_time'].append(time.time() - training_start_time)
 
@@ -1317,8 +1317,8 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
         elif mode == "pwn":
             training_start_time = time.time()
 
-            model, best_hpos = train_pwn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat,
-                                         y_val.reshape(-1, 1), hpos, hpo, mode, data_set, target_activity=target_activity)
+            model, best_hps = train_pwn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat,
+                                         y_val.reshape(-1, 1), hps, hpo, mode, data_set, target_activity=target_activity)
 
             results['training_time'].append(time.time() - training_start_time)
 
@@ -1355,7 +1355,7 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
         elif mode == "mlps_sln":
             training_start_time = time.time()
 
-            models = train_mlps_sln(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat, y_val.reshape(-1, 1), hpos)
+            models = train_mlps_sln(X_train_seq, X_train_stat, y_train.reshape(-1, 1), id, X_val_seq, X_val_stat, y_val.reshape(-1, 1), hps)
 
             results['training_time'].append(time.time() - training_start_time)
 
@@ -1391,26 +1391,26 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             results['preds_proba_test'] = [pred_proba[0] for pred_proba in preds_proba_test]
 
         elif mode == "rf":
-            model, best_hpos = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+            model, best_hps = train_rf(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hps, hpo, data_set, target_activity=target_activity)
 
         elif mode == "xgb":
-            model, best_hpos = train_xgb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+            model, best_hps = train_xgb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hps, hpo, data_set, target_activity=target_activity)
 
         elif mode == "lr":
             training_start_time = time.time()
-            model, best_hpos = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                         y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+            model, best_hps = train_lr(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                         y_val.reshape(-1, 1), hps, hpo, data_set, target_activity=target_activity)
             results['training_time'].append(time.time() - training_start_time)
 
         elif mode == "nb":
-            model, best_hpos = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+            model, best_hps = train_nb(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hps, hpo, data_set, target_activity=target_activity)
 
         elif mode == "dt":
-            model, best_hpos = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                        y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+            model, best_hps = train_dt(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                        y_val.reshape(-1, 1), hps, hpo, data_set, target_activity=target_activity)
 
             """
             from matplotlib import pyplot as plt
@@ -1424,8 +1424,8 @@ def evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, s
             """
 
         elif mode == "knn":
-            model, best_hpos = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
-                                         y_val.reshape(-1, 1), hpos, hpo, data_set, target_activity=target_activity)
+            model, best_hps = train_knn(X_train_seq, X_train_stat, y_train.reshape(-1, 1), X_val_seq, X_val_stat,
+                                         y_val.reshape(-1, 1), hps, hpo, data_set, target_activity=target_activity)
 
         if mode in ["rf", "xgb", "dt", "knn", "nb", "lr"]:
             inference_start_time = time.time()
@@ -1665,7 +1665,7 @@ if __name__ == "__main__":
 
     data_set = "sepsis"  # bpi2012, hospital
 
-    hpos = {
+    hps = {
         # "mlps_sln": {"stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [32]},
         # "pwn": {"seq_feature_sz": [4], "stat_feature_sz": [4], "learning_rate": [0.01], "batch_size": [32], "inter_seq_best": [1]},
         "lstm": {"hidden_sz": [4, 32, 128], "learning_rate": [0.001, 0.01], "batch_size": [32, 128]},
@@ -1693,7 +1693,7 @@ if __name__ == "__main__":
                         target_activity, max_len, min_len)
 
                     x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                        evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hpos, hpo, static_features, seed)
+                        evaluate(x_seqs, x_statics, y, mode, target_activity, data_set, hps, hpo, static_features, seed)
 
     elif data_set == "bpi2012":
         for seed in [15]:  # 15, 37, 98, 137, 245]:
@@ -1706,7 +1706,7 @@ if __name__ == "__main__":
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_bpi_data(max_len, min_len)
 
                 x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                    evaluate(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
+                    evaluate(x_seqs, x_statics, y, mode, "deviant", data_set, hps, hpo, static_features, seed)
 
     elif data_set == "hospital":
         for seed in [15]:  # [15, 37, 98, 137, 245]:
@@ -1719,7 +1719,7 @@ if __name__ == "__main__":
                 x_seqs, x_statics, y, x_time_vals_final, seq_features, static_features = data.get_hospital_data(max_len, min_len)
 
                 x_seqs_train, x_statics_train, y_train, x_seqs_val, x_statics_val, y_val = \
-                    evaluate(x_seqs, x_statics, y, mode, "deviant", data_set, hpos, hpo, static_features, seed)
+                    evaluate(x_seqs, x_statics, y, mode, "deviant", data_set, hps, hpo, static_features, seed)
 
     else:
         print("Data set not available!")
