@@ -80,8 +80,8 @@ def train_rf(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
     """
     if hpo:
-        best_model = ""
-        best_hps = ""
+        best_model = np.nan
+        best_hps = np.nan
         aucs = []
         #loop through all possible combinations of max_depth, n_estimators, max_leaf_nodes hyperparameters
         for max_depth in hps["rf"]["max_depth"]:
@@ -155,8 +155,8 @@ def train_xgb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
     """
 
     if hpo:
-        best_model = ""
-        best_hps = ""
+        best_model = np.nan
+        best_hps = np.nan
         aucs = []
         #loop through all possible combinations of hyperparameters
         for max_depth in hps["xgb"]["max_depth"]:
@@ -229,8 +229,8 @@ def train_lr(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
     """
 
     if hpo:
-        best_model = ""
-        best_hps = ""
+        best_model = np.nan
+        best_hps = np.nan
         aucs = []
         #loop through all possible combinations of hyperparameters
         for c in hps["lr"]["reg_strength"]:
@@ -299,8 +299,8 @@ def train_nb(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
         model (GaussianNB): The trained model, without hyperparameter optimization.
     """
     if hpo:
-        best_model = ""
-        best_hps = ""
+        best_model = np.nan
+        best_hps = np.nan
         aucs = []
         #loop through all possible var_smoothing values
         for var_smoothing in hps["nb"]["var_smoothing"]:
@@ -371,8 +371,8 @@ def train_dt(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, h
 
     """
     if hpo:
-        best_model = ""
-        best_hps = ""
+        best_model = np.nan
+        best_hps = np.nan
         aucs = []
         #loop through all possible combinations of max_depth and min_samples_split hyperparameters
         for max_depth in hps["dt"]["max_depth"]:
@@ -443,8 +443,8 @@ def train_knn(x_train_seq, x_train_stat, y_train, x_val_seq, x_val_stat, y_val, 
         model (KNeighborsClassifier): The trained model, without hyperparameter optimization.
     """
     if hpo:
-        best_model = ""
-        best_hps = ""
+        best_model = np.nan
+        best_hps = np.nan
         aucs = []
         #loop through all possible combinations of hyperparameters
         for n_neighbors in hps["knn"]["n_neighbors"]:
@@ -543,8 +543,8 @@ def train_lstm(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_st
     import torch.optim as optim
 
     if hpo:
-        best_model = ""
-        best_hps = ""
+        best_model = np.nan
+        best_hps = np.nan
         aucs = []
 
         # x_train_seq = torch.from_numpy(x_train_seq)
@@ -726,8 +726,8 @@ def train_pwn(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_val_sta
     import torch.optim as optim
     
     if hpo:
-        best_model = ""
-        best_hps = ""
+        best_model = np.nan
+        best_hps = np.nan
         aucs = []
 
         x_train_seq = torch.from_numpy(x_train_seq)
@@ -936,7 +936,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
     # Iterate through each static feature
     for j in range(0, num_features_stat):
 
-        best_model = ""
+        best_model = np.nan
         aucs = []
         #loop through all possible combinations of hyperparameters
         for learning_rate in hps["mlps_sln"]["learning_rate"]:
@@ -1056,7 +1056,7 @@ def train_mlps_sln(x_train_seq, x_train_stat, y_train, id, x_val_seq=False, x_va
         x_val_stat_update[:, c] = torch.sigmoid(models["mlps"][c](x_val_stat_update[:, c].reshape(-1, 1).float())).reshape(-1)
 
     # Fit MLP based on models["mlps"]
-    best_model = ""
+    best_model = np.nan
     aucs = []
     
     #loop through all possible combinations of hyperparameters
